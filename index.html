@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
             background-color: #1a202c;
             color: #e2e8f0;
         }
+
         .tile {
             background-color: #2d3748;
             border: 1px solid #4a5568;
@@ -24,6 +26,7 @@
             flex-direction: column;
             position: relative;
         }
+
         .tile-header {
             font-size: 1.125rem;
             font-weight: 700;
@@ -35,38 +38,46 @@
             align-items: center;
             flex-shrink: 0;
         }
+
         .tile-header svg {
             margin-right: 0.5rem;
         }
+
         .tile-content {
             flex-grow: 1;
         }
+
         .highlight {
             color: #63b3ed;
             font-weight: 600;
         }
+
         .sub-header {
             font-weight: 600;
             color: #718096;
             margin-top: 0.75rem;
             margin-bottom: 0.25rem;
         }
+
         li {
             padding-left: 1rem;
             position: relative;
         }
+
         li::before {
             content: '•';
             position: absolute;
             left: 0;
             color: #63b3ed;
         }
+
         .tooltip {
             position: relative;
             display: inline-block;
             border-bottom: 1px dotted #a0aec0;
             cursor: help;
         }
+
         .tooltip .tooltiptext {
             visibility: hidden;
             width: 280px;
@@ -87,10 +98,12 @@
             font-weight: 400;
             line-height: 1.5;
         }
+
         .tooltip:hover .tooltiptext {
             visibility: visible;
             opacity: 1;
         }
+
         /* Interactive Elements */
         .tracker-dot {
             width: 1rem;
@@ -101,10 +114,12 @@
             border: 2px solid #63b3ed;
             background-color: transparent;
         }
+
         .tracker-dot.used {
             background-color: #e2e8f0;
             border-color: #63b3ed;
         }
+
         .hp-input {
             background-color: #1a202c;
             border: 1px solid #4a5568;
@@ -112,27 +127,32 @@
             text-align: center;
             width: 4rem;
         }
+
         .skill-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0.25rem 0;
         }
+
         .edit-toggle {
             background-color: #4a5568;
             border: 1px solid #63b3ed;
             color: #e2e8f0;
             transition: all 0.2s;
         }
+
         .edit-toggle:hover {
             background-color: #63b3ed;
             color: #1a202c;
         }
+
         .edit-toggle.active {
             background-color: #63b3ed;
             color: #1a202c;
             box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3);
         }
+
         .edit-mode .editable {
             border: 1px dashed #63b3ed;
             border-radius: 0.25rem;
@@ -140,10 +160,12 @@
             cursor: text;
             position: relative;
         }
+
         .edit-mode .editable:hover {
             background-color: rgba(99, 179, 237, 0.1);
             border-style: solid;
         }
+
         .edit-mode .editable:hover::after {
             content: "✏️ Click to edit";
             position: absolute;
@@ -158,6 +180,7 @@
             z-index: 1000;
             border: 1px solid #63b3ed;
         }
+
         .edit-mode .tooltip-editable {
             border: 1px dashed #f6ad55;
             border-radius: 0.25rem;
@@ -165,12 +188,14 @@
             cursor: text;
             position: relative;
         }
+
         .edit-mode .tooltip-editable:hover {
             background-color: rgba(246, 173, 85, 0.1);
             border-style: solid;
         }
+
         .edit-mode .tooltip-editable:hover::after {
-            content: "💬 Click to edit tooltip (Ctrl+Enter to save)";
+            content: "💬 Click to edit tooltip";
             position: absolute;
             top: -2rem;
             left: 0;
@@ -183,8 +208,34 @@
             z-index: 1000;
             border: 1px solid #f6ad55;
         }
+
+        .tooltip-edit-container textarea {
+            background: #1a202c;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+            min-height: 4rem;
+        }
+
+        .tooltip-edit-container textarea:focus {
+            outline: none;
+            border-color: #63b3ed;
+            box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3);
+        }
+
+        .text-edit-container input {
+            background: #1a202c;
+            border: 1px solid #4a5568;
+            color: #e2e8f0;
+        }
+
+        .text-edit-container input:focus {
+            outline: none;
+            border-color: #63b3ed;
+            box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3);
+        }
     </style>
 </head>
+
 <body class="p-4 sm:p-6 lg:p-8">
 
     <div class="max-w-7xl mx-auto">
@@ -194,24 +245,36 @@
                 <span id="character-name" class="editable" data-editable="character-name">Azrik Snow</span>
                 <span class="text-lg text-gray-400 ml-2">- Interactive Combat Cheat Sheet</span>
             </h1>
-            <button id="edit-toggle" class="edit-toggle px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
-                <svg id="edit-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+            <button id="edit-toggle"
+                class="edit-toggle px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                <svg id="edit-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="mr-2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
                 <span id="edit-text">Edit Mode</span>
             </button>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
 
             <div class="tile md:col-span-2">
                 <div class="absolute top-2 right-2">
-                    <button id="resetButton" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors text-xs">Full Reset</button>
+                    <button id="resetButton"
+                        class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors text-xs">Full
+                        Reset</button>
                 </div>
-                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Core Stats</h2>
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>Core Stats</h2>
                 <div class="grid grid-cols-2 gap-2 text-center">
-                    <div><p class="text-2xl font-bold text-white">18</p><p class="text-xs text-gray-400">AC</p></div>
+                    <div>
+                        <p class="text-2xl font-bold text-white">18</p>
+                        <p class="text-xs text-gray-400">AC</p>
+                    </div>
                     <div class="flex flex-col items-center justify-center">
                         <div class="flex items-center text-2xl font-bold text-white">
                             <input id="hp-current" type="number" value="54" class="hp-input rounded-md p-1 text-2xl">
@@ -219,82 +282,159 @@
                         </div>
                         <p class="text-xs text-gray-400">Current HP</p>
                     </div>
-                    <div><p class="text-2xl font-bold text-white">+6</p><p class="text-xs text-gray-400">Initiative</p></div>
-                    <div><p class="text-2xl font-bold text-white">19</p><p class="text-xs text-gray-400">Passive Inv.</p></div>
+                    <div>
+                        <p class="text-2xl font-bold text-white">+6</p>
+                        <p class="text-xs text-gray-400">Initiative</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-white">19</p>
+                        <p class="text-xs text-gray-400">Passive Inv.</p>
+                    </div>
                 </div>
                 <div class="mt-4 text-sm space-y-1">
                     <p><span class="highlight">Prof. Bonus:</span> +3</p>
-                    <p><span class="highlight">Senses:</span> <span class="editable" data-editable="senses">Darkvision 60ft, <span class="highlight tooltip">Shadowflame Sight<span class="tooltiptext">You can see normally in darkness, both magical and nonmagical, to a distance of 60 feet.</span></span> 60ft</span></p>
-                    <p><span class="highlight">Resistances:</span> <span class="editable" data-editable="resistances">Fire</span></p>
+                    <p><span class="highlight">Senses:</span> <span class="editable" data-editable="senses">Darkvision
+                            60ft, <span class="highlight tooltip">Shadowflame Sight<span class="tooltiptext">You can see
+                                    normally in darkness, both magical and nonmagical, to a distance of 60
+                                    feet.</span></span> 60ft</span></p>
+                    <p><span class="highlight">Resistances:</span> <span class="editable"
+                            data-editable="resistances">Fire</span></p>
                 </div>
             </div>
 
             <div class="tile md:col-span-2">
-                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Modifiers & Saves</h2>
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>Modifiers & Saves</h2>
                 <div class="grid grid-cols-3 gap-2 text-center text-sm">
-                    <div><p class="text-lg font-bold text-white">-1</p><p class="text-xs text-gray-400">STR</p></div>
-                    <div><p class="text-lg font-bold text-white">+3</p><p class="text-xs text-gray-400">DEX</p></div>
-                    <div><p class="text-lg font-bold text-white">+1</p><p class="text-xs text-gray-400">CON</p></div>
-                    <div><p class="text-lg font-bold text-white">+3</p><p class="text-xs text-gray-400">INT</p></div>
-                    <div><p class="text-lg font-bold text-white">+1</p><p class="text-xs text-gray-400">WIS</p></div>
-                    <div><p class="text-lg font-bold text-white">+0</p><p class="text-xs text-gray-400">CHA</p></div>
+                    <div>
+                        <p class="text-lg font-bold text-white">-1</p>
+                        <p class="text-xs text-gray-400">STR</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+3</p>
+                        <p class="text-xs text-gray-400">DEX</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+1</p>
+                        <p class="text-xs text-gray-400">CON</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+3</p>
+                        <p class="text-xs text-gray-400">INT</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+1</p>
+                        <p class="text-xs text-gray-400">WIS</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+0</p>
+                        <p class="text-xs text-gray-400">CHA</p>
+                    </div>
                 </div>
                 <div class="sub-header">SAVING THROWS</div>
                 <div class="grid grid-cols-3 gap-2 text-center text-sm">
-                    <div><p class="text-lg font-bold text-white">-1</p><p class="text-xs text-gray-400">STR</p></div>
-                    <div class="text-blue-400"><p class="text-lg font-bold">+6</p><p class="text-xs">DEX</p></div>
-                    <div><p class="text-lg font-bold text-white">+0</p><p class="text-xs text-gray-400">CON</p></div>
-                    <div class="text-blue-400"><p class="text-lg font-bold">+6</p><p class="text-xs">INT</p></div>
-                    <div><p class="text-lg font-bold text-white">+1</p><p class="text-xs text-gray-400">WIS</p></div>
-                    <div><p class="text-lg font-bold text-white">+0</p><p class="text-xs text-gray-400">CHA</p></div>
+                    <div>
+                        <p class="text-lg font-bold text-white">-1</p>
+                        <p class="text-xs text-gray-400">STR</p>
+                    </div>
+                    <div class="text-blue-400">
+                        <p class="text-lg font-bold">+6</p>
+                        <p class="text-xs">DEX</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+0</p>
+                        <p class="text-xs text-gray-400">CON</p>
+                    </div>
+                    <div class="text-blue-400">
+                        <p class="text-lg font-bold">+6</p>
+                        <p class="text-xs">INT</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+1</p>
+                        <p class="text-xs text-gray-400">WIS</p>
+                    </div>
+                    <div>
+                        <p class="text-lg font-bold text-white">+0</p>
+                        <p class="text-xs text-gray-400">CHA</p>
+                    </div>
                 </div>
-                 <p class="text-xs text-center mt-2 text-gray-400">Advantage on CON saves for Concentration</p>
+                <p class="text-xs text-center mt-2 text-gray-400">Advantage on CON saves for Concentration</p>
             </div>
 
             <div class="tile md:col-span-2">
-                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>Skills</h2>
-                 <div class="grid grid-cols-2 gap-x-4 text-sm">
-                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Acrobatics</span> <span class="font-bold ml-auto">+6</span></div>
-                    <div class="skill-row"><span>○ Animal Handling</span> <span class="font-bold ml-auto">+1</span></div>
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>Skills</h2>
+                <div class="grid grid-cols-2 gap-x-4 text-sm">
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Acrobatics</span> <span
+                            class="font-bold ml-auto">+6</span></div>
+                    <div class="skill-row"><span>○ Animal Handling</span> <span class="font-bold ml-auto">+1</span>
+                    </div>
                     <div class="skill-row"><span>○ Arcana</span> <span class="font-bold ml-auto">+3</span></div>
                     <div class="skill-row"><span>○ Athletics</span> <span class="font-bold ml-auto">-1</span></div>
                     <div class="skill-row"><span>○ Deception</span> <span class="font-bold ml-auto">+0</span></div>
-                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> History</span> <span class="font-bold ml-auto">+6</span></div>
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> History</span> <span
+                            class="font-bold ml-auto">+6</span></div>
                     <div class="skill-row"><span>○ Insight</span> <span class="font-bold ml-auto">+1</span></div>
                     <div class="skill-row"><span>○ Intimidation</span> <span class="font-bold ml-auto">+0</span></div>
-                    <div class="skill-row"><span><span class="text-yellow-400 font-bold">★</span> Investigation</span> <span class="font-bold ml-auto">+9</span></div>
+                    <div class="skill-row"><span><span class="text-yellow-400 font-bold">★</span> Investigation</span>
+                        <span class="font-bold ml-auto">+9</span>
+                    </div>
                     <div class="skill-row"><span>○ Medicine</span> <span class="font-bold ml-auto">+1</span></div>
-                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Nature</span> <span class="font-bold ml-auto">+6</span></div>
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Nature</span> <span
+                            class="font-bold ml-auto">+6</span></div>
                     <div class="skill-row"><span>○ Perception</span> <span class="font-bold ml-auto">+1</span></div>
                     <div class="skill-row"><span>○ Performance</span> <span class="font-bold ml-auto">+0</span></div>
                     <div class="skill-row"><span>○ Persuasion</span> <span class="font-bold ml-auto">+0</span></div>
                     <div class="skill-row"><span>○ Religion</span> <span class="font-bold ml-auto">+3</span></div>
-                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Sleight of Hand</span> <span class="font-bold ml-auto">+6</span></div>
-                    <div class="skill-row"><span><span class="text-yellow-400 font-bold">★</span> Stealth</span> <span class="font-bold ml-auto">+9</span></div>
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Sleight of Hand</span>
+                        <span class="font-bold ml-auto">+6</span>
+                    </div>
+                    <div class="skill-row"><span><span class="text-yellow-400 font-bold">★</span> Stealth</span> <span
+                            class="font-bold ml-auto">+9</span></div>
                     <div class="skill-row"><span>○ Survival</span> <span class="font-bold ml-auto">+1</span></div>
-                 </div>
-                 <div class="text-xs text-gray-400 mt-2"><span class="text-yellow-400 font-bold">★</span> Expertise <span class="text-red-400 font-bold ml-2">●</span> Proficiency</div>
+                </div>
+                <div class="text-xs text-gray-400 mt-2"><span class="text-yellow-400 font-bold">★</span> Expertise <span
+                        class="text-red-400 font-bold ml-2">●</span> Proficiency</div>
             </div>
 
             <div class="tile col-span-1 md:col-span-6">
-                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>Weapons & Magic Items</h2>
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>Weapons & Magic Items</h2>
                 <div>
                     <div class="mb-4">
                         <div class="sub-header">WEAPON STATS</div>
                         <div class="text-sm space-y-1">
-                            <p><span class="font-bold">Blood-Wood Fang:</span> <span class="editable" data-editable="weapon-bloodwood-stats">+8 | 1d6+5 Piercing or 1d4+5 Slashing</span></p>
-                            <p><span class="font-bold">Scimitar (Nick):</span> <span class="editable" data-editable="weapon-scimitar-stats">+6 | 1d6+3 Slashing</span></p>
+                            <p><span class="font-bold">Blood-Wood Fang:</span> <span class="editable"
+                                    data-editable="weapon-bloodwood-stats">+8 | 1d6+5 Piercing or 1d4+5 Slashing</span>
+                            </p>
+                            <p><span class="font-bold">Scimitar (Nick):</span> <span class="editable"
+                                    data-editable="weapon-scimitar-stats">+6 | 1d6+3 Slashing</span></p>
                         </div>
                     </div>
                     <div>
                         <div class="sub-header">BLOOD-WOOD FANG ABILITIES</div>
                         <ul class="space-y-2 text-sm">
-                            <li><span class="font-bold">Weapon Mastery (Vex):</span> <span class="editable" data-editable="ability-vex">Advantage on next attack against target.</span></li>
-                            <li><span class="font-bold">Soulrend Echo (1/Turn):</span> <span class="editable" data-editable="ability-soulrend">On Sneak Attack, deal extra <span class="font-bold">2d6 radiant damage</span>. If target is concentrating, they have disadvantage on the save.</span></li>
+                            <li><span class="font-bold">Weapon Mastery (Vex):</span> <span class="editable"
+                                    data-editable="ability-vex">Advantage on next attack against target.</span></li>
+                            <li><span class="font-bold">Soulrend Echo (1/Turn):</span> <span class="editable"
+                                    data-editable="ability-soulrend">On Sneak Attack, deal extra <span
+                                        class="font-bold">2d6 radiant damage</span>. If target is concentrating, they
+                                    have disadvantage on the save.</span></li>
                             <li class="flex items-center">
                                 <span>
                                     <span class="font-bold">Infernal Channeling:</span>
-                                    <span class="pl-2 text-gray-400">On hit, spend 1 charge to cast <span class="font-bold">Booming Blade</span>.</span>
+                                    <span class="pl-2 text-gray-400">On hit, spend 1 charge to cast <span
+                                            class="font-bold">Booming Blade</span>.</span>
                                 </span>
                                 <span class="flex items-center flex-shrink-0 ml-4">
                                     <span class="flex space-x-1" data-tracker="infernalChanneling" data-max="4"></span>
@@ -317,64 +457,115 @@
             </div>
 
             <div class="tile col-span-1 md:col-span-6">
-                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9l-6-6-6 6"></path><path d="M6 9v12h12V9"></path></svg>Actions in Combat</h2>
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M18 9l-6-6-6 6"></path>
+                        <path d="M6 9v12h12V9"></path>
+                    </svg>Actions in Combat</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                     <div>
                         <p class="sub-header">CORE</p>
                         <ul class="space-y-1">
-                            <li><span class="font-bold tooltip">Sneak Attack<span class="tooltiptext">Trigger with Advantage OR if target is threatened by an ally, attacked someone other than you last turn, or is concentrating.</span></span> (3d6, 1/Turn)</li>
-                            <li><span class="font-bold tooltip">Second Trick<span class="tooltiptext">After using any Cunning Action on your turn, you can make one weapon attack after the use of the bonus action. This attack can benefit from Sneak Attack.</span></span></li>
-                            <li><span class="font-bold tooltip">Alert Feat<span class="tooltiptext">Immediately after you roll Initiative, you can swap your Initiative with one willing ally.</span></span></li>
-                            <li><span class="font-bold tooltip">Tactical Mind<span class="tooltiptext">When you fail an ability check, you can expend a use of Second Wind to roll 1d10 and add it to the check. If it still fails, the use is not expended.</span></span></li>
+                            <li><span class="font-bold tooltip">Sneak Attack<span class="tooltiptext">Trigger with
+                                        Advantage OR if target is threatened by an ally, attacked someone other than you
+                                        last turn, or is concentrating.</span></span> (3d6, 1/Turn)</li>
+                            <li><span class="font-bold tooltip">Second Trick<span class="tooltiptext">After using any
+                                        Cunning Action on your turn, you can make one weapon attack after the use of the
+                                        bonus action. This attack can benefit from Sneak Attack.</span></span></li>
+                            <li><span class="font-bold tooltip">Alert Feat<span class="tooltiptext">Immediately after
+                                        you roll Initiative, you can swap your Initiative with one willing
+                                        ally.</span></span></li>
+                            <li><span class="font-bold tooltip">Tactical Mind<span class="tooltiptext">When you fail an
+                                        ability check, you can expend a use of Second Wind to roll 1d10 and add it to
+                                        the check. If it still fails, the use is not expended.</span></span></li>
                         </ul>
                     </div>
                     <div>
                         <p class="sub-header">ACTION</p>
                         <ul class="space-y-1">
                             <li>Attack</li>
-                            <li><span class="tooltip">Weapon Mastery (Nick)<span class="tooltiptext">When you make the extra attack of the Light property, you can make it as part of the Attack action instead of as a Bonus Action.</span></span></li>
+                            <li><span class="tooltip">Weapon Mastery (Nick)<span class="tooltiptext">When you make the
+                                        extra attack of the Light property, you can make it as part of the Attack action
+                                        instead of as a Bonus Action.</span></span></li>
                             <li>Cast a Spell</li>
-                            <li class="font-bold flex items-center justify-between"><span class="tooltip">Action Surge<span class="tooltiptext">On your turn, you can take one additional action, except the Magic action.</span></span><span class="flex items-center flex-shrink-0"><span class="flex ml-2 space-x-1" data-tracker="actionSurge" data-max="1"></span><span class="text-xs text-gray-400 ml-2">(SR)</span></span></li>
+                            <li class="font-bold flex items-center justify-between"><span class="tooltip">Action
+                                    Surge<span class="tooltiptext">On your turn, you can take one additional action,
+                                        except the Magic action.</span></span><span
+                                    class="flex items-center flex-shrink-0"><span class="flex ml-2 space-x-1"
+                                        data-tracker="actionSurge" data-max="1"></span><span
+                                        class="text-xs text-gray-400 ml-2">(SR)</span></span></li>
                         </ul>
                     </div>
                     <div>
                         <p class="sub-header">BONUS ACTION</p>
                         <ul class="space-y-1">
-                            <li><span class="tooltip">Steady Aim<span class="tooltiptext">Gain Advantage on your next attack if you haven't moved. Your speed becomes 0 until the end of the turn.</span></span></li>
-                            <li><span class="tooltip">Cunning Action<span class="tooltiptext"><b>Swift Escape:</b> Disengage + Distract (ally gains Adv).<br><b>Evasive Footwork:</b> Dash + ignore difficult terrain.</span></span></li>
-                            <li class="flex items-center justify-between whitespace-nowrap"><span class="tooltip">Wings of Rime<span class="tooltiptext"><b>Boon of the Frosted One:</b> As a bonus action, manifest black, frost-covered wings for 1 minute, granting you a flying speed equal to your walking speed. While your wings are active, once per turn when you hit a creature with an attack, you can deal an additional 1d10 cold damage.</span></span><span class="flex items-center flex-shrink-0"><span class="flex ml-2 space-x-1" data-tracker="wingsOfRime" data-max="3"></span><span class="text-xs text-gray-400 ml-2">(LR/24h)</span></span></li>
-                            <li><span class="tooltip">War Bond (Summon)<span class="tooltiptext">Summon your bonded weapon to your hand.</span></span></li>
+                            <li><span class="tooltip">Steady Aim<span class="tooltiptext">Gain Advantage on your next
+                                        attack if you haven't moved. Your speed becomes 0 until the end of the
+                                        turn.</span></span></li>
+                            <li><span class="tooltip">Cunning Action<span class="tooltiptext"><b>Swift Escape:</b>
+                                        Disengage + Distract (ally gains Adv).<br><b>Evasive Footwork:</b> Dash + ignore
+                                        difficult terrain.</span></span></li>
+                            <li class="flex items-center justify-between whitespace-nowrap"><span class="tooltip">Wings
+                                    of Rime<span class="tooltiptext"><b>Boon of the Frosted One:</b> As a bonus action,
+                                        manifest black, frost-covered wings for 1 minute, granting you a flying speed
+                                        equal to your walking speed. While your wings are active, once per turn when you
+                                        hit a creature with an attack, you can deal an additional 1d10 cold
+                                        damage.</span></span><span class="flex items-center flex-shrink-0"><span
+                                        class="flex ml-2 space-x-1" data-tracker="wingsOfRime" data-max="3"></span><span
+                                        class="text-xs text-gray-400 ml-2">(LR/24h)</span></span></li>
+                            <li><span class="tooltip">War Bond (Summon)<span class="tooltiptext">Summon your bonded
+                                        weapon to your hand.</span></span></li>
                         </ul>
                     </div>
                     <div>
                         <p class="sub-header">REACTION</p>
                         <ul class="space-y-1">
-                            <li><span class="tooltip">Uncanny Dodge<span class="tooltiptext">When an attacker you can see hits you, use your reaction to halve the attack's damage.</span></span></li>
-                            <li><span class="tooltip">War Caster<span class="tooltiptext">Cast a spell (like Booming Blade) as an opportunity attack.</span></span></li>
-                            <li><span class="tooltip">Shield<span class="tooltiptext">Use a 1st-level slot to gain +5 AC until the start of your next turn.</span></span></li>
-                            <li><span class="tooltip">Absorb Elements<span class="tooltiptext">Use a 1st-level slot to gain resistance to incoming elemental damage and add 1d6 of that type to your next melee attack.</span></span></li>
-                            <li><span class="tooltip">Hellish Rebuke<span class="tooltiptext">Use a 1st-level slot to retaliate with 2d10 fire damage (DEX save for half).</span></span></li>
+                            <li><span class="tooltip">Uncanny Dodge<span class="tooltiptext">When an attacker you can
+                                        see hits you, use your reaction to halve the attack's damage.</span></span></li>
+                            <li><span class="tooltip">War Caster<span class="tooltiptext">Cast a spell (like Booming
+                                        Blade) as an opportunity attack.</span></span></li>
+                            <li><span class="tooltip">Shield<span class="tooltiptext">Use a 1st-level slot to gain +5 AC
+                                        until the start of your next turn.</span></span></li>
+                            <li><span class="tooltip">Absorb Elements<span class="tooltiptext">Use a 1st-level slot to
+                                        gain resistance to incoming elemental damage and add 1d6 of that type to your
+                                        next melee attack.</span></span></li>
+                            <li><span class="tooltip">Hellish Rebuke<span class="tooltiptext">Use a 1st-level slot to
+                                        retaliate with 2d10 fire damage (DEX save for half).</span></span></li>
                         </ul>
                     </div>
                 </div>
             </div>
 
             <div class="tile col-span-1 md:col-span-3">
-                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Spellcasting</h2>
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>Spellcasting</h2>
                 <div class="flex justify-between items-center mb-2 text-sm">
-                    <span><span class="highlight">Spell Save DC:</span> <span class="editable" data-editable="spell-save-dc">14</span></span>
-                    <span><span class="highlight">Spell Attack:</span> <span class="editable" data-editable="spell-attack">+6</span></span>
+                    <span><span class="highlight">Spell Save DC:</span> <span class="editable"
+                            data-editable="spell-save-dc">14</span></span>
+                    <span><span class="highlight">Spell Attack:</span> <span class="editable"
+                            data-editable="spell-attack">+6</span></span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                     <div>
                         <p class="sub-header">CANTRIPS</p>
                         <ul class="space-y-1">
-                            <li><span class="tooltip">Booming Blade<span class="tooltiptext">1A, Self, S/M, 1 Rnd. If target moves, it takes 1d8 thunder dmg.</span></span></li>
-                            <li><span class="tooltip">Fire Bolt<span class="tooltiptext">1A, 120ft, V/S. Ranged spell attack for 2d10 fire dmg.</span></span></li>
-                            <li><span class="tooltip">Green-Flame Blade<span class="tooltiptext">1A, Self, S/M. On hit, flame leaps to another creature within 5ft, dealing your spellcasting modifier in fire dmg.</span></span></li>
-                            <li><span class="tooltip">Mage Hand<span class="tooltiptext">1BA, 30ft, V/S, 1 min. Create an invisible spectral hand.</span></span></li>
-                            <li><span class="tooltip">Message<span class="tooltiptext">1A, 120ft, V/S/M, 1 Rnd. Send a whispered message.</span></span></li>
-                            <li><span class="tooltip">Minor Illusion<span class="tooltiptext">1A, 30ft, S/M, 1 min. Create a sound or an image of an object.</span></span></li>
+                            <li><span class="tooltip">Booming Blade<span class="tooltiptext">1A, Self, S/M, 1 Rnd. If
+                                        target moves, it takes 1d8 thunder dmg.</span></span></li>
+                            <li><span class="tooltip">Fire Bolt<span class="tooltiptext">1A, 120ft, V/S. Ranged spell
+                                        attack for 2d10 fire dmg.</span></span></li>
+                            <li><span class="tooltip">Green-Flame Blade<span class="tooltiptext">1A, Self, S/M. On hit,
+                                        flame leaps to another creature within 5ft, dealing your spellcasting modifier
+                                        in fire dmg.</span></span></li>
+                            <li><span class="tooltip">Mage Hand<span class="tooltiptext">1BA, 30ft, V/S, 1 min. Create
+                                        an invisible spectral hand.</span></span></li>
+                            <li><span class="tooltip">Message<span class="tooltiptext">1A, 120ft, V/S/M, 1 Rnd. Send a
+                                        whispered message.</span></span></li>
+                            <li><span class="tooltip">Minor Illusion<span class="tooltiptext">1A, 30ft, S/M, 1 min.
+                                        Create a sound or an image of an object.</span></span></li>
                         </ul>
                     </div>
                     <div>
@@ -386,18 +577,35 @@
                             </div>
                         </div>
                         <ul class="space-y-1 mt-2">
-                            <li><span class="tooltip">Absorb Elements<span class="tooltiptext">1R, Self, S, 1 Rnd. Gain resistance to acid, cold, fire, lightning, or thunder dmg.</span></span></li>
-                            <li><span class="tooltip">Disguise Self<span class="tooltiptext">1A, Self, V/S, 1 hr. Change your appearance.</span></span></li>
-                            <li><span class="tooltip">Shield<span class="tooltiptext">1R, Self, V/S, 1 Rnd. +5 bonus to AC.</span></span></li>
-                            <li><span class="tooltip">Witch Bolt<span class="tooltiptext">1A, 60ft, V/S/M, Conc. 1 min. 1d12 lightning dmg. On subsequent turns, use your bonus action to deal the dmg again automatically.</span></span></li>
+                            <li><span class="tooltip">Absorb Elements<span class="tooltiptext">1R, Self, S, 1 Rnd. Gain
+                                        resistance to acid, cold, fire, lightning, or thunder dmg.</span></span></li>
+                            <li><span class="tooltip">Disguise Self<span class="tooltiptext">1A, Self, V/S, 1 hr. Change
+                                        your appearance.</span></span></li>
+                            <li><span class="tooltip">Shield<span class="tooltiptext">1R, Self, V/S, 1 Rnd. +5 bonus to
+                                        AC.</span></span></li>
+                            <li><span class="tooltip">Witch Bolt<span class="tooltiptext">1A, 60ft, V/S/M, Conc. 1 min.
+                                        1d12 lightning dmg. On subsequent turns, use your bonus action to deal the dmg
+                                        again automatically.</span></span></li>
                         </ul>
                     </div>
                     <div>
                         <p class="sub-header">INNATE SPELLS</p>
                         <ul class="space-y-1">
-                            <li class="flex items-center justify-between"><span class="tooltip">Darkness<span class="tooltiptext">1A, 60ft, V/M, Conc. 10 min. Create a 15ft radius sphere of magical darkness.</span></span><span class="flex items-center flex-shrink-0"><div class="flex ml-2 space-x-1" data-tracker="darkness" data-max="1"></div><span class="text-xs text-gray-400 ml-2">(LR)</span></span></li>
-                            <li class="flex items-center justify-between"><span class="tooltip whitespace-nowrap">Hellish Rebuke<span class="tooltiptext">1R, 60ft, V/S. 2d10 fire dmg to a creature that damages you. DEX save for half.</span></span><span class="flex items-center flex-shrink-0"><div class="flex ml-2 space-x-1" data-tracker="hellishRebuke" data-max="1"></div><span class="text-xs text-gray-400 ml-2">(LR)</span></span></li>
-                            <li><span class="tooltip">Thaumaturgy<span class="tooltiptext">1A, 30ft, V, 1 min. Manifest a minor wonder.</span></span> (At will)</li>
+                            <li class="flex items-center justify-between"><span class="tooltip">Darkness<span
+                                        class="tooltiptext">1A, 60ft, V/M, Conc. 10 min. Create a 15ft radius sphere of
+                                        magical darkness.</span></span><span class="flex items-center flex-shrink-0">
+                                    <div class="flex ml-2 space-x-1" data-tracker="darkness" data-max="1"></div><span
+                                        class="text-xs text-gray-400 ml-2">(LR)</span>
+                                </span></li>
+                            <li class="flex items-center justify-between"><span
+                                    class="tooltip whitespace-nowrap">Hellish Rebuke<span class="tooltiptext">1R, 60ft,
+                                        V/S. 2d10 fire dmg to a creature that damages you. DEX save for
+                                        half.</span></span><span class="flex items-center flex-shrink-0">
+                                    <div class="flex ml-2 space-x-1" data-tracker="hellishRebuke" data-max="1"></div>
+                                    <span class="text-xs text-gray-400 ml-2">(LR)</span>
+                                </span></li>
+                            <li><span class="tooltip">Thaumaturgy<span class="tooltiptext">1A, 30ft, V, 1 min. Manifest
+                                        a minor wonder.</span></span> (At will)</li>
                         </ul>
                     </div>
                 </div>
@@ -406,7 +614,8 @@
             <!-- Notes Section -->
             <div class="tile col-span-1 md:col-span-3">
                 <h2 class="tile-header">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14,2 14,8 20,8"></polyline>
                         <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -416,318 +625,468 @@
                     Notes
                 </h2>
                 <div class="tile-content">
-                    <textarea
-                        id="notes-area"
-                        placeholder="Write your notes here..."
-                        class="w-full h-32 bg-gray-700 border border-gray-600 rounded-md p-3 text-sm text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    ></textarea>
+                    <textarea id="notes-area" placeholder="Write your notes here..."
+                        class="w-full h-32 bg-gray-700 border border-gray-600 rounded-md p-3 text-sm text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
                 </div>
             </div>
         </div>
     </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const MAX_HP = 54;
-        const hpCurrent = document.getElementById('hp-current');
-        const resetButton = document.getElementById('resetButton');
-        const trackers = document.querySelectorAll('[data-tracker]');
-        const notesArea = document.getElementById('notes-area');
-        
-        // Edit mode functionality
-        const editToggle = document.getElementById('edit-toggle');
-        const editText = document.getElementById('edit-text');
-        const editIcon = document.getElementById('edit-icon');
-        const body = document.body;
-        let isEditMode = false;
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const MAX_HP = 54;
+            const hpCurrent = document.getElementById('hp-current');
+            const resetButton = document.getElementById('resetButton');
+            const trackers = document.querySelectorAll('[data-tracker]');
+            const notesArea = document.getElementById('notes-area');
 
-        // --- STATE SAVING FUNCTIONS ---
-        
-        function toggleEditMode() {
-            isEditMode = !isEditMode;
-            
-            if (isEditMode) {
-                body.classList.add('edit-mode');
-                editToggle.classList.add('active');
-                editText.textContent = 'View Mode';
-                editIcon.innerHTML = `
+            // Edit mode functionality
+            const editToggle = document.getElementById('edit-toggle');
+            const editText = document.getElementById('edit-text');
+            const editIcon = document.getElementById('edit-icon');
+            const body = document.body;
+            let isEditMode = false;
+
+            // --- STATE SAVING FUNCTIONS ---
+
+            function toggleEditMode() {
+                isEditMode = !isEditMode;
+
+                if (isEditMode) {
+                    body.classList.add('edit-mode');
+                    editToggle.classList.add('active');
+                    editText.textContent = 'View Mode';
+                    editIcon.innerHTML = `
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                 `;
-            } else {
-                body.classList.remove('edit-mode');
-                editToggle.classList.remove('active');
-                editText.textContent = 'Edit Mode';
-                editIcon.innerHTML = `
+                } else {
+                    body.classList.remove('edit-mode');
+                    editToggle.classList.remove('active');
+                    editText.textContent = 'Edit Mode';
+                    editIcon.innerHTML = `
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 `;
+                }
+
+                // Save edit mode state
+                localStorage.setItem('edit-mode', isEditMode);
             }
-            
-            // Save edit mode state
-            localStorage.setItem('edit-mode', isEditMode);
-        }
-        
-        function loadEditMode() {
-            const savedEditMode = localStorage.getItem('edit-mode');
-            if (savedEditMode === 'true') {
-                toggleEditMode();
+
+            function loadEditMode() {
+                const savedEditMode = localStorage.getItem('edit-mode');
+                if (savedEditMode === 'true') {
+                    toggleEditMode();
+                }
             }
-        }
-        
-        function makeTextEditable() {
-            const editables = document.querySelectorAll('.editable');
-            
-            editables.forEach(element => {
-                element.addEventListener('click', function() {
-                    if (!isEditMode) return;
-                    
-                    // Don't add multiple input fields
-                    if (this.querySelector('input')) return;
-                    
-                    const currentText = this.textContent;
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = currentText;
-                    input.className = 'bg-gray-700 border border-blue-500 rounded px-2 py-1 text-white w-full';
-                    
-                    // Replace content with input
-                    this.innerHTML = '';
-                    this.appendChild(input);
-                    input.focus();
-                    input.select();
-                    
-                    function finishEditing() {
-                        const newText = input.value.trim() || currentText;
-                        element.textContent = newText;
-                        
-                        // Save to localStorage
-                        const dataKey = element.dataset.editable || element.id;
-                        if (dataKey) {
-                            localStorage.setItem(`editable-${dataKey}`, newText);
+
+            function makeTextEditable() {
+                const editables = document.querySelectorAll('.editable');
+
+                editables.forEach(element => {
+                    element.addEventListener('click', function () {
+                        if (!isEditMode) return;
+
+                        // Don't add multiple edit containers
+                        if (document.querySelector('.text-edit-container')) return;
+
+                        const currentText = this.textContent;
+
+                        // Create editing container that stays visible
+                        const editContainer = document.createElement('div');
+                        editContainer.className = 'text-edit-container';
+                        editContainer.style.cssText = `
+                            position: fixed;
+                            background: #2d3748;
+                            border: 2px solid #63b3ed;
+                            border-radius: 0.5rem;
+                            padding: 1rem;
+                            z-index: 9999;
+                            min-width: 300px;
+                            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                        `;
+
+                        // Position the edit container near the element
+                        const rect = this.getBoundingClientRect();
+                        editContainer.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
+                        editContainer.style.top = (rect.bottom + 10) + 'px';
+
+                        // Create input field
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = currentText;
+                        input.className = 'bg-gray-700 border border-blue-500 rounded px-3 py-2 text-white w-full';
+                        input.style.cssText = `
+                            background: #1a202c;
+                            border: 1px solid #4a5568;
+                            color: #e2e8f0;
+                        `;
+
+                        // Add instruction text
+                        const instructions = document.createElement('div');
+                        instructions.className = 'text-xs text-gray-300 mb-2';
+                        instructions.textContent = 'Press Enter to save, Escape to cancel';
+
+                        // Add buttons
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'flex justify-end space-x-2 mt-2';
+
+                        const saveButton = document.createElement('button');
+                        saveButton.className = 'px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded';
+                        saveButton.textContent = 'Save';
+
+                        const cancelButton = document.createElement('button');
+                        cancelButton.className = 'px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded';
+                        cancelButton.textContent = 'Cancel';
+
+                        buttonContainer.appendChild(cancelButton);
+                        buttonContainer.appendChild(saveButton);
+
+                        editContainer.appendChild(instructions);
+                        editContainer.appendChild(input);
+                        editContainer.appendChild(buttonContainer);
+
+                        document.body.appendChild(editContainer);
+                        input.focus();
+                        input.select();
+
+                        function saveChanges() {
+                            const newText = input.value.trim() || currentText;
+                            element.textContent = newText;
+
+                            // Save to localStorage
+                            const dataKey = element.dataset.editable || element.id;
+                            if (dataKey) {
+                                localStorage.setItem(`editable-${dataKey}`, newText);
+                            }
+
+                            document.body.removeChild(editContainer);
                         }
-                    }
-                    
-                    input.addEventListener('blur', finishEditing);
-                    input.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            finishEditing();
+
+                        function cancelChanges() {
+                            document.body.removeChild(editContainer);
                         }
+
+                        // Event listeners
+                        saveButton.addEventListener('click', saveChanges);
+                        cancelButton.addEventListener('click', cancelChanges);
+
+                        input.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                saveChanges();
+                            } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelChanges();
+                            }
+                        });
+
+                        // Add focus styling
+                        input.addEventListener('focus', function () {
+                            this.style.borderColor = '#63b3ed';
+                            this.style.boxShadow = '0 0 0 2px rgba(99, 179, 237, 0.3)';
+                        });
+
+                        input.addEventListener('blur', function () {
+                            this.style.borderColor = '#4a5568';
+                            this.style.boxShadow = 'none';
+                        });
+
+                        // Close when clicking outside
+                        function handleClickOutside(e) {
+                            if (!editContainer.contains(e.target)) {
+                                cancelChanges();
+                                document.removeEventListener('click', handleClickOutside);
+                            }
+                        }
+
+                        // Add click outside listener after a short delay to avoid immediate trigger
+                        setTimeout(() => {
+                            document.addEventListener('click', handleClickOutside);
+                        }, 100);
                     });
                 });
+            }
+
+            function makeTooltipsEditable() {
+                const tooltips = document.querySelectorAll('.tooltip');
+
+                tooltips.forEach(tooltip => {
+                    const tooltipText = tooltip.querySelector('.tooltiptext');
+                    if (!tooltipText) return;
+
+                    // Add editable class to tooltip text
+                    tooltipText.classList.add('tooltip-editable');
+
+                    // Add data attribute for saving
+                    const parentText = tooltip.textContent.replace(tooltipText.textContent, '').trim();
+                    const dataKey = `tooltip-${parentText.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
+                    tooltipText.dataset.editable = dataKey;
+
+                    // Add click handler for edit mode
+                    tooltipText.addEventListener('click', function (e) {
+                        if (!isEditMode) return;
+                        e.stopPropagation();
+
+                        // Don't add multiple textareas
+                        if (this.querySelector('textarea')) return;
+
+                        const currentText = this.textContent;
+                        const textarea = document.createElement('textarea');
+                        textarea.value = currentText;
+                        textarea.className = 'bg-gray-700 border border-blue-500 rounded p-2 text-white text-xs w-full min-h-16 resize-none';
+
+                        // Create editing container that stays visible
+                        const editContainer = document.createElement('div');
+                        editContainer.className = 'tooltip-edit-container';
+                        editContainer.style.cssText = `
+                        position: fixed;
+                        background: #2d3748;
+                        border: 2px solid #f6ad55;
+                        border-radius: 0.5rem;
+                        padding: 1rem;
+                        z-index: 9999;
+                        min-width: 300px;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                    `;
+
+                        // Position the edit container near the tooltip
+                        const rect = tooltipText.getBoundingClientRect();
+                        editContainer.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
+                        editContainer.style.top = (rect.bottom + 10) + 'px';
+
+                        // Add instruction text
+                        const instructions = document.createElement('div');
+                        instructions.className = 'text-xs text-gray-300 mb-2';
+                        instructions.textContent = 'Press Ctrl+Enter to save, Escape to cancel';
+
+                        // Add buttons
+                        const buttonContainer = document.createElement('div');
+                        buttonContainer.className = 'flex justify-end space-x-2 mt-2';
+
+                        const saveButton = document.createElement('button');
+                        saveButton.className = 'px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded';
+                        saveButton.textContent = 'Save';
+
+                        const cancelButton = document.createElement('button');
+                        cancelButton.className = 'px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded';
+                        cancelButton.textContent = 'Cancel';
+
+                        buttonContainer.appendChild(cancelButton);
+                        buttonContainer.appendChild(saveButton);
+
+                        editContainer.appendChild(instructions);
+                        editContainer.appendChild(textarea);
+                        editContainer.appendChild(buttonContainer);
+
+                        document.body.appendChild(editContainer);
+                        textarea.focus();
+                        textarea.select();
+
+                        function saveChanges() {
+                            const newText = textarea.value.trim() || currentText;
+                            tooltipText.textContent = newText;
+
+                            // Save to localStorage
+                            const dataKey = tooltipText.dataset.editable;
+                            if (dataKey) {
+                                localStorage.setItem(`editable-${dataKey}`, newText);
+                            }
+
+                            document.body.removeChild(editContainer);
+                        }
+
+                        function cancelChanges() {
+                            document.body.removeChild(editContainer);
+                        }
+
+                        // Event listeners
+                        saveButton.addEventListener('click', saveChanges);
+                        cancelButton.addEventListener('click', cancelChanges);
+
+                        textarea.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter' && e.ctrlKey) {
+                                e.preventDefault();
+                                saveChanges();
+                            } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelChanges();
+                            }
+                        });
+
+                        // Close when clicking outside
+                        function handleClickOutside(e) {
+                            if (!editContainer.contains(e.target)) {
+                                cancelChanges();
+                                document.removeEventListener('click', handleClickOutside);
+                            }
+                        }
+
+                        // Add click outside listener after a short delay to avoid immediate trigger
+                        setTimeout(() => {
+                            document.addEventListener('click', handleClickOutside);
+                        }, 100);
+                    });
+                });
+            }
+
+            function loadTooltipContent() {
+                const tooltipTexts = document.querySelectorAll('.tooltiptext[data-editable]');
+
+                tooltipTexts.forEach(tooltipText => {
+                    const dataKey = tooltipText.dataset.editable;
+                    if (dataKey) {
+                        const savedText = localStorage.getItem(`editable-${dataKey}`);
+                        if (savedText) {
+                            tooltipText.textContent = savedText;
+                        }
+                    }
+                });
+            }
+
+            function loadEditableContent() {
+                const editables = document.querySelectorAll('.editable');
+
+                editables.forEach(element => {
+                    const dataKey = element.dataset.editable || element.id;
+                    if (dataKey) {
+                        const savedText = localStorage.getItem(`editable-${dataKey}`);
+                        if (savedText) {
+                            element.textContent = savedText;
+                        }
+                    }
+                });
+            }
+
+            function saveHp() {
+                localStorage.setItem('character-hp', hpCurrent.value);
+            }
+
+            function loadHp() {
+                const savedHp = localStorage.getItem('character-hp');
+                if (savedHp !== null) {
+                    hpCurrent.value = savedHp;
+                }
+            }
+
+            function saveTrackerState(trackerId, states) {
+                localStorage.setItem(`tracker-${trackerId}`, JSON.stringify(states));
+            }
+
+            function loadTrackerState(container) {
+                const trackerId = container.dataset.tracker;
+                const savedState = localStorage.getItem(`tracker-${trackerId}`);
+                if (savedState) {
+                    const states = JSON.parse(savedState);
+                    const dots = container.querySelectorAll('.tracker-dot');
+                    dots.forEach((dot, index) => {
+                        if (states[index]) {
+                            dot.classList.add('used');
+                        } else {
+                            dot.classList.remove('used');
+                        }
+                    });
+                }
+            }
+
+            function saveNotes() {
+                localStorage.setItem('character-notes', notesArea.value);
+            }
+
+            function loadNotes() {
+                const savedNotes = localStorage.getItem('character-notes');
+                if (savedNotes !== null) {
+                    notesArea.value = savedNotes;
+                }
+            }
+
+            // --- INITIALIZATION ---
+
+            function initializeTrackers() {
+                trackers.forEach(container => {
+                    const trackerId = container.dataset.tracker;
+                    const max = parseInt(container.dataset.max, 10);
+                    container.innerHTML = ''; // Clear previous dots
+
+                    for (let i = 0; i < max; i++) {
+                        const dot = document.createElement('div');
+                        dot.classList.add('tracker-dot');
+                        dot.addEventListener('click', () => {
+                            dot.classList.toggle('used');
+                            // When a dot is clicked, save the state of its entire group
+                            const dotsInGroup = container.querySelectorAll('.tracker-dot');
+                            const currentStates = Array.from(dotsInGroup).map(d => d.classList.contains('used'));
+                            saveTrackerState(trackerId, currentStates);
+                        });
+                        container.appendChild(dot);
+                    }
+                    // After creating the dots, load their saved state
+                    loadTrackerState(container);
+                });
+            }
+
+            initializeTrackers();
+            loadHp(); // Load HP on startup
+            loadNotes(); // Load notes on startup
+            loadEditMode(); // Load edit mode state
+            loadEditableContent(); // Load saved editable text
+            loadTooltipContent(); // Load saved tooltip text
+            makeTextEditable(); // Initialize editable functionality
+            makeTooltipsEditable(); // Initialize tooltip editing
+
+            // --- EVENT LISTENERS ---
+
+            editToggle.addEventListener('click', toggleEditMode);
+            hpCurrent.addEventListener('input', saveHp);
+            notesArea.addEventListener('input', saveNotes);
+
+            resetButton.addEventListener('click', () => {
+                if (confirm('Are you sure you want to reset all saved data? This cannot be undone.')) {
+                    // Reset HP visually and in storage
+                    hpCurrent.value = MAX_HP;
+                    localStorage.removeItem('character-hp');
+
+                    // Reset all trackers visually and in storage
+                    trackers.forEach(container => {
+                        localStorage.removeItem(`tracker-${container.dataset.tracker}`);
+                        container.querySelectorAll('.tracker-dot').forEach(dot => {
+                            dot.classList.remove('used');
+                        });
+                    });
+
+                    // Reset notes
+                    notesArea.value = '';
+                    localStorage.removeItem('character-notes');
+                }
             });
-        }
-        
-        function makeTooltipsEditable() {
+
+            // --- TOOLTIP POSITIONING (No changes needed here) ---
             const tooltips = document.querySelectorAll('.tooltip');
-            
             tooltips.forEach(tooltip => {
                 const tooltipText = tooltip.querySelector('.tooltiptext');
                 if (!tooltipText) return;
-                
-                // Add editable class to tooltip text
-                tooltipText.classList.add('tooltip-editable');
-                
-                // Add data attribute for saving
-                const parentText = tooltip.textContent.replace(tooltipText.textContent, '').trim();
-                const dataKey = `tooltip-${parentText.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
-                tooltipText.dataset.editable = dataKey;
-                
-                // Add click handler for edit mode
-                tooltipText.addEventListener('click', function(e) {
-                    if (!isEditMode) return;
-                    e.stopPropagation();
-                    
-                    // Don't add multiple textareas
-                    if (this.querySelector('textarea')) return;
-                    
-                    const currentText = this.textContent;
-                    const textarea = document.createElement('textarea');
-                    textarea.value = currentText;
-                    textarea.className = 'bg-gray-700 border border-blue-500 rounded p-2 text-white text-xs w-full min-h-16 resize-none';
-                    
-                    // Replace content with textarea
-                    this.innerHTML = '';
-                    this.appendChild(textarea);
-                    textarea.focus();
-                    textarea.select();
-                    
-                    function finishEditing() {
-                        const newText = textarea.value.trim() || currentText;
-                        tooltipText.textContent = newText;
-                        
-                        // Save to localStorage
-                        const dataKey = tooltipText.dataset.editable;
-                        if (dataKey) {
-                            localStorage.setItem(`editable-${dataKey}`, newText);
+
+                tooltip.addEventListener('mouseenter', () => {
+                    requestAnimationFrame(() => {
+                        tooltipText.style.transform = 'translateX(-50%)';
+                        const rect = tooltipText.getBoundingClientRect();
+                        const viewportWidth = window.innerWidth;
+
+                        if (rect.left < 16) {
+                            const overflow = 16 - rect.left;
+                            tooltipText.style.transform = `translateX(calc(-50% + ${overflow}px))`;
                         }
-                    }
-                    
-                    textarea.addEventListener('blur', finishEditing);
-                    textarea.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter' && e.ctrlKey) {
-                            finishEditing();
+                        else if (rect.right > viewportWidth - 16) {
+                            const overflow = rect.right - (viewportWidth - 16);
+                            tooltipText.style.transform = `translateX(calc(-50% - ${overflow}px))`;
                         }
                     });
                 });
             });
-        }
-        
-        function loadTooltipContent() {
-            const tooltipTexts = document.querySelectorAll('.tooltiptext[data-editable]');
-            
-            tooltipTexts.forEach(tooltipText => {
-                const dataKey = tooltipText.dataset.editable;
-                if (dataKey) {
-                    const savedText = localStorage.getItem(`editable-${dataKey}`);
-                    if (savedText) {
-                        tooltipText.textContent = savedText;
-                    }
-                }
-            });
-        }
-        
-        function loadEditableContent() {
-            const editables = document.querySelectorAll('.editable');
-            
-            editables.forEach(element => {
-                const dataKey = element.dataset.editable || element.id;
-                if (dataKey) {
-                    const savedText = localStorage.getItem(`editable-${dataKey}`);
-                    if (savedText) {
-                        element.textContent = savedText;
-                    }
-                }
-            });
-        }
-
-        function saveHp() {
-            localStorage.setItem('character-hp', hpCurrent.value);
-        }
-
-        function loadHp() {
-            const savedHp = localStorage.getItem('character-hp');
-            if (savedHp !== null) {
-                hpCurrent.value = savedHp;
-            }
-        }
-
-        function saveTrackerState(trackerId, states) {
-            localStorage.setItem(`tracker-${trackerId}`, JSON.stringify(states));
-        }
-
-        function loadTrackerState(container) {
-            const trackerId = container.dataset.tracker;
-            const savedState = localStorage.getItem(`tracker-${trackerId}`);
-            if (savedState) {
-                const states = JSON.parse(savedState);
-                const dots = container.querySelectorAll('.tracker-dot');
-                dots.forEach((dot, index) => {
-                    if (states[index]) {
-                        dot.classList.add('used');
-                    } else {
-                        dot.classList.remove('used');
-                    }
-                });
-            }
-        }
-
-        function saveNotes() {
-            localStorage.setItem('character-notes', notesArea.value);
-        }
-
-        function loadNotes() {
-            const savedNotes = localStorage.getItem('character-notes');
-            if (savedNotes !== null) {
-                notesArea.value = savedNotes;
-            }
-        }
-
-        // --- INITIALIZATION ---
-
-        function initializeTrackers() {
-            trackers.forEach(container => {
-                const trackerId = container.dataset.tracker;
-                const max = parseInt(container.dataset.max, 10);
-                container.innerHTML = ''; // Clear previous dots
-
-                for (let i = 0; i < max; i++) {
-                    const dot = document.createElement('div');
-                    dot.classList.add('tracker-dot');
-                    dot.addEventListener('click', () => {
-                        dot.classList.toggle('used');
-                        // When a dot is clicked, save the state of its entire group
-                        const dotsInGroup = container.querySelectorAll('.tracker-dot');
-                        const currentStates = Array.from(dotsInGroup).map(d => d.classList.contains('used'));
-                        saveTrackerState(trackerId, currentStates);
-                    });
-                    container.appendChild(dot);
-                }
-                // After creating the dots, load their saved state
-                loadTrackerState(container);
-            });
-        }
-
-        initializeTrackers();
-        loadHp(); // Load HP on startup
-        loadNotes(); // Load notes on startup
-        loadEditMode(); // Load edit mode state
-        loadEditableContent(); // Load saved editable text
-        loadTooltipContent(); // Load saved tooltip text
-        makeTextEditable(); // Initialize editable functionality
-        makeTooltipsEditable(); // Initialize tooltip editing
-
-        // --- EVENT LISTENERS ---
-
-        editToggle.addEventListener('click', toggleEditMode);
-        hpCurrent.addEventListener('input', saveHp);
-        notesArea.addEventListener('input', saveNotes);
-
-        resetButton.addEventListener('click', () => {
-             if (confirm('Are you sure you want to reset all saved data? This cannot be undone.')) {
-                // Reset HP visually and in storage
-                hpCurrent.value = MAX_HP;
-                localStorage.removeItem('character-hp');
-
-                // Reset all trackers visually and in storage
-                trackers.forEach(container => {
-                    localStorage.removeItem(`tracker-${container.dataset.tracker}`);
-                    container.querySelectorAll('.tracker-dot').forEach(dot => {
-                        dot.classList.remove('used');
-                    });
-                });
-
-                // Reset notes
-                notesArea.value = '';
-                localStorage.removeItem('character-notes');
-            }
         });
-
-        // --- TOOLTIP POSITIONING (No changes needed here) ---
-        const tooltips = document.querySelectorAll('.tooltip');
-        tooltips.forEach(tooltip => {
-            const tooltipText = tooltip.querySelector('.tooltiptext');
-            if (!tooltipText) return;
-
-            tooltip.addEventListener('mouseenter', () => {
-                requestAnimationFrame(() => {
-                    tooltipText.style.transform = 'translateX(-50%)';
-                    const rect = tooltipText.getBoundingClientRect();
-                    const viewportWidth = window.innerWidth;
-
-                    if (rect.left < 16) {
-                        const overflow = 16 - rect.left;
-                        tooltipText.style.transform = `translateX(calc(-50% + ${overflow}px))`;
-                    }
-                    else if (rect.right > viewportWidth - 16) {
-                        const overflow = rect.right - (viewportWidth - 16);
-                        tooltipText.style.transform = `translateX(calc(-50% - ${overflow}px))`;
-                    }
-                });
-            });
-        });
-    });
-</script>
+    </script>
 
 </body>
+
 </html>

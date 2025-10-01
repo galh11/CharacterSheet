@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azrik Snow: Interactive Combat Cheat Sheet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+        .tile {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .tile-header {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #a0aec0;
+            border-bottom: 2px solid #4a5568;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .tile-header svg {
+            margin-right: 0.5rem;
+        }
+        .tile-content {
+            flex-grow: 1;
+        }
+        .highlight {
+            color: #63b3ed;
+            font-weight: 600;
+        }
+        .sub-header {
+            font-weight: 600;
+            color: #718096;
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        li {
+            padding-left: 1rem;
+            position: relative;
+        }
+        li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #63b3ed;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #a0aec0;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 280px;
+            background-color: #1a202c;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid #4a5568;
+            font-size: 0.875rem;
+            font-weight: 400;
+            line-height: 1.5;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        /* Interactive Elements */
+        .tracker-dot {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            border: 2px solid #63b3ed;
+            background-color: transparent;
+        }
+        .tracker-dot.used {
+            background-color: #e2e8f0;
+            border-color: #63b3ed;
+        }
+        .hp-input {
+            background-color: #1a202c;
+            border: 1px solid #4a5568;
+            color: white;
+            text-align: center;
+            width: 4rem;
+        }
+        .skill-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.25rem 0;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+            
+            <!-- Row 1: Core Info -->
+            <div class="tile md:col-span-2">
+                <div class="absolute top-2 right-2">
+                    <button id="resetButton" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors text-xs">Reset</button>
+                </div>
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Core Stats</h2>
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div><p class="text-2xl font-bold text-white">18</p><p class="text-xs text-gray-400">AC</p></div>
+                    <div class="flex flex-col items-center justify-center">
+                        <div class="flex items-center text-2xl font-bold text-white">
+                            <input id="hp-current" type="number" value="54" class="hp-input rounded-md p-1 text-2xl">
+                            <span class="ml-2">/ 54</span>
+                        </div>
+                        <p class="text-xs text-gray-400">Current HP</p>
+                    </div>
+                    <div><p class="text-2xl font-bold text-white">+6</p><p class="text-xs text-gray-400">Initiative</p></div>
+                    <div><p class="text-2xl font-bold text-white">19</p><p class="text-xs text-gray-400">Passive Inv.</p></div>
+                </div>
+                <div class="mt-4 text-sm space-y-1">
+                    <p><span class="highlight">Prof. Bonus:</span> +3</p>
+                    <p><span class="highlight">Senses:</span> Darkvision 60ft, <span class="highlight tooltip">Shadowflame Sight<span class="tooltiptext">You can see normally in darkness, both magical and nonmagical, to a distance of 60 feet.</span></span> 60ft</p>
+                    <p><span class="highlight">Resistances:</span> Fire</p>
+                </div>
+            </div>
+
+            <div class="tile md:col-span-2">
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Modifiers & Saves</h2>
+                <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div><p class="text-lg font-bold text-white">-1</p><p class="text-xs text-gray-400">STR</p></div>
+                    <div><p class="text-lg font-bold text-white">+3</p><p class="text-xs text-gray-400">DEX</p></div>
+                    <div><p class="text-lg font-bold text-white">+1</p><p class="text-xs text-gray-400">CON</p></div>
+                    <div><p class="text-lg font-bold text-white">+3</p><p class="text-xs text-gray-400">INT</p></div>
+                    <div><p class="text-lg font-bold text-white">+1</p><p class="text-xs text-gray-400">WIS</p></div>
+                    <div><p class="text-lg font-bold text-white">+0</p><p class="text-xs text-gray-400">CHA</p></div>
+                </div>
+                <div class="sub-header">SAVING THROWS</div>
+                <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div><p class="text-lg font-bold text-white">-1</p><p class="text-xs text-gray-400">STR</p></div>
+                    <div class="text-blue-400"><p class="text-lg font-bold">+6</p><p class="text-xs">DEX</p></div>
+                    <div><p class="text-lg font-bold text-white">+0</p><p class="text-xs text-gray-400">CON</p></div>
+                    <div class="text-blue-400"><p class="text-lg font-bold">+6</p><p class="text-xs">INT</p></div>
+                    <div><p class="text-lg font-bold text-white">+1</p><p class="text-xs text-gray-400">WIS</p></div>
+                    <div><p class="text-lg font-bold text-white">+0</p><p class="text-xs text-gray-400">CHA</p></div>
+                </div>
+                 <p class="text-xs text-center mt-2 text-gray-400">Advantage on CON saves for Concentration</p>
+            </div>
+
+            <div class="tile md:col-span-2">
+                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>Skills</h2>
+                 <div class="grid grid-cols-2 gap-x-4 text-sm">
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Acrobatics</span> <span class="font-bold ml-auto">+6</span></div>
+                    <div class="skill-row"><span>○ Animal Handling</span> <span class="font-bold ml-auto">+1</span></div>
+                    <div class="skill-row"><span>○ Arcana</span> <span class="font-bold ml-auto">+3</span></div>
+                    <div class="skill-row"><span>○ Athletics</span> <span class="font-bold ml-auto">-1</span></div>
+                    <div class="skill-row"><span>○ Deception</span> <span class="font-bold ml-auto">+0</span></div>
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> History</span> <span class="font-bold ml-auto">+6</span></div>
+                    <div class="skill-row"><span>○ Insight</span> <span class="font-bold ml-auto">+1</span></div>
+                    <div class="skill-row"><span>○ Intimidation</span> <span class="font-bold ml-auto">+0</span></div>
+                    <div class="skill-row"><span><span class="text-yellow-400 font-bold">★</span> Investigation</span> <span class="font-bold ml-auto">+9</span></div>
+                    <div class="skill-row"><span>○ Medicine</span> <span class="font-bold ml-auto">+1</span></div>
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Nature</span> <span class="font-bold ml-auto">+6</span></div>
+                    <div class="skill-row"><span>○ Perception</span> <span class="font-bold ml-auto">+1</span></div>
+                    <div class="skill-row"><span>○ Performance</span> <span class="font-bold ml-auto">+0</span></div>
+                    <div class="skill-row"><span>○ Persuasion</span> <span class="font-bold ml-auto">+0</span></div>
+                    <div class="skill-row"><span>○ Religion</span> <span class="font-bold ml-auto">+3</span></div>
+                    <div class="skill-row"><span><span class="text-red-400 font-bold">●</span> Sleight of Hand</span> <span class="font-bold ml-auto">+6</span></div>
+                    <div class="skill-row"><span><span class="text-yellow-400 font-bold">★</span> Stealth</span> <span class="font-bold ml-auto">+9</span></div>
+                    <div class="skill-row"><span>○ Survival</span> <span class="font-bold ml-auto">+1</span></div>
+                 </div>
+                 <div class="text-xs text-gray-400 mt-2"><span class="text-yellow-400 font-bold">★</span> Expertise <span class="text-red-400 font-bold ml-2">●</span> Proficiency</div>
+            </div>
+            
+            <!-- Row 2: Weapons -->
+            <div class="tile col-span-1 md:col-span-6">
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>Weapons & Magic Items</h2>
+                <div>
+                    <div class="mb-4">
+                        <div class="sub-header">WEAPON STATS</div>
+                        <div class="text-sm space-y-1">
+                            <p><span class="font-bold">Blood-Wood Fang:</span> +8 | 1d6+5 Piercing or 1d4+5 Slashing</p>
+                            <p><span class="font-bold">Scimitar (Nick):</span> +6 | 1d6+3 Slashing</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="sub-header">BLOOD-WOOD FANG ABILITIES</div>
+                        <ul class="space-y-2 text-sm">
+                            <li><span class="font-bold">Weapon Mastery (Vex):</span> Advantage on next attack against target.</li>
+                            <li><span class="font-bold">Soulrend Echo (1/Turn):</span> On Sneak Attack, deal extra <span class="font-bold">2d6 radiant damage</span>. If target is concentrating, they have disadvantage on the save.</li>
+                            <li class="flex items-center">
+                                <span>
+                                    <span class="font-bold">Infernal Channeling:</span>
+                                    <span class="pl-2 text-gray-400">On hit, spend 1 charge to cast <span class="font-bold">Booming Blade</span>.</span>
+                                </span>
+                                <span class="flex items-center flex-shrink-0 ml-4">
+                                    <span class="flex space-x-1" data-tracker="infernalChanneling" data-max="4"></span>
+                                    <span class="text-xs text-gray-400 ml-2">(Dawn)</span>
+                                </span>
+                            </li>
+                            <li class="flex items-center">
+                                <span>
+                                    <span class="font-bold">Whisperstep:</span>
+                                    <span class="pl-2 text-gray-400">BA to teleport 30ft & gain Advantage.</span>
+                                </span>
+                                <span class="flex items-center flex-shrink-0 ml-4">
+                                    <span class="flex space-x-1" data-tracker="whisperstep" data-max="1"></span>
+                                    <span class="text-xs text-gray-400 ml-2">(Dawn)</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Actions -->
+            <div class="tile col-span-1 md:col-span-6">
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9l-6-6-6 6"></path><path d="M6 9v12h12V9"></path></svg>Actions in Combat</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <p class="sub-header">CORE</p>
+                        <ul class="space-y-1">
+                            <li><span class="font-bold tooltip">Sneak Attack<span class="tooltiptext">Trigger with Advantage OR if target is threatened by an ally, attacked someone other than you last turn, or is concentrating.</span></span> (3d6, 1/Turn)</li>
+                            <li><span class="font-bold tooltip">Second Trick<span class="tooltiptext">After using any Cunning Action on your turn, you can make one weapon attack after the use of the bonus action. This attack can benefit from Sneak Attack.</span></span></li>
+                            <li><span class="font-bold tooltip">Alert Feat<span class="tooltiptext">Immediately after you roll Initiative, you can swap your Initiative with one willing ally.</span></span></li>
+                            <li><span class="font-bold tooltip">Tactical Mind<span class="tooltiptext">When you fail an ability check, you can expend a use of Second Wind to roll 1d10 and add it to the check. If it still fails, the use is not expended.</span></span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="sub-header">ACTION</p>
+                        <ul class="space-y-1">
+                            <li>Attack</li>
+                            <li><span class="tooltip">Weapon Mastery (Nick)<span class="tooltiptext">When you make the extra attack of the Light property, you can make it as part of the Attack action instead of as a Bonus Action.</span></span></li>
+                            <li>Cast a Spell</li>
+                            <li class="font-bold flex items-center justify-between"><span class="tooltip">Action Surge<span class="tooltiptext">On your turn, you can take one additional action, except the Magic action.</span></span><span class="flex items-center flex-shrink-0"><span class="flex ml-2 space-x-1" data-tracker="actionSurge" data-max="1"></span><span class="text-xs text-gray-400 ml-2">(SR)</span></span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="sub-header">BONUS ACTION</p>
+                        <ul class="space-y-1">
+                            <li><span class="tooltip">Steady Aim<span class="tooltiptext">Gain Advantage on your next attack if you haven't moved. Your speed becomes 0 until the end of the turn.</span></span></li>
+                            <li><span class="tooltip">Cunning Action<span class="tooltiptext"><b>Swift Escape:</b> Disengage + Distract (ally gains Adv).<br><b>Evasive Footwork:</b> Dash + ignore difficult terrain.</span></span></li>
+                            <li class="flex items-center justify-between whitespace-nowrap"><span class="tooltip">Wings of Rime<span class="tooltiptext"><b>Boon of the Frosted One:</b> As a bonus action, manifest black, frost-covered wings for 1 minute, granting you a flying speed equal to your walking speed. While your wings are active, once per turn when you hit a creature with an attack, you can deal an additional 1d10 cold damage.</span></span><span class="flex items-center flex-shrink-0"><span class="flex ml-2 space-x-1" data-tracker="wingsOfRime" data-max="3"></span><span class="text-xs text-gray-400 ml-2">(LR/24h)</span></span></li>
+                            <li><span class="tooltip">War Bond (Summon)<span class="tooltiptext">Summon your bonded weapon to your hand.</span></span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="sub-header">REACTION</p>
+                        <ul class="space-y-1">
+                            <li><span class="tooltip">Uncanny Dodge<span class="tooltiptext">When an attacker you can see hits you, use your reaction to halve the attack's damage.</span></span></li>
+                            <li><span class="tooltip">War Caster<span class="tooltiptext">Cast a spell (like Booming Blade) as an opportunity attack.</span></span></li>
+                            <li><span class="tooltip">Shield<span class="tooltiptext">Use a 1st-level slot to gain +5 AC until the start of your next turn.</span></span></li>
+                            <li><span class="tooltip">Absorb Elements<span class="tooltiptext">Use a 1st-level slot to gain resistance to incoming elemental damage and add 1d6 of that type to your next melee attack.</span></span></li>
+                            <li><span class="tooltip">Hellish Rebuke<span class="tooltiptext">Use a 1st-level slot to retaliate with 2d10 fire damage (DEX save for half).</span></span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Spells and Tactics -->
+            <div class="tile col-span-1 md:col-span-3">
+                <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Spellcasting</h2>
+                <div class="flex justify-between items-center mb-2 text-sm">
+                    <span><span class="highlight">Spell Save DC:</span> 14</span>
+                    <span><span class="highlight">Spell Attack:</span> +6</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <p class="sub-header">CANTRIPS</p>
+                        <ul class="space-y-1">
+                            <li><span class="tooltip">Booming Blade<span class="tooltiptext">1A, Self, S/M, 1 Rnd. If target moves, it takes 1d8 thunder dmg.</span></span></li>
+                            <li><span class="tooltip">Fire Bolt<span class="tooltiptext">1A, 120ft, V/S. Ranged spell attack for 2d10 fire dmg.</span></span></li>
+                            <li><span class="tooltip">Green-Flame Blade<span class="tooltiptext">1A, Self, S/M. On hit, flame leaps to another creature within 5ft, dealing your spellcasting modifier in fire dmg.</span></span></li>
+                            <li><span class="tooltip">Mage Hand<span class="tooltiptext">1BA, 30ft, V/S, 1 min. Create an invisible spectral hand.</span></span></li>
+                            <li><span class="tooltip">Message<span class="tooltiptext">1A, 120ft, V/S/M, 1 Rnd. Send a whispered message.</span></span></li>
+                            <li><span class="tooltip">Minor Illusion<span class="tooltiptext">1A, 30ft, S/M, 1 min. Create a sound or an image of an object.</span></span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div>
+                            <p class="sub-header">1ST LEVEL SLOTS</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex space-x-1" data-tracker="level1Slots" data-max="3"></div>
+                                <span class="text-xs text-gray-400 ml-2">(LR)</span>
+                            </div>
+                        </div>
+                        <ul class="space-y-1 mt-2">
+                            <li><span class="tooltip">Absorb Elements<span class="tooltiptext">1R, Self, S, 1 Rnd. Gain resistance to acid, cold, fire, lightning, or thunder dmg.</span></span></li>
+                            <li><span class="tooltip">Disguise Self<span class="tooltiptext">1A, Self, V/S, 1 hr. Change your appearance.</span></span></li>
+                            <li><span class="tooltip">Shield<span class="tooltiptext">1R, Self, V/S, 1 Rnd. +5 bonus to AC.</span></span></li>
+                            <li><span class="tooltip">Witch Bolt<span class="tooltiptext">1A, 60ft, V/S/M, Conc. 1 min. 1d12 lightning dmg. On subsequent turns, use your bonus action to deal the dmg again automatically.</span></span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <p class="sub-header">INNATE SPELLS</p>
+                        <ul class="space-y-1">
+                            <li class="flex items-center justify-between"><span class="tooltip">Darkness<span class="tooltiptext">1A, 60ft, V/M, Conc. 10 min. Create a 15ft radius sphere of magical darkness.</span></span><span class="flex items-center flex-shrink-0"><div class="flex ml-2 space-x-1" data-tracker="darkness" data-max="1"></div><span class="text-xs text-gray-400 ml-2">(LR)</span></span></li>
+                            <li class="flex items-center justify-between"><span class="tooltip whitespace-nowrap">Hellish Rebuke<span class="tooltiptext">1R, 60ft, V/S. 2d10 fire dmg to a creature that damages you. DEX save for half.</span></span><span class="flex items-center flex-shrink-0"><div class="flex ml-2 space-x-1" data-tracker="hellishRebuke" data-max="1"></div><span class="text-xs text-gray-400 ml-2">(LR)</span></span></li>
+                            <li><span class="tooltip">Thaumaturgy<span class="tooltiptext">1A, 30ft, V, 1 min. Manifest a minor wonder.</span></span> (At will)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tile col-span-1 md:col-span-3">
+                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M6 21V9a9 9 0 0 1 9 9"></path></svg>Key Combos & Tactics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                    <div><span class="font-bold">The Vex Cycle:</span> <span class="text-gray-400">Hit with Blood-Wood Fang to activate Vex, granting Advantage for an easy Sneak Attack.</span></div>
+                    <div><span class="font-bold">Shadow Assassin:</span> <span class="text-gray-400">Cast <span class="font-bold">Darkness</span> on yourself. Your Shadowflame Sight gives you Advantage against blinded enemies inside.</span></div>
+                    <div><span class="font-bold">Sticky Duelist:</span> <span class="text-gray-400">Hit an enemy and spend a charge for <span class="font-bold">Booming Blade</span>. The target is now "stuck," and Vex gives you Advantage.</span></div>
+                    <div class="lg:col-span-3"><span class="font-bold">Hit and Run Master:</span> <span class="text-gray-400"><span class="font-bold">1. Action:</span> Attack (Vex) + Nick. <span class="font-bold">2. BA:</span> Cunning Action (Disengage). <span class="font-bold">3. Free Attack:</span> Second Trick.</span></div>
+                    <div class="lg:col-span-3"><span class="font-bold">Nova Strike:</span> <span class="text-gray-400"><span class="font-bold">1. BA:</span> Whisperstep (Teleport + Advantage). <span class="font-bold">2. Action:</span> Sneak Attack (stack all damage). <span class="font-bold">3. Action Surge:</span> Attack again with Advantage from Vex.</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const MAX_HP = 54;
+        const hpCurrent = document.getElementById('hp-current');
+        const resetButton = document.getElementById('resetButton');
+
+        // Initialize all trackers
+        const trackers = document.querySelectorAll('[data-tracker]');
+        
+        function initializeTrackers() {
+            trackers.forEach(container => {
+                const max = parseInt(container.dataset.max, 10);
+                container.innerHTML = ''; // Clear previous dots
+                for (let i = 0; i < max; i++) {
+                    const dot = document.createElement('div');
+                    dot.classList.add('tracker-dot');
+                    dot.addEventListener('click', () => {
+                        dot.classList.toggle('used');
+                    });
+                    container.appendChild(dot);
+                }
+            });
+        }
+        
+        initializeTrackers();
+
+        // Reset button logic
+        resetButton.addEventListener('click', () => {
+            // Reset HP
+            hpCurrent.value = MAX_HP;
+            
+            // Reset all trackers
+            trackers.forEach(container => {
+                container.querySelectorAll('.tracker-dot').forEach(dot => {
+                    dot.classList.remove('used');
+                });
+            });
+        });
+
+        // Tooltip positioning logic
+        const tooltips = document.querySelectorAll('.tooltip');
+        tooltips.forEach(tooltip => {
+            const tooltipText = tooltip.querySelector('.tooltiptext');
+            if (!tooltipText) return;
+
+            tooltip.addEventListener('mouseenter', () => {
+                requestAnimationFrame(() => {
+                    tooltipText.style.transform = 'translateX(-50%)';
+                    const rect = tooltipText.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+
+                    if (rect.left < 16) {
+                        const overflow = 16 - rect.left;
+                        tooltipText.style.transform = `translateX(calc(-50% + ${overflow}px))`;
+                    }
+                    else if (rect.right > viewportWidth - 16) {
+                        const overflow = rect.right - (viewportWidth - 16);
+                        tooltipText.style.transform = `translateX(calc(-50% - ${overflow}px))`;
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

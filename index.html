@@ -125,10 +125,9 @@
     <div class="max-w-7xl mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
             
-            <!-- Row 1: Core Info -->
             <div class="tile md:col-span-2">
                 <div class="absolute top-2 right-2">
-                    <button id="resetButton" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors text-xs">Reset</button>
+                    <button id="resetButton" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors text-xs">Full Reset</button>
                 </div>
                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>Core Stats</h2>
                 <div class="grid grid-cols-2 gap-2 text-center">
@@ -197,7 +196,6 @@
                  <div class="text-xs text-gray-400 mt-2"><span class="text-yellow-400 font-bold">★</span> Expertise <span class="text-red-400 font-bold ml-2">●</span> Proficiency</div>
             </div>
             
-            <!-- Row 2: Weapons -->
             <div class="tile col-span-1 md:col-span-6">
                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>Weapons & Magic Items</h2>
                 <div>
@@ -238,7 +236,6 @@
                 </div>
             </div>
 
-            <!-- Row 3: Actions -->
             <div class="tile col-span-1 md:col-span-6">
                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9l-6-6-6 6"></path><path d="M6 9v12h12V9"></path></svg>Actions in Combat</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
@@ -282,7 +279,6 @@
                 </div>
             </div>
 
-            <!-- Row 4: Spells and Tactics -->
             <div class="tile col-span-1 md:col-span-3">
                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Spellcasting</h2>
                 <div class="flex justify-between items-center mb-2 text-sm">
@@ -345,41 +341,90 @@
         const MAX_HP = 54;
         const hpCurrent = document.getElementById('hp-current');
         const resetButton = document.getElementById('resetButton');
-
-        // Initialize all trackers
         const trackers = document.querySelectorAll('[data-tracker]');
-        
+
+        // --- STATE SAVING FUNCTIONS ---
+
+        function saveHp() {
+            localStorage.setItem('azrik-hp', hpCurrent.value);
+        }
+
+        function loadHp() {
+            const savedHp = localStorage.getItem('azrik-hp');
+            if (savedHp !== null) {
+                hpCurrent.value = savedHp;
+            }
+        }
+
+        function saveTrackerState(trackerId, states) {
+            localStorage.setItem(`azrik-tracker-${trackerId}`, JSON.stringify(states));
+        }
+
+        function loadTrackerState(container) {
+            const trackerId = container.dataset.tracker;
+            const savedState = localStorage.getItem(`azrik-tracker-${trackerId}`);
+            if (savedState) {
+                const states = JSON.parse(savedState);
+                const dots = container.querySelectorAll('.tracker-dot');
+                dots.forEach((dot, index) => {
+                    if (states[index]) {
+                        dot.classList.add('used');
+                    } else {
+                        dot.classList.remove('used');
+                    }
+                });
+            }
+        }
+
+        // --- INITIALIZATION ---
+
         function initializeTrackers() {
             trackers.forEach(container => {
+                const trackerId = container.dataset.tracker;
                 const max = parseInt(container.dataset.max, 10);
                 container.innerHTML = ''; // Clear previous dots
+
                 for (let i = 0; i < max; i++) {
                     const dot = document.createElement('div');
                     dot.classList.add('tracker-dot');
                     dot.addEventListener('click', () => {
                         dot.classList.toggle('used');
+                        // When a dot is clicked, save the state of its entire group
+                        const dotsInGroup = container.querySelectorAll('.tracker-dot');
+                        const currentStates = Array.from(dotsInGroup).map(d => d.classList.contains('used'));
+                        saveTrackerState(trackerId, currentStates);
                     });
                     container.appendChild(dot);
                 }
+                // After creating the dots, load their saved state
+                loadTrackerState(container);
             });
         }
         
         initializeTrackers();
+        loadHp(); // Load HP on startup
 
-        // Reset button logic
+        // --- EVENT LISTENERS ---
+
+        hpCurrent.addEventListener('input', saveHp);
+
         resetButton.addEventListener('click', () => {
-            // Reset HP
-            hpCurrent.value = MAX_HP;
-            
-            // Reset all trackers
-            trackers.forEach(container => {
-                container.querySelectorAll('.tracker-dot').forEach(dot => {
-                    dot.classList.remove('used');
+             if (confirm('Are you sure you want to reset all saved data? This cannot be undone.')) {
+                // Reset HP visually and in storage
+                hpCurrent.value = MAX_HP;
+                localStorage.removeItem('azrik-hp');
+                
+                // Reset all trackers visually and in storage
+                trackers.forEach(container => {
+                    localStorage.removeItem(`azrik-tracker-${container.dataset.tracker}`);
+                    container.querySelectorAll('.tracker-dot').forEach(dot => {
+                        dot.classList.remove('used');
+                    });
                 });
-            });
+            }
         });
 
-        // Tooltip positioning logic
+        // --- TOOLTIP POSITIONING (No changes needed here) ---
         const tooltips = document.querySelectorAll('.tooltip');
         tooltips.forEach(tooltip => {
             const tooltipText = tooltip.querySelector('.tooltiptext');

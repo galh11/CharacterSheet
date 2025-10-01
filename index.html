@@ -118,13 +118,93 @@
             align-items: center;
             padding: 0.25rem 0;
         }
+        .edit-toggle {
+            background-color: #4a5568;
+            border: 1px solid #63b3ed;
+            color: #e2e8f0;
+            transition: all 0.2s;
+        }
+        .edit-toggle:hover {
+            background-color: #63b3ed;
+            color: #1a202c;
+        }
+        .edit-toggle.active {
+            background-color: #63b3ed;
+            color: #1a202c;
+            box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.3);
+        }
+        .edit-mode .editable {
+            border: 1px dashed #63b3ed;
+            border-radius: 0.25rem;
+            padding: 0.125rem;
+            cursor: text;
+            position: relative;
+        }
+        .edit-mode .editable:hover {
+            background-color: rgba(99, 179, 237, 0.1);
+            border-style: solid;
+        }
+        .edit-mode .editable:hover::after {
+            content: "✏️ Click to edit";
+            position: absolute;
+            top: -2rem;
+            left: 0;
+            background: #2d3748;
+            color: #63b3ed;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            border: 1px solid #63b3ed;
+        }
+        .edit-mode .tooltip-editable {
+            border: 1px dashed #f6ad55;
+            border-radius: 0.25rem;
+            padding: 0.125rem;
+            cursor: text;
+            position: relative;
+        }
+        .edit-mode .tooltip-editable:hover {
+            background-color: rgba(246, 173, 85, 0.1);
+            border-style: solid;
+        }
+        .edit-mode .tooltip-editable:hover::after {
+            content: "💬 Click to edit tooltip (Ctrl+Enter to save)";
+            position: absolute;
+            top: -2rem;
+            left: 0;
+            background: #2d3748;
+            color: #f6ad55;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 1000;
+            border: 1px solid #f6ad55;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-6 lg:p-8">
 
     <div class="max-w-7xl mx-auto">
+        <!-- Header with Character Name and Edit Toggle -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-white">
+                <span id="character-name" class="editable" data-editable="character-name">Azrik Snow</span>
+                <span class="text-lg text-gray-400 ml-2">- Interactive Combat Cheat Sheet</span>
+            </h1>
+            <button id="edit-toggle" class="edit-toggle px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                <svg id="edit-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                <span id="edit-text">Edit Mode</span>
+            </button>
+        </div>
+        
         <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
-            
+
             <div class="tile md:col-span-2">
                 <div class="absolute top-2 right-2">
                     <button id="resetButton" class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors text-xs">Full Reset</button>
@@ -144,8 +224,8 @@
                 </div>
                 <div class="mt-4 text-sm space-y-1">
                     <p><span class="highlight">Prof. Bonus:</span> +3</p>
-                    <p><span class="highlight">Senses:</span> Darkvision 60ft, <span class="highlight tooltip">Shadowflame Sight<span class="tooltiptext">You can see normally in darkness, both magical and nonmagical, to a distance of 60 feet.</span></span> 60ft</p>
-                    <p><span class="highlight">Resistances:</span> Fire</p>
+                    <p><span class="highlight">Senses:</span> <span class="editable" data-editable="senses">Darkvision 60ft, <span class="highlight tooltip">Shadowflame Sight<span class="tooltiptext">You can see normally in darkness, both magical and nonmagical, to a distance of 60 feet.</span></span> 60ft</span></p>
+                    <p><span class="highlight">Resistances:</span> <span class="editable" data-editable="resistances">Fire</span></p>
                 </div>
             </div>
 
@@ -195,22 +275,22 @@
                  </div>
                  <div class="text-xs text-gray-400 mt-2"><span class="text-yellow-400 font-bold">★</span> Expertise <span class="text-red-400 font-bold ml-2">●</span> Proficiency</div>
             </div>
-            
+
             <div class="tile col-span-1 md:col-span-6">
                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>Weapons & Magic Items</h2>
                 <div>
                     <div class="mb-4">
                         <div class="sub-header">WEAPON STATS</div>
                         <div class="text-sm space-y-1">
-                            <p><span class="font-bold">Blood-Wood Fang:</span> +8 | 1d6+5 Piercing or 1d4+5 Slashing</p>
-                            <p><span class="font-bold">Scimitar (Nick):</span> +6 | 1d6+3 Slashing</p>
+                            <p><span class="font-bold">Blood-Wood Fang:</span> <span class="editable" data-editable="weapon-bloodwood-stats">+8 | 1d6+5 Piercing or 1d4+5 Slashing</span></p>
+                            <p><span class="font-bold">Scimitar (Nick):</span> <span class="editable" data-editable="weapon-scimitar-stats">+6 | 1d6+3 Slashing</span></p>
                         </div>
                     </div>
                     <div>
                         <div class="sub-header">BLOOD-WOOD FANG ABILITIES</div>
                         <ul class="space-y-2 text-sm">
-                            <li><span class="font-bold">Weapon Mastery (Vex):</span> Advantage on next attack against target.</li>
-                            <li><span class="font-bold">Soulrend Echo (1/Turn):</span> On Sneak Attack, deal extra <span class="font-bold">2d6 radiant damage</span>. If target is concentrating, they have disadvantage on the save.</li>
+                            <li><span class="font-bold">Weapon Mastery (Vex):</span> <span class="editable" data-editable="ability-vex">Advantage on next attack against target.</span></li>
+                            <li><span class="font-bold">Soulrend Echo (1/Turn):</span> <span class="editable" data-editable="ability-soulrend">On Sneak Attack, deal extra <span class="font-bold">2d6 radiant damage</span>. If target is concentrating, they have disadvantage on the save.</span></li>
                             <li class="flex items-center">
                                 <span>
                                     <span class="font-bold">Infernal Channeling:</span>
@@ -282,8 +362,8 @@
             <div class="tile col-span-1 md:col-span-3">
                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Spellcasting</h2>
                 <div class="flex justify-between items-center mb-2 text-sm">
-                    <span><span class="highlight">Spell Save DC:</span> 14</span>
-                    <span><span class="highlight">Spell Attack:</span> +6</span>
+                    <span><span class="highlight">Spell Save DC:</span> <span class="editable" data-editable="spell-save-dc">14</span></span>
+                    <span><span class="highlight">Spell Attack:</span> <span class="editable" data-editable="spell-attack">+6</span></span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                     <div>
@@ -322,15 +402,25 @@
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Notes Section -->
             <div class="tile col-span-1 md:col-span-3">
-                 <h2 class="tile-header"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><path d="M6 21V9a9 9 0 0 1 9 9"></path></svg>Key Combos & Tactics</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2 text-sm">
-                    <div><span class="font-bold">The Vex Cycle:</span> <span class="text-gray-400">Hit with Blood-Wood Fang to activate Vex, granting Advantage for an easy Sneak Attack.</span></div>
-                    <div><span class="font-bold">Shadow Assassin:</span> <span class="text-gray-400">Cast <span class="font-bold">Darkness</span> on yourself. Your Shadowflame Sight gives you Advantage against blinded enemies inside.</span></div>
-                    <div><span class="font-bold">Sticky Duelist:</span> <span class="text-gray-400">Hit an enemy and spend a charge for <span class="font-bold">Booming Blade</span>. The target is now "stuck," and Vex gives you Advantage.</span></div>
-                    <div class="lg:col-span-3"><span class="font-bold">Hit and Run Master:</span> <span class="text-gray-400"><span class="font-bold">1. Action:</span> Attack (Vex) + Nick. <span class="font-bold">2. BA:</span> Cunning Action (Disengage). <span class="font-bold">3. Free Attack:</span> Second Trick.</span></div>
-                    <div class="lg:col-span-3"><span class="font-bold">Nova Strike:</span> <span class="text-gray-400"><span class="font-bold">1. BA:</span> Whisperstep (Teleport + Advantage). <span class="font-bold">2. Action:</span> Sneak Attack (stack all damage). <span class="font-bold">3. Action Surge:</span> Attack again with Advantage from Vex.</span></div>
+                <h2 class="tile-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14,2 14,8 20,8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10,9 9,9 8,9"></polyline>
+                    </svg>
+                    Notes
+                </h2>
+                <div class="tile-content">
+                    <textarea
+                        id="notes-area"
+                        placeholder="Write your notes here..."
+                        class="w-full h-32 bg-gray-700 border border-gray-600 rounded-md p-3 text-sm text-gray-100 placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    ></textarea>
                 </div>
             </div>
         </div>
@@ -342,27 +432,193 @@
         const hpCurrent = document.getElementById('hp-current');
         const resetButton = document.getElementById('resetButton');
         const trackers = document.querySelectorAll('[data-tracker]');
+        const notesArea = document.getElementById('notes-area');
+        
+        // Edit mode functionality
+        const editToggle = document.getElementById('edit-toggle');
+        const editText = document.getElementById('edit-text');
+        const editIcon = document.getElementById('edit-icon');
+        const body = document.body;
+        let isEditMode = false;
 
         // --- STATE SAVING FUNCTIONS ---
+        
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            
+            if (isEditMode) {
+                body.classList.add('edit-mode');
+                editToggle.classList.add('active');
+                editText.textContent = 'View Mode';
+                editIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            } else {
+                body.classList.remove('edit-mode');
+                editToggle.classList.remove('active');
+                editText.textContent = 'Edit Mode';
+                editIcon.innerHTML = `
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                `;
+            }
+            
+            // Save edit mode state
+            localStorage.setItem('edit-mode', isEditMode);
+        }
+        
+        function loadEditMode() {
+            const savedEditMode = localStorage.getItem('edit-mode');
+            if (savedEditMode === 'true') {
+                toggleEditMode();
+            }
+        }
+        
+        function makeTextEditable() {
+            const editables = document.querySelectorAll('.editable');
+            
+            editables.forEach(element => {
+                element.addEventListener('click', function() {
+                    if (!isEditMode) return;
+                    
+                    // Don't add multiple input fields
+                    if (this.querySelector('input')) return;
+                    
+                    const currentText = this.textContent;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = currentText;
+                    input.className = 'bg-gray-700 border border-blue-500 rounded px-2 py-1 text-white w-full';
+                    
+                    // Replace content with input
+                    this.innerHTML = '';
+                    this.appendChild(input);
+                    input.focus();
+                    input.select();
+                    
+                    function finishEditing() {
+                        const newText = input.value.trim() || currentText;
+                        element.textContent = newText;
+                        
+                        // Save to localStorage
+                        const dataKey = element.dataset.editable || element.id;
+                        if (dataKey) {
+                            localStorage.setItem(`editable-${dataKey}`, newText);
+                        }
+                    }
+                    
+                    input.addEventListener('blur', finishEditing);
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            finishEditing();
+                        }
+                    });
+                });
+            });
+        }
+        
+        function makeTooltipsEditable() {
+            const tooltips = document.querySelectorAll('.tooltip');
+            
+            tooltips.forEach(tooltip => {
+                const tooltipText = tooltip.querySelector('.tooltiptext');
+                if (!tooltipText) return;
+                
+                // Add editable class to tooltip text
+                tooltipText.classList.add('tooltip-editable');
+                
+                // Add data attribute for saving
+                const parentText = tooltip.textContent.replace(tooltipText.textContent, '').trim();
+                const dataKey = `tooltip-${parentText.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
+                tooltipText.dataset.editable = dataKey;
+                
+                // Add click handler for edit mode
+                tooltipText.addEventListener('click', function(e) {
+                    if (!isEditMode) return;
+                    e.stopPropagation();
+                    
+                    // Don't add multiple textareas
+                    if (this.querySelector('textarea')) return;
+                    
+                    const currentText = this.textContent;
+                    const textarea = document.createElement('textarea');
+                    textarea.value = currentText;
+                    textarea.className = 'bg-gray-700 border border-blue-500 rounded p-2 text-white text-xs w-full min-h-16 resize-none';
+                    
+                    // Replace content with textarea
+                    this.innerHTML = '';
+                    this.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    
+                    function finishEditing() {
+                        const newText = textarea.value.trim() || currentText;
+                        tooltipText.textContent = newText;
+                        
+                        // Save to localStorage
+                        const dataKey = tooltipText.dataset.editable;
+                        if (dataKey) {
+                            localStorage.setItem(`editable-${dataKey}`, newText);
+                        }
+                    }
+                    
+                    textarea.addEventListener('blur', finishEditing);
+                    textarea.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter' && e.ctrlKey) {
+                            finishEditing();
+                        }
+                    });
+                });
+            });
+        }
+        
+        function loadTooltipContent() {
+            const tooltipTexts = document.querySelectorAll('.tooltiptext[data-editable]');
+            
+            tooltipTexts.forEach(tooltipText => {
+                const dataKey = tooltipText.dataset.editable;
+                if (dataKey) {
+                    const savedText = localStorage.getItem(`editable-${dataKey}`);
+                    if (savedText) {
+                        tooltipText.textContent = savedText;
+                    }
+                }
+            });
+        }
+        
+        function loadEditableContent() {
+            const editables = document.querySelectorAll('.editable');
+            
+            editables.forEach(element => {
+                const dataKey = element.dataset.editable || element.id;
+                if (dataKey) {
+                    const savedText = localStorage.getItem(`editable-${dataKey}`);
+                    if (savedText) {
+                        element.textContent = savedText;
+                    }
+                }
+            });
+        }
 
         function saveHp() {
-            localStorage.setItem('azrik-hp', hpCurrent.value);
+            localStorage.setItem('character-hp', hpCurrent.value);
         }
 
         function loadHp() {
-            const savedHp = localStorage.getItem('azrik-hp');
+            const savedHp = localStorage.getItem('character-hp');
             if (savedHp !== null) {
                 hpCurrent.value = savedHp;
             }
         }
 
         function saveTrackerState(trackerId, states) {
-            localStorage.setItem(`azrik-tracker-${trackerId}`, JSON.stringify(states));
+            localStorage.setItem(`tracker-${trackerId}`, JSON.stringify(states));
         }
 
         function loadTrackerState(container) {
             const trackerId = container.dataset.tracker;
-            const savedState = localStorage.getItem(`azrik-tracker-${trackerId}`);
+            const savedState = localStorage.getItem(`tracker-${trackerId}`);
             if (savedState) {
                 const states = JSON.parse(savedState);
                 const dots = container.querySelectorAll('.tracker-dot');
@@ -373,6 +629,17 @@
                         dot.classList.remove('used');
                     }
                 });
+            }
+        }
+
+        function saveNotes() {
+            localStorage.setItem('character-notes', notesArea.value);
+        }
+
+        function loadNotes() {
+            const savedNotes = localStorage.getItem('character-notes');
+            if (savedNotes !== null) {
+                notesArea.value = savedNotes;
             }
         }
 
@@ -400,27 +667,39 @@
                 loadTrackerState(container);
             });
         }
-        
+
         initializeTrackers();
         loadHp(); // Load HP on startup
+        loadNotes(); // Load notes on startup
+        loadEditMode(); // Load edit mode state
+        loadEditableContent(); // Load saved editable text
+        loadTooltipContent(); // Load saved tooltip text
+        makeTextEditable(); // Initialize editable functionality
+        makeTooltipsEditable(); // Initialize tooltip editing
 
         // --- EVENT LISTENERS ---
 
+        editToggle.addEventListener('click', toggleEditMode);
         hpCurrent.addEventListener('input', saveHp);
+        notesArea.addEventListener('input', saveNotes);
 
         resetButton.addEventListener('click', () => {
              if (confirm('Are you sure you want to reset all saved data? This cannot be undone.')) {
                 // Reset HP visually and in storage
                 hpCurrent.value = MAX_HP;
-                localStorage.removeItem('azrik-hp');
-                
+                localStorage.removeItem('character-hp');
+
                 // Reset all trackers visually and in storage
                 trackers.forEach(container => {
-                    localStorage.removeItem(`azrik-tracker-${container.dataset.tracker}`);
+                    localStorage.removeItem(`tracker-${container.dataset.tracker}`);
                     container.querySelectorAll('.tracker-dot').forEach(dot => {
                         dot.classList.remove('used');
                     });
                 });
+
+                // Reset notes
+                notesArea.value = '';
+                localStorage.removeItem('character-notes');
             }
         });
 

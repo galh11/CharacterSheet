@@ -181,24 +181,39 @@
             border: 1px solid #63b3ed;
         }
 
-        .edit-mode .tooltip-editable {
-            border: 1px dashed #f6ad55;
-            border-radius: 0.25rem;
-            padding: 0.125rem;
-            cursor: text;
+        .edit-mode .tooltip {
             position: relative;
         }
 
-        .edit-mode .tooltip-editable:hover {
-            background-color: rgba(246, 173, 85, 0.1);
-            border-style: solid;
+        .edit-mode .tooltip::before {
+            content: "💬";
+            position: absolute;
+            top: -0.25rem;
+            right: -0.5rem;
+            background: #f6ad55;
+            color: #1a202c;
+            border-radius: 50%;
+            width: 1rem;
+            height: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            z-index: 10;
+            cursor: pointer;
         }
 
-        .edit-mode .tooltip-editable:hover::after {
-            content: "💬 Click to edit tooltip";
+        .edit-mode .tooltip:hover::before {
+            background: #ed8936;
+            transform: scale(1.1);
+        }
+
+        .edit-mode .tooltip:hover::after {
+            content: "Click to edit tooltip";
             position: absolute;
-            top: -2rem;
-            left: 0;
+            top: -2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
             background: #2d3748;
             color: #f6ad55;
             padding: 0.25rem 0.5rem;
@@ -634,6 +649,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('Character sheet script loaded');
+
             const MAX_HP = 54;
             const hpCurrent = document.getElementById('hp-current');
             const resetButton = document.getElementById('resetButton');
@@ -647,9 +664,24 @@
             const body = document.body;
             let isEditMode = false;
 
-            // --- STATE SAVING FUNCTIONS ---
+            // Debug: Check if elements exist
+            if (!editToggle) {
+                console.error('Edit toggle button not found!');
+                return;
+            }
+            if (!editText) {
+                console.error('Edit text span not found!');
+                return;
+            }
+            if (!editIcon) {
+                console.error('Edit icon not found!');
+                return;
+            }
+
+            console.log('Edit mode elements found successfully');            // --- STATE SAVING FUNCTIONS ---
 
             function toggleEditMode() {
+                console.log('toggleEditMode called, current isEditMode:', isEditMode);
                 isEditMode = !isEditMode;
 
                 if (isEditMode) {
@@ -660,6 +692,7 @@
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                 `;
+                    console.log('Switched to edit mode');
                 } else {
                     body.classList.remove('edit-mode');
                     editToggle.classList.remove('active');
@@ -668,13 +701,12 @@
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 `;
+                    console.log('Switched to view mode');
                 }
 
                 // Save edit mode state
                 localStorage.setItem('edit-mode', isEditMode);
-            }
-
-            function loadEditMode() {
+            } function loadEditMode() {
                 const savedEditMode = localStorage.getItem('edit-mode');
                 if (savedEditMode === 'true') {
                     toggleEditMode();
@@ -816,45 +848,45 @@
                     const tooltipText = tooltip.querySelector('.tooltiptext');
                     if (!tooltipText) return;
 
-                    // Add editable class to tooltip text
-                    tooltipText.classList.add('tooltip-editable');
-
                     // Add data attribute for saving
                     const parentText = tooltip.textContent.replace(tooltipText.textContent, '').trim();
                     const dataKey = `tooltip-${parentText.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`;
                     tooltipText.dataset.editable = dataKey;
 
-                    // Add click handler for edit mode
-                    tooltipText.addEventListener('click', function (e) {
+                    // Add click handler to the tooltip element itself for edit mode
+                    tooltip.addEventListener('click', function (e) {
                         if (!isEditMode) return;
                         e.stopPropagation();
+                        e.preventDefault(); // Prevent any default tooltip behavior
 
-                        // Don't add multiple textareas
-                        if (this.querySelector('textarea')) return;
+                        // Don't open multiple edit containers
+                        if (document.querySelector('.tooltip-edit-container')) return;
 
-                        const currentText = this.textContent;
-                        const textarea = document.createElement('textarea');
-                        textarea.value = currentText;
-                        textarea.className = 'bg-gray-700 border border-blue-500 rounded p-2 text-white text-xs w-full min-h-16 resize-none';
+                        const currentText = tooltipText.textContent;
 
                         // Create editing container that stays visible
                         const editContainer = document.createElement('div');
                         editContainer.className = 'tooltip-edit-container';
                         editContainer.style.cssText = `
-                        position: fixed;
-                        background: #2d3748;
-                        border: 2px solid #f6ad55;
-                        border-radius: 0.5rem;
-                        padding: 1rem;
-                        z-index: 9999;
-                        min-width: 300px;
-                        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-                    `;
+                            position: fixed;
+                            background: #2d3748;
+                            border: 2px solid #f6ad55;
+                            border-radius: 0.5rem;
+                            padding: 1rem;
+                            z-index: 9999;
+                            min-width: 300px;
+                            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                        `;
 
                         // Position the edit container near the tooltip
-                        const rect = tooltipText.getBoundingClientRect();
+                        const rect = tooltip.getBoundingClientRect();
                         editContainer.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
                         editContainer.style.top = (rect.bottom + 10) + 'px';
+
+                        // Create textarea
+                        const textarea = document.createElement('textarea');
+                        textarea.value = currentText;
+                        textarea.className = 'bg-gray-700 border border-blue-500 rounded p-2 text-white text-xs w-full min-h-16 resize-none';
 
                         // Add instruction text
                         const instructions = document.createElement('div');
@@ -930,158 +962,226 @@
                     });
                 });
             }
+            buttonContainer.className = 'flex justify-end space-x-2 mt-2';
 
-            function loadTooltipContent() {
-                const tooltipTexts = document.querySelectorAll('.tooltiptext[data-editable]');
+            const saveButton = document.createElement('button');
+            saveButton.className = 'px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded';
+            saveButton.textContent = 'Save';
 
-                tooltipTexts.forEach(tooltipText => {
-                    const dataKey = tooltipText.dataset.editable;
-                    if (dataKey) {
-                        const savedText = localStorage.getItem(`editable-${dataKey}`);
-                        if (savedText) {
-                            tooltipText.textContent = savedText;
-                        }
-                    }
-                });
-            }
+            const cancelButton = document.createElement('button');
+            cancelButton.className = 'px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded';
+            cancelButton.textContent = 'Cancel';
 
-            function loadEditableContent() {
-                const editables = document.querySelectorAll('.editable');
+            buttonContainer.appendChild(cancelButton);
+            buttonContainer.appendChild(saveButton);
 
-                editables.forEach(element => {
-                    const dataKey = element.dataset.editable || element.id;
-                    if (dataKey) {
-                        const savedText = localStorage.getItem(`editable-${dataKey}`);
-                        if (savedText) {
-                            element.textContent = savedText;
-                        }
-                    }
-                });
-            }
+            editContainer.appendChild(instructions);
+            editContainer.appendChild(textarea);
+            editContainer.appendChild(buttonContainer);
 
-            function saveHp() {
-                localStorage.setItem('character-hp', hpCurrent.value);
-            }
+            document.body.appendChild(editContainer);
+            textarea.focus();
+            textarea.select();
 
-            function loadHp() {
-                const savedHp = localStorage.getItem('character-hp');
-                if (savedHp !== null) {
-                    hpCurrent.value = savedHp;
+            function saveChanges() {
+                const newText = textarea.value.trim() || currentText;
+                tooltipText.textContent = newText;
+
+                // Save to localStorage
+                const dataKey = tooltipText.dataset.editable;
+                if (dataKey) {
+                    localStorage.setItem(`editable-${dataKey}`, newText);
                 }
+
+                document.body.removeChild(editContainer);
             }
 
-            function saveTrackerState(trackerId, states) {
-                localStorage.setItem(`tracker-${trackerId}`, JSON.stringify(states));
+            function cancelChanges() {
+                document.body.removeChild(editContainer);
             }
 
-            function loadTrackerState(container) {
-                const trackerId = container.dataset.tracker;
-                const savedState = localStorage.getItem(`tracker-${trackerId}`);
-                if (savedState) {
-                    const states = JSON.parse(savedState);
-                    const dots = container.querySelectorAll('.tracker-dot');
-                    dots.forEach((dot, index) => {
-                        if (states[index]) {
-                            dot.classList.add('used');
-                        } else {
-                            dot.classList.remove('used');
-                        }
-                    });
-                }
-            }
+            // Event listeners
+            saveButton.addEventListener('click', saveChanges);
+            cancelButton.addEventListener('click', cancelChanges);
 
-            function saveNotes() {
-                localStorage.setItem('character-notes', notesArea.value);
-            }
-
-            function loadNotes() {
-                const savedNotes = localStorage.getItem('character-notes');
-                if (savedNotes !== null) {
-                    notesArea.value = savedNotes;
-                }
-            }
-
-            // --- INITIALIZATION ---
-
-            function initializeTrackers() {
-                trackers.forEach(container => {
-                    const trackerId = container.dataset.tracker;
-                    const max = parseInt(container.dataset.max, 10);
-                    container.innerHTML = ''; // Clear previous dots
-
-                    for (let i = 0; i < max; i++) {
-                        const dot = document.createElement('div');
-                        dot.classList.add('tracker-dot');
-                        dot.addEventListener('click', () => {
-                            dot.classList.toggle('used');
-                            // When a dot is clicked, save the state of its entire group
-                            const dotsInGroup = container.querySelectorAll('.tracker-dot');
-                            const currentStates = Array.from(dotsInGroup).map(d => d.classList.contains('used'));
-                            saveTrackerState(trackerId, currentStates);
-                        });
-                        container.appendChild(dot);
-                    }
-                    // After creating the dots, load their saved state
-                    loadTrackerState(container);
-                });
-            }
-
-            initializeTrackers();
-            loadHp(); // Load HP on startup
-            loadNotes(); // Load notes on startup
-            loadEditMode(); // Load edit mode state
-            loadEditableContent(); // Load saved editable text
-            loadTooltipContent(); // Load saved tooltip text
-            makeTextEditable(); // Initialize editable functionality
-            makeTooltipsEditable(); // Initialize tooltip editing
-
-            // --- EVENT LISTENERS ---
-
-            editToggle.addEventListener('click', toggleEditMode);
-            hpCurrent.addEventListener('input', saveHp);
-            notesArea.addEventListener('input', saveNotes);
-
-            resetButton.addEventListener('click', () => {
-                if (confirm('Are you sure you want to reset all saved data? This cannot be undone.')) {
-                    // Reset HP visually and in storage
-                    hpCurrent.value = MAX_HP;
-                    localStorage.removeItem('character-hp');
-
-                    // Reset all trackers visually and in storage
-                    trackers.forEach(container => {
-                        localStorage.removeItem(`tracker-${container.dataset.tracker}`);
-                        container.querySelectorAll('.tracker-dot').forEach(dot => {
-                            dot.classList.remove('used');
-                        });
-                    });
-
-                    // Reset notes
-                    notesArea.value = '';
-                    localStorage.removeItem('character-notes');
+            textarea.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    saveChanges();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelChanges();
                 }
             });
 
-            // --- TOOLTIP POSITIONING (No changes needed here) ---
-            const tooltips = document.querySelectorAll('.tooltip');
-            tooltips.forEach(tooltip => {
-                const tooltipText = tooltip.querySelector('.tooltiptext');
-                if (!tooltipText) return;
+            // Close when clicking outside
+            function handleClickOutside(e) {
+                if (!editContainer.contains(e.target)) {
+                    cancelChanges();
+                    document.removeEventListener('click', handleClickOutside);
+                }
+            }
 
-                tooltip.addEventListener('mouseenter', () => {
-                    requestAnimationFrame(() => {
-                        tooltipText.style.transform = 'translateX(-50%)';
-                        const rect = tooltipText.getBoundingClientRect();
-                        const viewportWidth = window.innerWidth;
+            // Add click outside listener after a short delay to avoid immediate trigger
+            setTimeout(() => {
+                document.addEventListener('click', handleClickOutside);
+            }, 100);
+        });
 
-                        if (rect.left < 16) {
-                            const overflow = 16 - rect.left;
-                            tooltipText.style.transform = `translateX(calc(-50% + ${overflow}px))`;
-                        }
-                        else if (rect.right > viewportWidth - 16) {
-                            const overflow = rect.right - (viewportWidth - 16);
-                            tooltipText.style.transform = `translateX(calc(-50% - ${overflow}px))`;
-                        }
+        function loadTooltipContent() {
+            const tooltipTexts = document.querySelectorAll('.tooltiptext[data-editable]');
+
+            tooltipTexts.forEach(tooltipText => {
+                const dataKey = tooltipText.dataset.editable;
+                if (dataKey) {
+                    const savedText = localStorage.getItem(`editable-${dataKey}`);
+                    if (savedText) {
+                        tooltipText.textContent = savedText;
+                    }
+                }
+            });
+        }
+
+        function loadEditableContent() {
+            const editables = document.querySelectorAll('.editable');
+
+            editables.forEach(element => {
+                const dataKey = element.dataset.editable || element.id;
+                if (dataKey) {
+                    const savedText = localStorage.getItem(`editable-${dataKey}`);
+                    if (savedText) {
+                        element.textContent = savedText;
+                    }
+                }
+            });
+        }
+
+        function saveHp() {
+            localStorage.setItem('character-hp', hpCurrent.value);
+        }
+
+        function loadHp() {
+            const savedHp = localStorage.getItem('character-hp');
+            if (savedHp !== null) {
+                hpCurrent.value = savedHp;
+            }
+        }
+
+        function saveTrackerState(trackerId, states) {
+            localStorage.setItem(`tracker-${trackerId}`, JSON.stringify(states));
+        }
+
+        function loadTrackerState(container) {
+            const trackerId = container.dataset.tracker;
+            const savedState = localStorage.getItem(`tracker-${trackerId}`);
+            if (savedState) {
+                const states = JSON.parse(savedState);
+                const dots = container.querySelectorAll('.tracker-dot');
+                dots.forEach((dot, index) => {
+                    if (states[index]) {
+                        dot.classList.add('used');
+                    } else {
+                        dot.classList.remove('used');
+                    }
+                });
+            }
+        }
+
+        function saveNotes() {
+            localStorage.setItem('character-notes', notesArea.value);
+        }
+
+        function loadNotes() {
+            const savedNotes = localStorage.getItem('character-notes');
+            if (savedNotes !== null) {
+                notesArea.value = savedNotes;
+            }
+        }
+
+        // --- INITIALIZATION ---
+
+        function initializeTrackers() {
+            trackers.forEach(container => {
+                const trackerId = container.dataset.tracker;
+                const max = parseInt(container.dataset.max, 10);
+                container.innerHTML = ''; // Clear previous dots
+
+                for (let i = 0; i < max; i++) {
+                    const dot = document.createElement('div');
+                    dot.classList.add('tracker-dot');
+                    dot.addEventListener('click', () => {
+                        dot.classList.toggle('used');
+                        // When a dot is clicked, save the state of its entire group
+                        const dotsInGroup = container.querySelectorAll('.tracker-dot');
+                        const currentStates = Array.from(dotsInGroup).map(d => d.classList.contains('used'));
+                        saveTrackerState(trackerId, currentStates);
                     });
+                    container.appendChild(dot);
+                }
+                // After creating the dots, load their saved state
+                loadTrackerState(container);
+            });
+        }
+
+        initializeTrackers();
+        loadHp(); // Load HP on startup
+        loadNotes(); // Load notes on startup
+        loadEditMode(); // Load edit mode state
+        loadEditableContent(); // Load saved editable text
+        loadTooltipContent(); // Load saved tooltip text
+        makeTextEditable(); // Initialize editable functionality
+        makeTooltipsEditable(); // Initialize tooltip editing
+
+        // --- EVENT LISTENERS ---
+
+        console.log('Adding event listener to edit toggle button');
+        editToggle.addEventListener('click', function (e) {
+            console.log('Edit toggle button clicked!');
+            toggleEditMode();
+        });
+        hpCurrent.addEventListener('input', saveHp);
+        notesArea.addEventListener('input', saveNotes);
+
+        resetButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset all saved data? This cannot be undone.')) {
+                // Reset HP visually and in storage
+                hpCurrent.value = MAX_HP;
+                localStorage.removeItem('character-hp');
+
+                // Reset all trackers visually and in storage
+                trackers.forEach(container => {
+                    localStorage.removeItem(`tracker-${container.dataset.tracker}`);
+                    container.querySelectorAll('.tracker-dot').forEach(dot => {
+                        dot.classList.remove('used');
+                    });
+                });
+
+                // Reset notes
+                notesArea.value = '';
+                localStorage.removeItem('character-notes');
+            }
+        });
+
+        // --- TOOLTIP POSITIONING (No changes needed here) ---
+        const tooltips = document.querySelectorAll('.tooltip');
+        tooltips.forEach(tooltip => {
+            const tooltipText = tooltip.querySelector('.tooltiptext');
+            if (!tooltipText) return;
+
+            tooltip.addEventListener('mouseenter', () => {
+                requestAnimationFrame(() => {
+                    tooltipText.style.transform = 'translateX(-50%)';
+                    const rect = tooltipText.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+
+                    if (rect.left < 16) {
+                        const overflow = 16 - rect.left;
+                        tooltipText.style.transform = `translateX(calc(-50% + ${overflow}px))`;
+                    }
+                    else if (rect.right > viewportWidth - 16) {
+                        const overflow = rect.right - (viewportWidth - 16);
+                        tooltipText.style.transform = `translateX(calc(-50% - ${overflow}px))`;
+                    }
                 });
             });
         });

@@ -26,10 +26,10 @@ Beyond screenshot or text dump.
 
 ## Phases
 
-### Phase A — Data model + persistence  [ ]
-- [ ] Expand model: sections own positioned, typed fields with descriptions.
-- [ ] localStorage autosave + load.
-- [ ] Zod validation kept in sync.
+### Phase A — Data model + persistence  [x]
+- [x] Expand model: sections own positioned, typed fields with descriptions.
+- [x] localStorage autosave + load.
+- [x] Zod validation kept in sync.
 
 ### Phase B — Sections with editable fields  [ ]
 - [ ] Render sections as cards holding a list of fields.

@@ -18,12 +18,12 @@ const snap = (value: number) => Math.round(value / GRID) * GRID
 type DragState =
     | { mode: 'idle' }
     | {
-          mode: 'move' | 'resize'
-          pointerId: number
-          startX: number
-          startY: number
-          origin: SectionLayout
-      }
+        mode: 'move' | 'resize'
+        pointerId: number
+        startX: number
+        startY: number
+        origin: SectionLayout
+    }
 
 /**
  * Wraps a card on the free canvas, providing drag-to-move (via the top handle)
@@ -39,7 +39,7 @@ export function CanvasItem({ layout, isEditMode, onLayoutCommit, children }: Can
     const beginMove = (event: React.PointerEvent) => {
         if (!isEditMode) return
         event.preventDefault()
-        ;(event.target as HTMLElement).setPointerCapture(event.pointerId)
+            ; (event.target as HTMLElement).setPointerCapture(event.pointerId)
         drag.current = {
             mode: 'move',
             pointerId: event.pointerId,
@@ -54,7 +54,7 @@ export function CanvasItem({ layout, isEditMode, onLayoutCommit, children }: Can
         if (!isEditMode) return
         event.preventDefault()
         event.stopPropagation()
-        ;(event.target as HTMLElement).setPointerCapture(event.pointerId)
+            ; (event.target as HTMLElement).setPointerCapture(event.pointerId)
         drag.current = {
             mode: 'resize',
             pointerId: event.pointerId,

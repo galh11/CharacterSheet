@@ -1,6 +1,7 @@
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
 import type { FieldReference } from '../model/compute'
+import { Tooltip } from './Tooltip'
 import {
     type CharacterField,
     type CharacterSection,
@@ -237,16 +238,16 @@ export function SectionCard({
                             ) : (
                                 <div
                                     className="flex items-center justify-between gap-3 text-sm"
-                                    title={field.description || undefined}
                                 >
-                                    <span
-                                        className={clsx(
-                                            'text-slate-400',
-                                            field.description && 'cursor-help underline decoration-dotted decoration-slate-600 underline-offset-4',
-                                        )}
-                                    >
-                                        {field.label}
-                                    </span>
+                                    {field.description ? (
+                                        <Tooltip content={field.description}>
+                                            <span className="cursor-help text-slate-400 underline decoration-dotted decoration-slate-600 underline-offset-4">
+                                                {field.label}
+                                            </span>
+                                        </Tooltip>
+                                    ) : (
+                                        <span className="text-slate-400">{field.label}</span>
+                                    )}
                                     <span
                                         className={clsx(
                                             'font-mono',

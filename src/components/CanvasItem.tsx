@@ -96,7 +96,12 @@ export function CanvasItem({ layout, isEditMode, onLayoutCommit, children }: Can
     return (
         <div
             className={clsx('absolute', live && 'z-10 select-none')}
-            style={{ left: current.x, top: current.y, width: current.w, height: current.h }}
+            style={{
+                left: current.x,
+                top: current.y,
+                width: current.w,
+                ...(isEditMode ? { height: current.h } : { minHeight: current.h }),
+            }}
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
@@ -110,7 +115,11 @@ export function CanvasItem({ layout, isEditMode, onLayoutCommit, children }: Can
                     ⠿ DRAG
                 </div>
             )}
-            <div className={clsx('h-full overflow-auto', isEditMode ? 'rounded-b-lg' : 'rounded-lg')}>
+            <div
+                className={clsx(
+                    isEditMode ? 'h-[calc(100%-1.25rem)] overflow-auto rounded-b-lg' : 'rounded-lg',
+                )}
+            >
                 {children}
             </div>
             {isEditMode && (

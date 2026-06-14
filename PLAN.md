@@ -47,9 +47,9 @@ Beyond screenshot or text dump.
 - [x] Reference other fields by name/slug.
 - [x] Live recompute as referenced values change.
 
-### Phase E — Editable on-hover descriptions  [ ]
-- [ ] Tooltip component shown on hover.
-- [ ] Edit description inline in edit mode.
+### Phase E — Editable on-hover descriptions  [x]
+- [x] Tooltip component shown on hover.
+- [x] Edit description inline in edit mode.
 
 ### Phase F — Quick-start import  [ ]
 - [ ] Paste D&D Beyond text → parse abilities, AC, HP, etc. into a sheet.

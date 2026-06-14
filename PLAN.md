@@ -51,10 +51,10 @@ Beyond screenshot or text dump.
 - [x] Tooltip component shown on hover.
 - [x] Edit description inline in edit mode.
 
-### Phase F — Quick-start import  [ ]
-- [ ] Paste D&D Beyond text → parse abilities, AC, HP, etc. into a sheet.
-- [ ] Upload screenshot → OCR text → same parser.
-- [ ] Review/confirm before replacing current sheet.
+### Phase F — Quick-start import  [x]
+- [x] Paste D&D Beyond text → parse abilities, AC, HP, etc. into a sheet.
+- [x] Upload screenshot → OCR text → same parser.
+- [x] Review/confirm before replacing current sheet.
 
 ### Phase G — Toolbar & polish  [ ]
 - [ ] Toolbar: edit toggle, add section, quick start, export, import, reset.

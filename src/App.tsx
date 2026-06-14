@@ -4,12 +4,15 @@ import { characterSheetSchema } from './model/characterSheet'
 import { computeSheet, listReferences } from './model/compute'
 import { CanvasItem } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
+import { QuickStartModal } from './components/QuickStartModal'
 import { useSheet } from './state/useSheet'
 
 function App() {
     const [isEditMode, setIsEditMode] = useState(false)
+    const [showQuickStart, setShowQuickStart] = useState(false)
     const {
         sheet,
+        replaceSheet,
         renameSheet,
         updateSection,
         setSectionLayout,
@@ -57,18 +60,27 @@ function App() {
                             Interactive D&amp;D cheat sheet — drag, resize, and edit anything.
                         </p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={() => setIsEditMode((current) => !current)}
-                        className={clsx(
-                            'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-                            isEditMode
-                                ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
-                                : 'bg-slate-700 text-slate-200 hover:bg-slate-600',
-                        )}
-                    >
-                        {isEditMode ? 'Done editing' : 'Edit'}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowQuickStart(true)}
+                            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-violet-400"
+                        >
+                            Quick start
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsEditMode((current) => !current)}
+                            className={clsx(
+                                'rounded-md px-4 py-2 text-sm font-medium transition-colors',
+                                isEditMode
+                                    ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+                                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600',
+                            )}
+                        >
+                            {isEditMode ? 'Done editing' : 'Edit'}
+                        </button>
+                    </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
@@ -125,6 +137,17 @@ function App() {
                     </div>
                 </div>
             </section>
+
+            {showQuickStart && (
+                <QuickStartModal
+                    onClose={() => setShowQuickStart(false)}
+                    onConfirm={(imported) => {
+                        replaceSheet(imported)
+                        setShowQuickStart(false)
+                        setIsEditMode(true)
+                    }}
+                />
+            )}
         </main>
     )
 }

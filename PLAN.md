@@ -31,11 +31,11 @@ Beyond screenshot or text dump.
 - [x] localStorage autosave + load.
 - [x] Zod validation kept in sync.
 
-### Phase B — Sections with editable fields  [ ]
-- [ ] Render sections as cards holding a list of fields.
-- [ ] Add / edit / delete fields (label + value).
-- [ ] Field types: text, number, boolean.
-- [ ] Add / rename / delete sections.
+### Phase B — Sections with editable fields  [x]
+- [x] Render sections as cards holding a list of fields.
+- [x] Add / edit / delete fields (label + value).
+- [x] Field types: text, number, boolean.
+- [x] Add / rename / delete sections.
 
 ### Phase C — Drag & resize section cards  [ ]
 - [ ] Free-drag section cards around the canvas.

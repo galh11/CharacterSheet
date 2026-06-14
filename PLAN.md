@@ -37,10 +37,10 @@ Beyond screenshot or text dump.
 - [x] Field types: text, number, boolean.
 - [x] Add / rename / delete sections.
 
-### Phase C — Drag & resize section cards  [ ]
-- [ ] Free-drag section cards around the canvas.
-- [ ] Resize cards.
-- [ ] Persist layout (x, y, w, h).
+### Phase C — Drag & resize section cards  [x]
+- [x] Free-drag section cards around the canvas.
+- [x] Resize cards.
+- [x] Persist layout (x, y, w, h).
 
 ### Phase D — Computed / calculation fields  [ ]
 - [ ] Safe formula evaluator (arithmetic + helpers like floor/ceil/min/max).

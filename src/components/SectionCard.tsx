@@ -47,7 +47,7 @@ export function SectionCard({
 }: SectionCardProps) {
     return (
         <article
-            className="flex flex-col rounded-lg border border-slate-700 bg-slate-950/60 p-4"
+            className="flex h-full min-h-full flex-col rounded-lg border border-slate-700 bg-slate-950/60 p-4"
             style={{ borderTopColor: section.accent, borderTopWidth: 3 }}
         >
             <header className="mb-2 flex items-start justify-between gap-2">

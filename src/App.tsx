@@ -2,6 +2,7 @@ import { clsx } from 'clsx'
 import { useMemo, useState } from 'react'
 import { characterSheetSchema } from './model/characterSheet'
 import { computeSheet } from './model/compute'
+import { CanvasItem } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { useSheet } from './state/useSheet'
 
@@ -11,6 +12,7 @@ function App() {
         sheet,
         renameSheet,
         updateSection,
+        setSectionLayout,
         addSection,
         deleteSection,
         addField,
@@ -22,8 +24,20 @@ function App() {
     const validation = useMemo(() => characterSheetSchema.safeParse(sheet), [sheet])
     const computed = useMemo(() => computeSheet(sheet), [sheet])
 
+    const canvasSize = useMemo(() => {
+        const width = Math.max(
+            960,
+            ...sheet.sections.map((section) => section.layout.x + section.layout.w + 48),
+        )
+        const height = Math.max(
+            520,
+            ...sheet.sections.map((section) => section.layout.y + section.layout.h + 80),
+        )
+        return { width, height }
+    }, [sheet.sections])
+
     return (
-        <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 p-6 md:p-10">
+        <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 p-6 md:p-10">
             <header className="rounded-xl border border-slate-700 bg-slate-900/75 p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
@@ -39,7 +53,7 @@ function App() {
                             <h1 className="m-0 text-3xl font-semibold text-slate-100">{sheet.name}</h1>
                         )}
                         <p className="mt-2 text-sm text-slate-300">
-                            Interactive D&amp;D cheat sheet — typed fields with live calculations.
+                            Interactive D&amp;D cheat sheet — drag, resize, and edit anything.
                         </p>
                     </div>
                     <button
@@ -66,7 +80,7 @@ function App() {
 
             <section className="rounded-xl border border-slate-700 bg-slate-900/50 p-4 md:p-6">
                 <div className="mb-4 flex items-center justify-between gap-4">
-                    <h2 className="m-0 text-lg font-semibold text-slate-100">Canvas Sections</h2>
+                    <h2 className="m-0 text-lg font-semibold text-slate-100">Canvas</h2>
                     {isEditMode && (
                         <button
                             type="button"
@@ -78,21 +92,35 @@ function App() {
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {sheet.sections.map((section) => (
-                        <SectionCard
-                            key={section.id}
-                            section={section}
-                            isEditMode={isEditMode}
-                            results={computed}
-                            onUpdateSection={(patch) => updateSection(section.id, patch)}
-                            onDeleteSection={() => deleteSection(section.id)}
-                            onAddField={() => addField(section.id)}
-                            onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
-                            onDeleteField={(fieldId) => deleteField(section.id, fieldId)}
-                            onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
-                        />
-                    ))}
+                <div className="overflow-auto">
+                    <div
+                        className={clsx(
+                            'relative rounded-lg',
+                            isEditMode && 'bg-[radial-gradient(circle,_rgba(148,163,184,0.12)_1px,_transparent_1px)] [background-size:16px_16px]',
+                        )}
+                        style={{ width: canvasSize.width, height: canvasSize.height }}
+                    >
+                        {sheet.sections.map((section) => (
+                            <CanvasItem
+                                key={section.id}
+                                layout={section.layout}
+                                isEditMode={isEditMode}
+                                onLayoutCommit={(layout) => setSectionLayout(section.id, layout)}
+                            >
+                                <SectionCard
+                                    section={section}
+                                    isEditMode={isEditMode}
+                                    results={computed}
+                                    onUpdateSection={(patch) => updateSection(section.id, patch)}
+                                    onDeleteSection={() => deleteSection(section.id)}
+                                    onAddField={() => addField(section.id)}
+                                    onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
+                                    onDeleteField={(fieldId) => deleteField(section.id, fieldId)}
+                                    onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
+                                />
+                            </CanvasItem>
+                        ))}
+                    </div>
                 </div>
             </section>
         </main>

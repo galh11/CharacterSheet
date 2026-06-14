@@ -56,10 +56,10 @@ Beyond screenshot or text dump.
 - [x] Upload screenshot → OCR text → same parser.
 - [x] Review/confirm before replacing current sheet.
 
-### Phase G — Toolbar & polish  [ ]
-- [ ] Toolbar: edit toggle, add section, quick start, export, import, reset.
-- [ ] JSON export / import.
-- [ ] Visual polish + responsive behavior.
+### Phase G — Toolbar & polish  [x]
+- [x] Toolbar: edit toggle, add section, quick start, export, import, reset.
+- [x] JSON export / import.
+- [x] Visual polish + responsive behavior.
 
 ## Notes
 

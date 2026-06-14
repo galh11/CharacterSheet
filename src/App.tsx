@@ -1,15 +1,18 @@
 import { clsx } from 'clsx'
-import { useMemo, useState } from 'react'
-import { characterSheetSchema } from './model/characterSheet'
+import { useMemo, useRef, useState } from 'react'
+import { characterSheetSchema, createStarterSheet } from './model/characterSheet'
 import { computeSheet, listReferences } from './model/compute'
 import { CanvasItem } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { QuickStartModal } from './components/QuickStartModal'
+import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { useSheet } from './state/useSheet'
 
 function App() {
     const [isEditMode, setIsEditMode] = useState(false)
     const [showQuickStart, setShowQuickStart] = useState(false)
+    const [notice, setNotice] = useState<string | null>(null)
+    const importRef = useRef<HTMLInputElement>(null)
     const {
         sheet,
         replaceSheet,
@@ -27,6 +30,24 @@ function App() {
     const validation = useMemo(() => characterSheetSchema.safeParse(sheet), [sheet])
     const computed = useMemo(() => computeSheet(sheet), [sheet])
     const references = useMemo(() => listReferences(sheet, computed), [sheet, computed])
+
+    const handleImport = async (file: File | undefined) => {
+        if (!file) return
+        const result = await importSheetFromFile(file)
+        if (result.ok && result.sheet) {
+            replaceSheet(result.sheet)
+            setNotice('Sheet imported.')
+        } else {
+            setNotice(result.error)
+        }
+    }
+
+    const handleReset = () => {
+        if (window.confirm('Reset to a fresh starter sheet? This cannot be undone.')) {
+            replaceSheet(createStarterSheet())
+            setNotice('Sheet reset.')
+        }
+    }
 
     const canvasSize = useMemo(() => {
         const width = Math.max(
@@ -70,6 +91,37 @@ function App() {
                         </button>
                         <button
                             type="button"
+                            onClick={() => exportSheetToFile(sheet)}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                        >
+                            Export
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => importRef.current?.click()}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                        >
+                            Import
+                        </button>
+                        <input
+                            ref={importRef}
+                            type="file"
+                            accept="application/json"
+                            className="hidden"
+                            onChange={(event) => {
+                                void handleImport(event.target.files?.[0])
+                                event.target.value = ''
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleReset}
+                            className="rounded-md border border-rose-700/50 px-3 py-2 text-sm text-rose-300 hover:bg-rose-900/40"
+                        >
+                            Reset
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => setIsEditMode((current) => !current)}
                             className={clsx(
                                 'rounded-md px-4 py-2 text-sm font-medium transition-colors',
@@ -88,6 +140,7 @@ function App() {
                     <span className={validation.success ? 'text-emerald-300' : 'text-rose-300'}>
                         Model: {validation.success ? 'valid' : 'invalid'}
                     </span>
+                    {notice && <span className="text-cyan-300">{notice}</span>}
                 </div>
             </header>
 

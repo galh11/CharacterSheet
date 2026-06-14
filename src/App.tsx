@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import { useMemo, useState } from 'react'
 import { characterSheetSchema } from './model/characterSheet'
-import { computeSheet } from './model/compute'
+import { computeSheet, listReferences } from './model/compute'
 import { CanvasItem } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { useSheet } from './state/useSheet'
@@ -23,6 +23,7 @@ function App() {
 
     const validation = useMemo(() => characterSheetSchema.safeParse(sheet), [sheet])
     const computed = useMemo(() => computeSheet(sheet), [sheet])
+    const references = useMemo(() => listReferences(sheet, computed), [sheet, computed])
 
     const canvasSize = useMemo(() => {
         const width = Math.max(
@@ -111,6 +112,7 @@ function App() {
                                     section={section}
                                     isEditMode={isEditMode}
                                     results={computed}
+                                    references={references}
                                     onUpdateSection={(patch) => updateSection(section.id, patch)}
                                     onDeleteSection={() => deleteSection(section.id)}
                                     onAddField={() => addField(section.id)}

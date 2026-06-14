@@ -42,10 +42,10 @@ Beyond screenshot or text dump.
 - [x] Resize cards.
 - [x] Persist layout (x, y, w, h).
 
-### Phase D — Computed / calculation fields  [ ]
-- [ ] Safe formula evaluator (arithmetic + helpers like floor/ceil/min/max).
-- [ ] Reference other fields by name/slug.
-- [ ] Live recompute as referenced values change.
+### Phase D — Computed / calculation fields  [x]
+- [x] Safe formula evaluator (arithmetic + helpers like floor/ceil/min/max).
+- [x] Reference other fields by name/slug.
+- [x] Live recompute as referenced values change.
 
 ### Phase E — Editable on-hover descriptions  [ ]
 - [ ] Tooltip component shown on hover.

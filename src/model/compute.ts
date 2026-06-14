@@ -28,8 +28,7 @@ const baseScope = (sheet: CharacterSheet): Record<string, number> => {
  * Supports computed fields that reference other computed fields (a few passes).
  * Returns a map of field id -> result.
  */
-export const computeSheet = (sheet: CharacterSheet): Map<string, FormulaResult> => {
-    const results = new Map<string, FormulaResult>()
+export const computeSheet = (sheet: CharacterSheet): Map<string, FormulaResult> => {    const results = new Map<string, FormulaResult>()
     const scope = baseScope(sheet)
 
     const computedFields: CharacterField[] = []
@@ -62,4 +61,42 @@ export const computeSheet = (sheet: CharacterSheet): Map<string, FormulaResult> 
     }
 
     return results
+}
+
+export interface FieldReference {
+    slug: string
+    label: string
+    value: number
+}
+
+/**
+ * List the field identifiers available to formulas, with their current numeric
+ * value. Useful for showing an autocomplete-style hint in the editor.
+ */
+export const listReferences = (
+    sheet: CharacterSheet,
+    results: Map<string, FormulaResult>,
+): FieldReference[] => {
+    const refs: FieldReference[] = []
+    const seen = new Set<string>()
+    for (const section of sheet.sections) {
+        for (const field of section.fields) {
+            const slug = slugify(field.label)
+            if (!slug || seen.has(slug)) continue
+            let value: number | null = null
+            if (field.type === 'number') {
+                const n = Number(field.value)
+                value = Number.isNaN(n) ? null : n
+            } else if (field.type === 'boolean') {
+                value = field.value === 'true' ? 1 : 0
+            } else if (field.type === 'computed') {
+                const result = results.get(field.id)
+                value = result?.ok ? result.value : null
+            }
+            if (value === null) continue
+            seen.add(slug)
+            refs.push({ slug, label: field.label, value })
+        }
+    }
+    return refs.sort((a, b) => a.slug.localeCompare(b.slug))
 }

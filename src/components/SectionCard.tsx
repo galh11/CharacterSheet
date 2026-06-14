@@ -1,5 +1,6 @@
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
+import type { FieldReference } from '../model/compute'
 import {
     type CharacterField,
     type CharacterSection,
@@ -10,6 +11,7 @@ interface SectionCardProps {
     section: CharacterSection
     isEditMode: boolean
     results: Map<string, FormulaResult>
+    references: FieldReference[]
     onUpdateSection: (
         patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent'>>,
     ) => void
@@ -38,6 +40,7 @@ export function SectionCard({
     section,
     isEditMode,
     results,
+    references,
     onUpdateSection,
     onDeleteSection,
     onAddField,
@@ -197,8 +200,38 @@ export function SectionCard({
                                         aria-label="Field description"
                                     />
 
-                                    {computedError && (
-                                        <p className="mt-1 mb-0 text-[11px] text-rose-300">{result?.error}</p>
+                                    {field.type === 'computed' && (
+                                        <div className="mt-2">
+                                            <div className="flex items-center gap-2 text-[11px]">
+                                                <span className="text-slate-500">=</span>
+                                                {result?.ok ? (
+                                                    <span className="font-mono text-emerald-300">{result.value}</span>
+                                                ) : (
+                                                    <span className="font-mono text-rose-300">
+                                                        {result?.error ?? 'enter a formula'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {references.length > 0 && (
+                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                    {references.map((ref) => (
+                                                        <button
+                                                            key={ref.slug}
+                                                            type="button"
+                                                            onClick={() =>
+                                                                onUpdateField(field.id, {
+                                                                    value: `${field.value}${ref.slug}`,
+                                                                })
+                                                            }
+                                                            className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300 hover:bg-slate-700"
+                                                            title={`${ref.label} = ${ref.value}`}
+                                                        >
+                                                            {ref.slug}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
                             ) : (

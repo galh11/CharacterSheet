@@ -259,16 +259,29 @@ const parseInventory = (text: string): CharacterField[] => {
         if (!inBlock) continue
         if (stopRe.test(line)) break
 
-        const match = /^(.+?)(?:\s+x?(\d+))?$/i.exec(line)
-        if (!match) continue
-        const name = match[1].replace(/[|,]/g, ' ').replace(/\s+/g, ' ').trim()
-        if (!name || !/[a-z]/i.test(name) || seen.has(name.toLowerCase())) continue
+        // Skip a column-header row like "ACTIVE NAME WEIGHT QTY COST NOTES".
+        const headerHits = line.match(/\b(?:active|name|weight|qty|cost|notes)\b/gi)
+        if (headerHits && headerHits.length >= 3) continue
+
+        // Strip leading OCR bullet noise ("~", "—", ">", "N =", "- ", etc.).
+        const cleaned = line.replace(/^[^A-Za-z0-9]+/, '').replace(/^[A-Za-z]\s*[=|]\s*/, '')
+        // Pull an explicit quantity ("x10") before dropping trailing columns.
+        const qty = /\bx(\d+)\b/i.exec(cleaned)?.[1]
+        // Drop trailing weight/qty/cost column numbers (keeps names like "Rope 50 ft").
+        const name = cleaned
+            .replace(/(?:\s+[\d.*]+){2,}\s*$/, '')
+            .replace(/\s+x\d+\s*$/i, '')
+            .replace(/[|,]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(/[\s*]+$/, '')
+            .trim()
+        if (!name || !/[a-z]{2}/i.test(name) || seen.has(name.toLowerCase())) continue
         seen.add(name.toLowerCase())
         fields.push(
             createField({
                 label: name.slice(0, 40),
                 type: 'text',
-                value: match[2] ? `x${match[2]}` : '',
+                value: qty ? `x${qty}` : '',
             }),
         )
     }

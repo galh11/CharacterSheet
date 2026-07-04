@@ -99,3 +99,31 @@ describe('parseCharacterText — attacks, inventory, saves', () => {
         expect(inventory?.fields.find((f) => f.label === 'Torch')?.value).toBe('x5')
     })
 })
+
+const OCR_INVENTORY = `Inventory
+ACTIVE NAME WEIGHT QTY COST NOTES
+~ Potion of Healing (Superior) 1551 3 1
+Caltrops 2 1 1
+Rope 50 ft x1
+Torch x5`
+
+describe('parseCharacterText — noisy OCR inventory', () => {
+    const inventory = () =>
+        parseCharacterText(OCR_INVENTORY).sheet.sections.find((s) => s.title === 'Inventory')
+
+    it('skips the column-header row', () => {
+        const labels = inventory()?.fields.map((f) => f.label) ?? []
+        expect(labels.some((l) => /active|weight|qty|cost|notes/i.test(l))).toBe(false)
+    })
+
+    it('strips trailing weight/qty/cost columns and bullet noise from names', () => {
+        const labels = inventory()?.fields.map((f) => f.label) ?? []
+        expect(labels).toEqual(
+            expect.arrayContaining(['Potion of Healing (Superior)', 'Caltrops', 'Rope 50 ft', 'Torch']),
+        )
+    })
+
+    it('still captures an explicit quantity', () => {
+        expect(inventory()?.fields.find((f) => f.label === 'Torch')?.value).toBe('x5')
+    })
+})

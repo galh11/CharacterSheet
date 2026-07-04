@@ -20,6 +20,8 @@ one hover away.
   You review what was detected before it replaces your sheet.
 - **Persistence & portability** — autosaves to `localStorage`; export/import the
   whole sheet as JSON.
+- **Installable (PWA)** — a service worker precaches the app so it works offline
+  and can be installed to a phone/tablet home screen for at-the-table use.
 
 ## Architecture
 

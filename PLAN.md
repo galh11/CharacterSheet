@@ -81,8 +81,8 @@ Beyond screenshot or text dump.
 - [x] Enable Pages (source: "GitHub Actions") in repo settings.
 - [x] Live at https://galh11.github.io/CharacterSheet/.
 
-### Phase K — Installable / offline (PWA)  [ ]
-- [ ] Web manifest + service worker for offline use and home-screen install
+### Phase K — Installable / offline (PWA)  [x]
+- [x] Web manifest + service worker for offline use and home-screen install
       (handy as an at-the-table play aid on a phone/tablet).
 
 ### Phase L — Data durability  [ ]

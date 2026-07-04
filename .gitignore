@@ -21,6 +21,10 @@ dist-ssr
 # Test coverage
 /coverage/
 
+# Personal reference screenshots (large binaries); the folder guide + the
+# transcribed text fixture are tracked, the images themselves are not.
+samples/screenshots/**/*.png
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,0 +1,47 @@
+Yad Armhand
+Goliath Pugilist 8
+Proficiency Bonus +3
+Walking Speed 35 ft
+Initiative +1
+Armor Class 15
+Hit Points 76 / 76
+Hit Dice 8d10
+
+Strength 20
+Dexterity 12
+Constitution 16
+Intelligence 8
+Wisdom 13
+Charisma 8
+
+Saving Throws
+Strength +8
+Constitution +6
+
+Skills
+Athletics +11
+Acrobatics +1
+Intimidation +2
+Perception +1
+Stealth +4
+
+Actions
+Brass Knuckles, 5 ft, +8, 1d4+5, Simple Light Push
+Dagger, 20/60, +8, 1d4+5, Finesse Light Thrown Nick
+Unarmed Strike, 5 ft, +8, 1d10+5, Force or bludgeoning
+Javelin, 30/120, +8, 1d6+5, Simple Thrown
+
+Inventory
+Potion of Healing x2
+Caltrops x1
+Crowbar x1
+Javelin x5
+Rope 50 ft x1
+Torch x5
+Thieves' Tools x1
+Waterskin x1
+
+Proficiencies
+Armor Light
+Tools Darts, Thieves' Tools
+Languages Common, Elvish, Giant

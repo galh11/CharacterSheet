@@ -85,9 +85,10 @@ Beyond screenshot or text dump.
 - [x] Web manifest + service worker for offline use and home-screen install
       (handy as an at-the-table play aid on a phone/tablet).
 
-### Phase L — Data durability  [ ]
-- [ ] Versioned `localStorage` schema + migration path for `character-sheet:vN`.
-- [ ] Pre-commit hooks (husky + lint-staged) to run lint/tests before commits.
+### Phase L — Data durability  [x]
+- [x] Versioned `localStorage` schema + migration path for `character-sheet:vN`.
+- [~] Pre-commit hooks: skipped — husky invokes `bash`, which resolves to the WSL
+      launcher on this machine (admin prompt). CI enforces lint/build/tests instead.
 
 ### Phase M — Importer depth  [ ]
 - [ ] Parse attacks, inventory, and saves & skills tables from D&D Beyond.

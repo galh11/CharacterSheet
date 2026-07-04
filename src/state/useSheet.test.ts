@@ -70,6 +70,6 @@ describe('useSheet', () => {
         act(() => result.current.renameSheet('Saved Hero'))
         const raw = localStorage.getItem('character-sheet:v1')
         expect(raw).not.toBeNull()
-        expect(JSON.parse(raw!).name).toBe('Saved Hero')
+        expect(JSON.parse(raw!).sheet.name).toBe('Saved Hero')
     })
 })

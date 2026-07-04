@@ -68,18 +68,18 @@ Beyond screenshot or text dump.
 - [x] Visual regression snapshots for view and edit modes.
 - [x] Coverage reporting (`npm run test:coverage`).
 
-### Phase I — Continuous integration  [~]
+### Phase I — Continuous integration  [x]
 - [x] GitHub Actions: run lint, build, unit tests, and e2e on push / PR.
 - [x] Upload the Playwright HTML report as a build artifact.
 - [x] Note: visual snapshots are Windows baselines, so CI runs functional e2e
       only until Linux baselines are generated.
-- [ ] Verify the workflow goes green on the first push.
+- [x] Verify the workflow goes green on the first push.
 
-### Phase J — Deployment  [~]
+### Phase J — Deployment  [x]
 - [x] Publish the static build to GitHub Pages via Actions (`deploy.yml`).
 - [x] Configure the Vite `base` path for project-scoped GitHub Pages.
-- [ ] Enable Pages (source: "GitHub Actions") in repo settings (one-time, manual).
-- [ ] Verify the live site loads at https://galh11.github.io/CharacterSheet/.
+- [x] Enable Pages (source: "GitHub Actions") in repo settings.
+- [x] Live at https://galh11.github.io/CharacterSheet/.
 
 ### Phase K — Installable / offline (PWA)  [ ]
 - [ ] Web manifest + service worker for offline use and home-screen install

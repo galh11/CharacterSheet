@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import type { CharacterSheet } from '../model/characterSheet'
 import { parseCharacterText, type ParseResult } from '../import/parseCharacter'
+import { parseCharacterJson, looksLikeDdbCharacter } from '../import/parseCharacterJson'
 import { recognizeImage } from '../import/ocr'
 
 interface QuickStartModalProps {
@@ -9,7 +10,7 @@ interface QuickStartModalProps {
     onConfirm: (sheet: CharacterSheet) => void
 }
 
-const PLACEHOLDER = `Paste text copied from your D&D Beyond character sheet here.\n\nTip: the Actions, Features & Traits, and the top stat block all parse well. You can also upload screenshots and we'll OCR them for you.`
+const PLACEHOLDER = `Paste text copied from your D&D Beyond character sheet — or paste the character JSON for an exact import.\n\nJSON (most accurate): open https://character-service.dndbeyond.com/character/v5/character/<id> for a public character, copy all, and paste here.\n\nText/screenshots also work (Actions, Features, and the top stat block parse best).`
 
 export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
     const [text, setText] = useState('')
@@ -19,11 +20,24 @@ export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
     const fileRef = useRef<HTMLInputElement>(null)
 
     const handleParse = () => {
-        if (!text.trim()) {
-            setError('Add some text (or upload a screenshot) first.')
+        const trimmed = text.trim()
+        if (!trimmed) {
+            setError('Add some text, paste JSON, or upload a screenshot first.')
             return
         }
         setError(null)
+        // Exact path: a pasted D&D Beyond character JSON.
+        if (trimmed.startsWith('{')) {
+            try {
+                const json: unknown = JSON.parse(trimmed)
+                if (looksLikeDdbCharacter(json)) {
+                    setResult(parseCharacterJson(json))
+                    return
+                }
+            } catch {
+                // Not valid JSON — fall back to the tolerant text parser.
+            }
+        }
         setResult(parseCharacterText(text))
     }
 
@@ -75,8 +89,9 @@ export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
 
                 <div className="flex-1 overflow-auto p-5">
                     <p className="mt-0 text-sm text-slate-300">
-                        Paste text from your character sheet, or upload screenshots to extract the text
-                        automatically. Then review what we detected before replacing your sheet.
+                        Paste your character <strong>JSON</strong> for an exact import, or paste text /
+                        upload screenshots to extract it automatically. Then review what we detected
+                        before replacing your sheet.
                     </p>
 
                     <div className="mt-3 flex flex-wrap gap-2">

@@ -12,5 +12,8 @@ files are not part of the application bundle.
 - `yad-armhand-ddb.txt` — a plain-text D&D Beyond-style paste transcribed from
   the screenshots, used as the fixture for the importer test
   (`src/import/parseCharacter.yad.test.ts`).
+- `yad-armhand-ddb.json` — the real D&D Beyond character JSON (from the
+  character-service API), used as the fixture for the JSON importer test
+  (`src/import/parseCharacterJson.test.ts`).
 - `screenshots/` — reference screenshots grouped by tab/view; see
   [screenshots/README.md](screenshots/README.md). The PNGs are git-ignored.

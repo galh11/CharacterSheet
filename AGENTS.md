@@ -47,6 +47,7 @@ src/
     transfer.ts            # JSON export/import
   import/
     parseCharacter.ts      # tolerant D&D Beyond text parser
+    parseCharacterJson.ts  # exact D&D Beyond character JSON importer
     ocr.ts                 # lazy Tesseract.js (CDN) screenshot OCR
   components/
     SectionCard.tsx        # renders + edits a section and its fields

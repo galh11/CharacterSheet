@@ -15,11 +15,12 @@ one hover away.
   reference other fields by name (e.g. `floor((str - 10) / 2)`) and recompute
   live. Helpers: `floor`, `ceil`, `round`, `abs`, `sqrt`, `min`, `max`.
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
-- **Quick start** — paste text from your D&D Beyond character sheet, or upload
-  screenshots (OCR'd in the browser), to auto-generate a starter cheat sheet.
-  Detects ability scores + modifiers, combat stats, skills, saving throws,
-  attacks, inventory, proficiencies, and features. You review what was detected
-  before it replaces your sheet.
+- **Quick start** — the most accurate path is to paste your **D&D Beyond
+  character JSON** (from the character-service API) for an exact import; you can
+  also paste text or upload screenshots (OCR'd in the browser). Detects ability
+  scores + modifiers, combat stats, skills, saving throws, attacks, inventory,
+  proficiencies, and features. You review what was detected before it replaces
+  your sheet.
 - **Persistence & portability** — autosaves to a versioned `localStorage` schema
   (with migration); export/import the whole sheet as JSON. Installable as an
   offline PWA.

@@ -15,14 +15,18 @@ zod for schema validation, clsx for class composition.
 ## Setup & commands
 
 ```bash
-npm install      # install dependencies
-npm run dev      # start the Vite dev server
-npm run lint     # run ESLint over the project
-npm run build    # type-check (tsc -b) and produce a production build
-npm run preview  # preview the production build locally
+npm install        # install dependencies
+npm run dev        # start the Vite dev server
+npm run lint       # run ESLint over the project
+npm run build      # type-check (tsc -b) and produce a production build
+npm run preview    # preview the production build locally
+npm run test       # unit/component tests (Vitest, watch mode)
+npm run test:run   # unit/component tests once
+npm run test:e2e   # end-to-end + visual tests (Playwright, real browser)
 ```
 
-Always run `npm run lint` and `npm run build` before considering a change done.
+Always run `npm run lint`, `npm run build`, and `npm run test:run` before
+considering a change done. When touching UI, also run `npm run test:e2e`.
 If Node/npm is unavailable in the environment, validate types via the editor's
 TypeScript diagnostics instead.
 
@@ -49,6 +53,18 @@ src/
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper
     Tooltip.tsx            # hover/focus description bubble
     QuickStartModal.tsx    # import review + confirm flow
+  test/
+    setup.ts               # Vitest setup: jest-dom matchers + localStorage mock
+  **/*.test.ts(x)          # unit/component tests colocated with source
+e2e/                       # Playwright end-to-end + visual tests
+  app.spec.ts              # functional flows (load, edit, drag, persist)
+  visual.spec.ts           # screenshot regression
+  visual.spec.ts-snapshots/  # committed baseline images
+samples/                   # reference D&D character data (import fixtures)
+public/                    # static assets (favicon, icons)
+vite.config.ts             # Vite plugins (app build)
+vitest.config.ts           # Vitest (unit/component) config
+playwright.config.ts       # Playwright config
 ```
 
 ## Code style
@@ -71,12 +87,27 @@ src/
 - OCR loads Tesseract.js lazily from a CDN, so there is no build-time dependency;
   importers must degrade gracefully to manual text paste if it fails.
 
+## Testing
+
+- **Unit/component** (Vitest + React Testing Library, jsdom): tests are
+  colocated with source as `*.test.ts(x)`. `src/test/setup.ts` registers jest-dom
+  matchers and an in-memory `localStorage` mock (Node's native global is
+  disabled and shadows jsdom's). Config lives in `vitest.config.ts` (kept
+  separate from `vite.config.ts` so the app build type-checks cleanly).
+- **End-to-end + visual** (Playwright, real Chromium): specs in `e2e/`. The
+  config auto-starts the dev server. Visual baselines are committed under
+  `e2e/visual.spec.ts-snapshots/`; refresh them with `npm run test:e2e:update`
+  after an intentional UI change.
+- Vitest ignores `e2e/**`; Playwright only runs `e2e/`. Keep them separate.
+- Prefer role/text/label queries over CSS selectors so tests survive refactors.
+
 ## Working agreement
 
 - Keep changes scoped and focused; do not refactor or add features beyond the
   request.
 - Preserve behavior unless a change explicitly requires altering it.
+- Add or update tests alongside behavior changes; keep the suites green.
 - Document meaningful architectural shifts in `README.md`; track delivery phases
   in `PLAN.md`.
 - Use Conventional Commit messages (e.g. `feat:`, `fix:`, `docs:`,
-  `refactor:`); commit at logical boundaries.
+  `refactor:`, `test:`); commit at logical boundaries.

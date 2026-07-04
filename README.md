@@ -30,6 +30,9 @@ one hover away.
 - `src/import/` — `parseCharacter` (D&D Beyond text parser) + `ocr` (lazy
   Tesseract.js from CDN).
 - `src/components/` — `SectionCard`, `CanvasItem`, `Tooltip`, `QuickStartModal`.
+- `src/**/*.test.ts(x)` — unit/component tests (Vitest) next to the code.
+- `e2e/` — Playwright end-to-end + visual regression tests.
+- `samples/` — reference D&D character data used as import fixtures.
 
 See [PLAN.md](PLAN.md) for the delivery plan and phase status.
 
@@ -42,6 +45,57 @@ npm run lint
 npm run build
 ```
 
+## Testing
+
+Tests use [Vitest](https://vitest.dev/) (the Vite-native test runner) with
+[React Testing Library](https://testing-library.com/docs/react-testing-library/intro/),
+which renders components into a simulated DOM and interacts with them the way a
+real user would (clicking, hovering, typing) to verify UI/UX behavior.
+
+```bash
+npm run test      # watch mode: re-runs tests as you edit files
+npm run test:run  # run once (used in CI / one-off checks)
+npm run test:ui   # open the interactive test dashboard in a browser
+npm run test:coverage  # run once and report how much code is exercised
+```
+
+Test files live next to the code they cover and end in `.test.ts`/`.test.tsx`
+(for example `src/components/Tooltip.test.tsx`). Coverage spans the pure logic
+(`model/formula.ts`, `model/compute.ts`, `model/characterSheet.ts`), the state
+layer (`state/useSheet.ts`, `state/persistence.ts`, `state/transfer.ts`), the
+D&D Beyond text importer (`import/parseCharacter.ts`), and the `Tooltip`
+component.
+
+### End-to-end (E2E) tests
+
+[Playwright](https://playwright.dev/) drives a **real Chromium browser** against
+the running app to verify full user flows — like dragging a section around the
+canvas. These specs live in `e2e/` and are separate from the Vitest tests.
+
+```bash
+npx playwright install chromium  # one-time: download the browser
+npm run test:e2e                 # run E2E tests (auto-starts the dev server)
+npm run test:e2e:ui              # run them in Playwright's interactive UI
+```
+
+### Visual regression tests
+
+Some E2E specs capture a screenshot of the app and compare it against a stored
+baseline image, so unintended visual changes fail the build. Baselines live in
+`e2e/visual.spec.ts-snapshots/` and are committed to the repo.
+
+```bash
+npm run test:e2e:update  # refresh baselines after an intentional UI change
+```
+
+## Sample data
+
+The [samples/](samples) folder holds reference D&D character data
+(`yad-armhand.md` and a standalone `yad-armhand.html` prototype). These are used
+as fixtures/examples for the D&D Beyond import feature and are not part of the
+app bundle.
+
 ## License
+
 
 MIT. See [LICENSE](LICENSE).

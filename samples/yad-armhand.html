@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Yad Armhand — Pugilist 8</title>
+<style>
+  :root {
+    --bg: #14110f;
+    --panel: #1d1916;
+    --panel-2: #251f1b;
+    --edge: #3a302a;
+    --ink: #ece3d8;
+    --muted: #a2948a;
+    --accent: #d98a3d;      /* pugilist orange */
+    --accent-2: #c2562f;    /* deep ember */
+    --good: #6fae6f;
+    --bad: #d4655a;
+    --gold: #d9b54a;
+    --shadow: 0 2px 8px rgba(0,0,0,.45);
+    --r: 8px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 15% -10%, #2a221d 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 0%, #2a1c16 0%, transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+    padding: 14px;
+  }
+  h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: .2px; }
+  a { color: var(--accent); }
+
+  /* ---------- top bar ---------- */
+  .topbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
+    padding: 12px 16px; margin-bottom: 14px;
+    background: linear-gradient(180deg, #2a211b, #1d1815);
+    border: 1px solid var(--edge); border-radius: var(--r);
+    box-shadow: var(--shadow);
+    position: sticky; top: 8px; z-index: 50;
+  }
+  .topbar .name { font-size: 22px; color: var(--accent); }
+  .topbar .sub { color: var(--muted); font-size: 12.5px; }
+  .topbar .spacer { flex: 1; }
+  .rest-btns { display: flex; gap: 8px; }
+  button.btn {
+    cursor: pointer; border: 1px solid var(--edge); background: var(--panel-2);
+    color: var(--ink); padding: 6px 12px; border-radius: 6px; font-size: 12.5px;
+    transition: .12s;
+  }
+  button.btn:hover { border-color: var(--accent); color: #fff; background: #2f2620; }
+  button.btn.warn:hover { border-color: var(--accent-2); }
+  button.btn.ghost { background: transparent; }
+
+  /* ---------- layout ---------- */
+  .grid { display: grid; grid-template-columns: 270px 1fr 320px; gap: 14px; align-items: start; }
+  @media (max-width: 1180px) { .grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 14px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--edge); border-radius: var(--r);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card > .hd {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: linear-gradient(180deg, #271f1a, #201a16);
+    border-bottom: 1px solid var(--edge); cursor: pointer; user-select: none;
+  }
+  .card > .hd h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--accent); }
+  .card > .hd .chev { color: var(--muted); transition: .15s; font-size: 12px; }
+  .card.collapsed > .bd { display: none; }
+  .card.collapsed > .hd .chev { transform: rotate(-90deg); }
+  .card > .bd { padding: 12px; }
+
+  /* ---------- stat headline ---------- */
+  .headline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .hstat {
+    text-align: center; background: var(--panel-2); border: 1px solid var(--edge);
+    border-radius: 6px; padding: 8px 4px;
+  }
+  .hstat .v { font-size: 22px; font-weight: 800; color: #fff; }
+  .hstat .l { font-size: 10.5px; text-transform: uppercase; color: var(--muted); letter-spacing: .5px; }
+  .hstat.ac { position: relative; }
+  .hstat.ac .v { color: var(--accent); }
+
+  /* ---------- HP ---------- */
+  .hp-wrap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .hp-box { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 6px; padding: 6px; text-align: center; }
+  .hp-box .l { font-size: 10px; text-transform: uppercase; color: var(--muted); }
+  .hp-box input {
+    width: 100%; background: transparent; border: none; color: #fff; text-align: center;
+    font-size: 20px; font-weight: 800; outline: none;
+  }
+  .hp-box.temp input { color: var(--gold); }
+  .hpbar { height: 8px; border-radius: 4px; background: #2a211c; overflow: hidden; border: 1px solid var(--edge); margin-bottom: 8px; }
+  .hpbar > div { height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width .2s; }
+  .hp-actions { display: flex; gap: 6px; }
+  .hp-actions input {
+    width: 60px; background: var(--panel-2); border: 1px solid var(--edge); border-radius: 6px;
+    color: var(--ink); padding: 6px; text-align: center; font-size: 14px;
+  }
+  .hp-actions button { flex: 1; }
+  .bloodied-tag {
+    display: none; margin-top: 8px; font-size: 11.5px; color: var(--bad); text-align: center;
+    border: 1px dashed var(--bad); border-radius: 6px; padding: 4px;
+  }
+  .bloodied-tag.on { display: block; }
+
+  /* ---------- abilities ---------- */
+  .abil { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .ab {
+    background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px;
+    text-align: center; padding: 8px 4px 6px; cursor: pointer; transition: .12s; position: relative;
+  }
+  .ab:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .ab .name { font-size: 10px; text-transform: uppercase; color: var(--muted); letter-spacing: .5px; }
+  .ab .mod { font-size: 22px; font-weight: 800; color: #fff; }
+  .ab .score { font-size: 11px; color: var(--muted); }
+  .ab .save { font-size: 10px; color: var(--accent); margin-top: 2px; }
+  .ab.prof::after { content: "★"; position: absolute; top: 4px; right: 6px; color: var(--gold); font-size: 10px; }
+
+  /* ---------- lists / rows ---------- */
+  .row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 4px 6px; border-radius: 5px; font-size: 13px;
+  }
+  .row:nth-child(odd) { background: rgba(255,255,255,.018); }
+  .row .lbl { display: flex; align-items: center; gap: 6px; }
+  .row .val { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--muted); flex: none; }
+  .dot.prof { background: var(--accent); border-color: var(--accent); }
+  .dot.exp { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 0 2px rgba(217,181,74,.25); }
+  .clickroll { cursor: pointer; }
+  .clickroll:hover { background: rgba(217,138,61,.12) !important; }
+
+  /* ---------- resource pips ---------- */
+  .res { margin-bottom: 10px; }
+  .res:last-child { margin-bottom: 0; }
+  .res .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .res .top .n { font-size: 12.5px; font-weight: 700; }
+  .res .top .meta { font-size: 10px; color: var(--muted); }
+  .pips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pip {
+    width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--edge);
+    background: var(--panel-2); cursor: pointer; transition: .1s;
+  }
+  .pip:hover { border-color: var(--accent); }
+  .pip.on { background: radial-gradient(circle at 35% 30%, var(--accent), var(--accent-2)); border-color: var(--accent); }
+  .pip.sq { border-radius: 5px; }
+  .toggle {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer; padding: 4px 8px;
+    border: 1px solid var(--edge); border-radius: 6px; background: var(--panel-2); font-size: 12px;
+  }
+  .toggle .sw { width: 30px; height: 16px; border-radius: 10px; background: #3a2e27; position: relative; transition: .15s; flex: none; }
+  .toggle .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--muted); transition: .15s; }
+  .toggle.on .sw { background: var(--accent-2); }
+  .toggle.on .sw::after { left: 16px; background: #fff; }
+  .toggle.on { border-color: var(--accent); color: #fff; }
+
+  /* ---------- attacks ---------- */
+  table.atk { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  table.atk th { text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase; padding: 4px 6px; border-bottom: 1px solid var(--edge); }
+  table.atk td { padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,.04); }
+  table.atk tr:hover td { background: rgba(217,138,61,.07); }
+  table.atk .hit { color: var(--accent); font-weight: 700; }
+  table.atk .dmg { font-weight: 700; color: #fff; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--edge); color: var(--muted); margin: 1px 2px 1px 0; }
+
+  /* ---------- features ---------- */
+  .feat { border: 1px solid var(--edge); border-radius: 6px; margin-bottom: 6px; overflow: hidden; background: var(--panel-2); }
+  .feat > summary {
+    cursor: pointer; padding: 7px 10px; font-size: 12.5px; font-weight: 700; list-style: none;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .feat > summary::-webkit-details-marker { display: none; }
+  .feat > summary:hover { color: #fff; background: #2c241e; }
+  .feat[open] > summary { color: var(--accent); border-bottom: 1px solid var(--edge); }
+  .feat .body { padding: 8px 10px; font-size: 12.5px; color: #ddd2c7; }
+  .feat .body b { color: #fff; }
+  .feat .pill { font-size: 9.5px; color: var(--muted); border: 1px solid var(--edge); border-radius: 8px; padding: 1px 6px; white-space: nowrap; }
+
+  .keyword {
+    border-bottom: 1px dotted var(--accent); cursor: help; position: relative;
+  }
+  /* custom tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute; left: 0; top: calc(100% + 6px); z-index: 100;
+    width: max-content; max-width: 280px;
+    background: #0d0b0a; color: var(--ink); border: 1px solid var(--accent);
+    padding: 7px 9px; border-radius: 6px; font-size: 11.5px; font-weight: 400;
+    line-height: 1.4; box-shadow: var(--shadow); white-space: normal; text-transform: none; letter-spacing: 0;
+  }
+  [data-tip]:hover::before {
+    content: ""; position: absolute; left: 12px; top: calc(100% + 1px); z-index: 101;
+    border: 5px solid transparent; border-bottom-color: var(--accent);
+  }
+  [data-tip].tip-up:hover::after { top: auto; bottom: calc(100% + 6px); }
+  [data-tip].tip-up:hover::before { top: auto; bottom: calc(100% + 1px); border-bottom-color: transparent; border-top-color: var(--accent); }
+
+  /* ---------- inventory ---------- */
+  .inv { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .inv th { text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase; padding: 3px 5px; }
+  .inv td { padding: 3px 5px; border-bottom: 1px solid rgba(255,255,255,.04); }
+  .inv tr:hover td { background: rgba(255,255,255,.03); }
+  .subhd { font-size: 11px; text-transform: uppercase; color: var(--accent); letter-spacing: .6px; margin: 10px 0 4px; }
+
+  /* ---------- dice log ---------- */
+  .dicebar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .dicebar button { padding: 5px 9px; font-size: 12px; }
+  .log { font-size: 12px; max-height: 180px; overflow-y: auto; }
+  .log .e { padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,.05); display: flex; justify-content: space-between; gap: 8px; }
+  .log .e .t { color: var(--muted); }
+  .log .e .r { font-weight: 800; color: #fff; }
+  .log .e .r.crit { color: var(--good); }
+  .log .e .r.fail { color: var(--bad); }
+
+  .mini { font-size: 11px; color: var(--muted); }
+  .kv { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12.5px; }
+  .kv .k { color: var(--muted); }
+  .hr { height: 1px; background: var(--edge); margin: 8px 0; border: 0; }
+  .footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 16px; }
+  .reset-all { color: var(--muted); cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="name">Yad Armhand</div>
+    <div class="sub">Goliath Pugilist 8 · Squared Circle · Background: Wayfarer · Campaign: Water Deep</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="rest-btns">
+    <button class="btn ghost" onclick="shortRest()" data-tip="Restores Moxie Points and all Short-Rest features (Bloodied But Unbowed, Swagger Streak).">Short Rest</button>
+    <button class="btn warn" onclick="longRest()" data-tip="Restores HP to max, clears Temp HP & Exhaustion, and refreshes every tracked resource.">Long Rest</button>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- ================= LEFT COLUMN ================= -->
+  <div class="col">
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Core</h3><span class="chev">▾</span></div>
+      <div class="bd">
+        <div class="headline" style="margin-bottom:10px">
+          <div class="hstat ac" data-tip="Iron Chin: base AC = 12 + Constitution modifier (12 + 3). Requires Light/no armor and no Shield."><div class="v">15</div><div class="l">Armor</div></div>
+          <div class="hstat" data-tip="Dexterity modifier (+1). Lucky can grant Advantage on initiative."><div class="v">+1</div><div class="l">Init</div></div>
+          <div class="hstat" data-tip="Walking speed. Climb speed 35 ft. (Athlete). Large Form raises speed to 45 ft."><div class="v">35</div><div class="l">Speed</div></div>
+          <div class="hstat" data-tip="Proficiency Bonus at level 8."><div class="v">+3</div><div class="l">Prof</div></div>
+        </div>
+        <div class="hp-wrap">
+          <div class="hp-box"><div class="l">Current</div><input id="hpCur" type="number" value="76" oninput="onHp()"></div>
+          <div class="hp-box"><div class="l">Max</div><input id="hpMax" type="number" value="76" oninput="onHp()"></div>
+          <div class="hp-box temp" data-tip="Temporary Hit Points don't stack with each other and aren't restored by healing. Brace Up grants roll+11; Bloodied But Unbowed grants 32 when bloodied."><div class="l">Temp</div><input id="hpTmp" type="number" value="0" oninput="onHp()"></div>
+        </div>
+        <div class="hpbar"><div id="hpFill"></div></div>
+        <div class="hp-actions">
+          <input id="hpDelta" type="number" placeholder="0" />
+          <button class="btn" onclick="dmg()" data-tip="Subtract from Temp HP first, then Current.">Damage</button>
+          <button class="btn" onclick="heal()">Heal</button>
+        </div>
+        <div id="bloodied" class="bloodied-tag" data-tip="Bloodied = at or below half max HP (≤ 38). Enables the bonus Temp HP from Bloodied But Unbowed and the Down But Not Out damage bonus.">⚠ BLOODIED (≤ 38 HP)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Abilities &amp; Saves</h3><span class="chev">▾</span></div>
+      <div class="bd">
+        <div class="abil" id="abilities"></div>
+        <div class="mini" style="margin-top:8px">★ = save proficiency · click a tile to roll a check (d20 + modifier)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Skills</h3><span class="chev">▾</span></div>
+      <div class="bd" id="skills"></div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Proficiencies</h3><span class="chev">▾</span></div>
+      <div class="bd">
+        <div class="kv"><span class="k">Armor</span><span>Light</span></div>
+        <div class="kv"><span class="k">Weapons</span><span>Simple &amp; improvised</span></div>
+        <div class="kv"><span class="k">Tools</span><span>Darts, Thieves' Tools</span></div>
+        <div class="kv"><span class="k">Languages</span><span>Common, Elvish, Giant</span></div>
+        <hr class="hr">
+        <div class="kv"><span class="k">Passive Perception</span><span>11</span></div>
+        <div class="kv"><span class="k">Passive Investigation</span><span>9</span></div>
+        <div class="kv"><span class="k">Passive Insight</span><span>14</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= MIDDLE COLUMN ================= -->
+  <div class="col">
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Attacks &nbsp;·&nbsp; 2 per Attack action</h3><span class="chev">▾</span></div>
+      <div class="bd">
+        <table class="atk">
+          <thead><tr><th>Attack</th><th>Range</th><th>Hit</th><th>Damage</th><th>Type / Notes</th></tr></thead>
+          <tbody>
+            <tr data-tip="Click to roll an attack. With Heavy Hitter you may also apply Grapple or Shove on a hit. Damage type can be Force (Moxie-Fueled Fists).">
+              <td><b>Unarmed Strike</b></td><td>5 ft.</td><td class="hit clickroll" onclick="rollAtk('Unarmed Strike')">+8</td><td class="dmg clickroll" onclick="rollDmg('Unarmed Strike',10,5)">1d10+5</td><td>Bludgeoning or Force</td>
+            </tr>
+            <tr data-tip="Any Simple Melee or improvised weapon. Use the Fisticuffs die (1d10) in place of its normal damage.">
+              <td><b>Pugilist Weapon</b></td><td>varies</td><td class="hit clickroll" onclick="rollAtk('Pugilist Weapon')">+8</td><td class="dmg clickroll" onclick="rollDmg('Pugilist Weapon',10,5)">1d10+5</td><td>by weapon</td>
+            </tr>
+            <tr data-tip="Javelin is a Simple Melee weapon = Pugilist weapon, so it uses the 1d10 Fisticuffs die. Silvered. Haymaker works.">
+              <td><b>Javelin</b> (melee)</td><td>5 ft.</td><td class="hit clickroll" onclick="rollAtk('Javelin (melee)')">+8</td><td class="dmg clickroll" onclick="rollDmg('Javelin melee',10,5)">1d10+5</td><td>Piercing · Silvered</td>
+            </tr>
+            <tr data-tip="Thrown attacks still count as a Pugilist weapon, so they use 1d10 — not the printed 1d6. Slow.">
+              <td><b>Javelin</b> (thrown)</td><td>30/120</td><td class="hit clickroll" onclick="rollAtk('Javelin (thrown)')">+8</td><td class="dmg clickroll" onclick="rollDmg('Javelin thrown',10,5)">1d10+5</td><td>Piercing · Silvered · Slow</td>
+            </tr>
+          </tbody>
+        </table>
+        <hr class="hr">
+        <div class="mini" style="line-height:1.6">
+          <b style="color:var(--accent)">Grapple / Shove DC 16</b> &nbsp;(8 + Prof 3 + Str 5) — target chooses STR or DEX save.<br>
+          <span class="keyword" data-tip="Spend 1 Moxie Point. On a hit, you deal maximum damage and regain the point.">Haymaker</span>,
+          <span class="keyword" data-tip="On an Unarmed Strike hit you can use Damage plus your choice of Grapple or Shove.">Heavy Hitter</span>,
+          <span class="keyword" data-tip="On a hit that gives damage, choose Force instead of the normal type (Unarmed Strikes & improvised weapons only).">Moxie-Fueled Fists</span>,
+          <span class="keyword" data-tip="Hill's Tumble: when you hit a Large or smaller creature and deal damage, you can give it the Prone condition (3/Long Rest).">Hill's Tumble</span>,
+          <span class="keyword" data-tip="Sap (improvised weapons only): hitting as part of the Attack action gives the target Disadvantage on its next attack roll.">Sap</span>
+          can all ride on your attacks.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Combat Options</h3><span class="chev">▾</span></div>
+      <div class="bd">
+        <div class="subhd">Bonus Action</div>
+        <table class="atk"><tbody>
+          <tr data-tip="Granted by Fisticuffs while unarmed/Pugilist weapons, Light or no armor, no Shield."><td><b>Unarmed Strike</b></td><td class="mini">free BA</td><td>One Unarmed Strike</td></tr>
+          <tr data-tip="Costs 1 Moxie Point."><td><b>One-Two Punch</b></td><td class="mini">1 Moxie</td><td>Two Unarmed Strikes</td></tr>
+          <tr data-tip="Costs 1 Moxie Point."><td><b>Stick and Move</b></td><td class="mini">1 Moxie</td><td>Unarmed Strike + Dash or Disengage</td></tr>
+          <tr data-tip="Roll 1d10, gain that + 11 Temp HP (lasts 10 min). Click to roll.">
+            <td><b>Brace Up</b></td><td class="mini">1 Moxie</td><td class="clickroll" onclick="braceUp()">Temp HP = 1d10 + 11 →</td></tr>
+        </tbody></table>
+        <div class="subhd">Reactions &amp; Turn Start</div>
+        <table class="atk"><tbody>
+          <tr data-tip="No action. At the start of your turn, hit each creature you're Grappling. Click to roll one instance.">
+            <td><b>Compression Lock</b></td><td class="mini">turn start</td><td class="clickroll" onclick="rollDmg('Compression Lock',10,5)">1d10+5 bludg. each grappled →</td></tr>
+          <tr data-tip="Reaction. On taking damage, regain ALL Moxie. If Bloodied, also gain 32 Temp HP. 1/Short Rest."><td><b>Bloodied But Unbowed</b></td><td class="mini">reaction</td><td>Refill Moxie (+32 tHP if bloodied)</td></tr>
+          <tr data-tip="Reaction, 1 Moxie. When a non-grappled creature misses you, redirect that attack at a creature you're Grappling."><td><b>Meat Shield</b></td><td class="mini">1 Moxie</td><td>Redirect a miss onto a grappled foe</td></tr>
+          <tr data-tip="1 Moxie. Impose Disadvantage on a creature's save/check against your Grapple or Shove DC."><td><b>Inescapable</b></td><td class="mini">1 Moxie</td><td>Disadv. on escape roll</td></tr>
+          <tr data-tip="On a failed STR/DEX/CON/CHA check, spend 1 Moxie, roll 1d10 and add. If it still fails, refund the point. 1/Short Rest. Click to roll.">
+            <td><b>Swagger Streak</b></td><td class="mini">1 Moxie</td><td class="clickroll" onclick="rollGeneric('Swagger Streak',10,0)">+1d10 to a failed check →</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Features &amp; Traits</h3><span class="chev">▾</span></div>
+      <div class="bd" id="features"></div>
+    </div>
+
+  </div>
+
+  <!-- ================= RIGHT COLUMN ================= -->
+  <div class="col">
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Resources</h3><span class="chev">▾</span></div>
+      <div class="bd" id="resources"></div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Conditions &amp; Toggles</h3><span class="chev">▾</span></div>
+      <div class="bd" id="toggles">
+        <div class="mini" style="margin-bottom:8px">Activate ongoing effects; they remind you what's running.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Dice</h3><span class="chev">▾</span></div>
+      <div class="bd">
+        <div class="dicebar">
+          <button class="btn" onclick="roll(20,'d20')">d20</button>
+          <button class="btn" onclick="rollAdv()">Adv</button>
+          <button class="btn" onclick="rollDis()">Dis</button>
+          <button class="btn" onclick="roll(10,'d10')">d10</button>
+          <button class="btn" onclick="roll(8,'d8')">d8</button>
+          <button class="btn" onclick="roll(6,'d6')">d6</button>
+          <button class="btn" onclick="roll(4,'d4')">d4</button>
+          <button class="btn ghost" onclick="clearLog()">Clear</button>
+        </div>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd" onclick="toggleCard(this)"><h3>Inventory</h3><span class="chev">▾</span></div>
+      <div class="bd" id="inventory"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">
+  Yad Armhand · all tracking saved locally in this browser · <span class="reset-all" onclick="hardReset()">reset everything</span>
+</div>
+
+<script>
+"use strict";
+
+/* ============== DATA ============== */
+const ABIL = [
+  ["Strength","STR",20,5,true,"+2 Pugilist 8 ASI · +1 Athlete · +2 Wayfarer (base 15, capped at 20)"],
+  ["Dexterity","DEX",12,1,false,"Base 12"],
+  ["Constitution","CON",16,3,true,"+1 Wayfarer (base 15)"],
+  ["Intelligence","INT",8,-1,false,"Base 8"],
+  ["Wisdom","WIS",13,1,false,"Base 13"],
+  ["Charisma","CHA",8,-1,false,"Base 8 — Wayfarer increases were moved to STR/CON"]
+];
+const SAVE = { STR:8, DEX:1, CON:6, INT:-1, WIS:1, CHA:-1 };
+
+const SKILLS = [
+  ["Acrobatics","DEX",1,0,"Powerful Build: Advantage on checks to end the Grappled condition."],
+  ["Animal Handling","WIS",1,0,""],
+  ["Arcana","INT",-1,0,""],
+  ["Athletics","STR",11,2,"Expertise (Muscle Mass). Powerful Build: Advantage on checks to end Grappled."],
+  ["Deception","CHA",-1,0,""],
+  ["History","INT",-1,0,""],
+  ["Insight","WIS",4,1,""],
+  ["Intimidation","CHA",2,1,""],
+  ["Investigation","INT",-1,0,""],
+  ["Medicine","WIS",1,0,""],
+  ["Nature","INT",-1,0,""],
+  ["Perception","WIS",1,0,""],
+  ["Performance","CHA",-1,0,""],
+  ["Persuasion","CHA",-1,0,""],
+  ["Religion","INT",-1,0,""],
+  ["Sleight of Hand","DEX",1,0,""],
+  ["Stealth","DEX",4,1,""],
+  ["Survival","WIS",1,0,""]
+];
+
+/* resources: id, name, max, reset, shape */
+const RES = [
+  ["moxie","Moxie Points",5,"Short Rest","round","Spend to fuel One-Two Punch, Stick and Move, Brace Up, Haymaker, Meat Shield, Inescapable, Swagger Streak. Regain all on a rest."],
+  ["luck","Luck Points",3,"Long Rest","round","Spend 1 for Advantage on your d20 Test, or to impose Disadvantage on an attack against you."],
+  ["hill","Hill's Tumble",3,"Long Rest","square","On a hit vs a Large or smaller creature, give it Prone. Uses = Proficiency Bonus."]
+];
+
+/* single-use toggles: id, name, reset, desc */
+const TOG = [
+  ["bbu","Bloodied But Unbowed","Short Rest","Reaction on taking damage: regain all Moxie; if Bloodied, also gain 32 Temp HP."],
+  ["swagger","Swagger Streak","Short Rest","Add 1d10 to a failed STR/DEX/CON/CHA check (refunds the Moxie if it still fails)."],
+  ["large","Large Form","Long Rest","Bonus Action: become Large for 10 min — Advantage on STR checks, +10 ft speed."],
+  ["digdeep","Dig Deep","Long Rest","Bonus Action: 10 min resistance to B/P/S damage; ignore Exhaustion < 6. Can refresh by gaining 1 Exhaustion."],
+  ["dbno","Down But Not Out","Long Rest","When you trigger Bloodied But Unbowed while Bloodied: +(3 + Exhaustion) damage to your strikes for 1 min."]
+];
+
+const FEATURES = [
+  ["Fisticuffs","Fisticuffs die 1d10","While unarmed or wielding only Pugilist weapons (Simple Melee or improvised), in Light/no armor and no Shield: <b>(1)</b> Unarmed Strike as a Bonus Action; <b>(2)</b> roll <b>1d10</b> in place of normal damage; <b>(3)</b> use mastery of improvised weapons — all count as having <b>Sap</b> (hit as part of the Attack action → target has Disadvantage on its next attack roll)."],
+  ["Iron Chin","AC 15","Base AC = 12 + Constitution modifier while in Light/no armor and no Shield."],
+  ["Moxie","5 points","Fuel for your features. Brace Up (BA, 1 pt): 1d10+11 Temp HP for 10 min. One-Two Punch (1 pt): two Unarmed Strikes as a BA. Stick and Move (BA, 1 pt): Unarmed Strike + Dash/Disengage."],
+  ["Bloodied But Unbowed","Reaction · 1/SR","On taking damage, Reaction to regain all expended Moxie. If Bloodied, also gain 32 Temp HP (gone after a Short Rest)."],
+  ["Swagger Streak","1/SR","Failed STR/DEX/CON/CHA check: spend 1 Moxie, roll 1d10 and add. If it still fails, the point is refunded."],
+  ["Heavy Hitter","passive","On an Unarmed Strike hit you can use both Damage and your choice of Grapple or Shove."],
+  ["Groundwork","subclass","<b>Compression Lock:</b> start of turn, 1d10+5 bludgeoning to each creature you Grapple (no action). <b>Inescapable:</b> 1 Moxie → Disadvantage on a roll vs your Grapple/Shove DC. <b>Stop and Drop:</b> on an Unarmed Strike hit without using a mastery property, use both Grapple and Shove."],
+  ["Muscle Mass","passive","Expertise in Athletics (+11)."],
+  ["Dig Deep","BA · 1/LR","10 min: Resistance to Bludgeoning/Piercing/Slashing and ignore Exhaustion levels below 6. Refresh by gaining 1 Exhaustion level."],
+  ["Extra Attack","passive","Attack twice when you take the Attack action."],
+  ["Haymaker","1 Moxie","Unarmed Strike or Pugilist weapon: spend 1 Moxie to deal maximum damage on a hit (and regain the point on a hit)."],
+  ["Moxie-Fueled Fists","passive","Unarmed Strikes and improvised-weapon attacks can deal Force instead of their normal type. Not an action; no Moxie."],
+  ["Meat Shield","Reaction · 1 Moxie","While Grappling, you have Half Cover from non-grappled creatures. When one misses you, redirect that attack onto a creature you're Grappling."],
+  ["Down But Not Out","1/LR","Trigger Bloodied But Unbowed while Bloodied → +(3 + Exhaustion levels) damage to your strikes for 1 minute."],
+  ["Hill's Tumble (Giant Ancestry)","3/LR · Action","Hit a Large or smaller creature and deal damage → give it Prone."],
+  ["Large Form","BA · 1/LR","Become Large for 10 min in a big enough space: Advantage on STR checks, +10 ft speed."],
+  ["Powerful Build","passive","Advantage on checks to end Grappled; count as one size larger for carrying capacity."],
+  ["Athlete (Feat)","passive","Climb Speed 35 ft. Stand from Prone with only 5 ft of movement. Running long/high jump after only 5 ft."],
+  ["Lucky (Feat)","3/LR","Luck Points: spend 1 for Advantage on your d20 Test, or impose Disadvantage on an attack roll against you."]
+];
+
+const INV = {
+  "Equipment — 54 lb":[
+    ["Potion of Healing (Superior)","3","1.5 lb","Healing, Consumable, 1 charge"],
+    ["Potion of Healing (Greater)","5","2.5 lb","Healing, Consumable, 1 charge"],
+    ["Caltrops","20","2 lb","Damage, Movement"],
+    ["Chain","2","20 lb",""],
+    ["Crowbar","1","5 lb","Utility"],
+    ["Javelin","3","6 lb","Simple, Silvered, Thrown, Slow (30/120)"],
+    ["Manacles","1","6 lb","Control"],
+    ["Pole","1","7 lb","Utility"],
+    ["Traveler's Clothes","1","4 lb","Outerwear"]
+  ],
+  "Backpack":[
+    ["Bullseye Lantern","1","2 lb","Exploration"],
+    ["Climber's Kit","1","12 lb","Movement"],
+    ["Grappling Hook","1","4 lb","Utility"],
+    ["Oil","2","2 lb","Damage, Utility"],
+    ["Rations","10","20 lb","Consumable"],
+    ["Rope","1","5 lb",""],
+    ["Thieves' Tools","1","1 lb","Utility"],
+    ["Tinderbox","1","1 lb","Utility"],
+    ["Torch","10","10 lb","Exploration"],
+    ["Waterskin","1","5 lb","Container"]
+  ]
+};
+
+/* ============== STATE ============== */
+const KEY = "yad-armhand-sheet-v1";
+let S = load();
+function load(){
+  try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)||"{}")); }
+  catch(e){ return defaults(); }
+}
+function defaults(){
+  return { hpCur:76, hpMax:76, hpTmp:0, moxie:0, luck:0, hill:0,
+           tog:{}, cards:{}, log:[] };
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(S)); }
+
+/* ============== RENDER ============== */
+function mod(n){ return (n>=0?"+":"")+n; }
+
+function renderAbilities(){
+  document.getElementById("abilities").innerHTML = ABIL.map(a=>{
+    const [name,abv,score,m,prof,tip]=a;
+    return `<div class="ab ${prof?'prof':''}" data-tip="${tip}" onclick="rollGeneric('${abv} check',20,${m})">
+      <div class="name">${abv}</div><div class="mod">${mod(m)}</div>
+      <div class="score">${score}</div>
+      <div class="save" onclick="event.stopPropagation();rollGeneric('${abv} save',20,${SAVE[abv]})" data-tip="Saving throw ${mod(SAVE[abv])}${prof?' (proficient)':''}">save ${mod(SAVE[abv])}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderSkills(){
+  document.getElementById("skills").innerHTML = SKILLS.map(s=>{
+    const [name,abv,bonus,pt,tip]=s;
+    const dot = pt===2?"exp":pt===1?"prof":"";
+    return `<div class="row clickroll" onclick="rollGeneric('${name}',20,${bonus})" ${tip?`data-tip="${tip}"`:""}>
+      <span class="lbl"><span class="dot ${dot}"></span>${name} <span class="mini">${abv}</span></span>
+      <span class="val">${mod(bonus)}</span></div>`;
+  }).join("");
+}
+
+function renderResources(){
+  document.getElementById("resources").innerHTML = RES.map(r=>{
+    const [id,name,max,reset,shape,tip]=r;
+    const used=S[id]||0;
+    let pips="";
+    for(let i=0;i<max;i++) pips+=`<div class="pip ${shape==='square'?'sq':''} ${i<used?'on':''}" onclick="setRes('${id}',${i})"></div>`;
+    return `<div class="res">
+      <div class="top"><span class="n" data-tip="${tip}">${name}</span><span class="meta">${max-used}/${max} left · ${reset}</span></div>
+      <div class="pips">${pips}</div></div>`;
+  }).join("");
+}
+
+function renderToggles(){
+  const head = `<div class="mini" style="margin-bottom:8px">Activate ongoing effects; they remind you what's running.</div>`;
+  document.getElementById("toggles").innerHTML = head + `<div style="display:flex;flex-direction:column;gap:6px">`+
+    TOG.map(t=>{
+      const [id,name,reset,desc]=t;
+      const on=S.tog[id];
+      return `<div class="toggle ${on?'on':''}" onclick="flipTog('${id}')" data-tip="${desc} (Resets: ${reset})">
+        <span class="sw"></span><span>${name}</span></div>`;
+    }).join("") + `</div>`;
+}
+
+function renderFeatures(){
+  document.getElementById("features").innerHTML = FEATURES.map(f=>{
+    return `<details class="feat"><summary>${f[0]} <span class="pill">${f[1]}</span></summary><div class="body">${f[2]}</div></details>`;
+  }).join("");
+}
+
+function renderInventory(){
+  let html = `<div class="kv"><span class="k">Carried</span><span>54 lb · Unencumbered</span></div>
+    <div class="kv"><span class="k" data-tip="Campaign currency: each whale bone mark ≈ platinum, worth 10 gp. 315 marks ≈ 3,150 gp.">Whale bone marks</span><span>315 🐋</span></div>
+    <div class="kv"><span class="k">Attunement</span><span>0 / 3</span></div>`;
+  for(const sec in INV){
+    html += `<div class="subhd">${sec}</div><table class="inv"><tbody>`;
+    html += INV[sec].map(it=>`<tr ${it[3]?`data-tip="${it[3]}"`:""}><td><b>${it[0]}</b></td><td class="mini">×${it[1]}</td><td class="mini">${it[2]}</td></tr>`).join("");
+    html += `</tbody></table>`;
+  }
+  html += `<div class="subhd">Pouches</div><div class="mini">Pouch (empty) · Pouch (empty)</div>`;
+  document.getElementById("inventory").innerHTML = html;
+}
+
+/* ============== HP ============== */
+function onHp(){
+  S.hpCur=+document.getElementById("hpCur").value||0;
+  S.hpMax=+document.getElementById("hpMax").value||0;
+  S.hpTmp=+document.getElementById("hpTmp").value||0;
+  refreshHp(); save();
+}
+function refreshHp(){
+  const pct=Math.max(0,Math.min(100, S.hpMax? (S.hpCur/S.hpMax*100):0));
+  document.getElementById("hpFill").style.width=pct+"%";
+  document.getElementById("bloodied").classList.toggle("on", S.hpCur>0 && S.hpCur <= S.hpMax/2);
+}
+function setHpInputs(){
+  document.getElementById("hpCur").value=S.hpCur;
+  document.getElementById("hpMax").value=S.hpMax;
+  document.getElementById("hpTmp").value=S.hpTmp;
+}
+function dmg(){
+  let d=+document.getElementById("hpDelta").value||0; if(!d) return;
+  if(S.hpTmp>0){ const t=Math.min(S.hpTmp,d); S.hpTmp-=t; d-=t; }
+  S.hpCur=Math.max(0,S.hpCur-d);
+  document.getElementById("hpDelta").value=""; setHpInputs(); refreshHp(); save();
+}
+function heal(){
+  let d=+document.getElementById("hpDelta").value||0; if(!d) return;
+  S.hpCur=Math.min(S.hpMax,S.hpCur+d);
+  document.getElementById("hpDelta").value=""; setHpInputs(); refreshHp(); save();
+}
+
+/* ============== RESOURCES ============== */
+function setRes(id,i){
+  // clicking pip i: if it's the highest lit, turn it off; else fill up to i+1
+  S[id] = (S[id]===i+1) ? i : i+1;
+  renderResources(); save();
+}
+function flipTog(id){ S.tog[id]=!S.tog[id]; renderToggles(); save(); }
+
+/* ============== RESTS ============== */
+function shortRest(){
+  S.moxie=0;                 // regain all moxie
+  S.tog.bbu=false; S.tog.swagger=false;
+  logLine("— Short Rest —","");
+  renderAll(); save();
+}
+function longRest(){
+  S.hpCur=S.hpMax; S.hpTmp=0;
+  S.moxie=0; S.luck=0; S.hill=0;
+  S.tog={};
+  setHpInputs(); refreshHp(); renderAll();
+  logLine("— Long Rest —",""); save();
+}
+
+/* ============== DICE ============== */
+function d(n){ return Math.floor(Math.random()*n)+1; }
+function logLine(t,r,cls=""){
+  S.log.unshift({t,r,cls}); S.log=S.log.slice(0,40);
+  document.getElementById("log").innerHTML = S.log.map(e=>
+    `<div class="e"><span class="t">${e.t}</span><span class="r ${e.cls}">${e.r}</span></div>`).join("");
+  save();
+}
+function clearLog(){ S.log=[]; document.getElementById("log").innerHTML=""; save(); }
+function roll(sides,label){ const v=d(sides); logLine(label, v, sides===20?(v===20?'crit':v===1?'fail':''):''); return v; }
+function rollAdv(){ const a=d(20),b=d(20),v=Math.max(a,b); logLine(`d20 adv (${a},${b})`, v, v===20?'crit':''); }
+function rollDis(){ const a=d(20),b=d(20),v=Math.min(a,b); logLine(`d20 dis (${a},${b})`, v, v===1?'fail':''); }
+function rollGeneric(name,sides,bonus){
+  const r=d(sides), tot=r+bonus;
+  const cls = sides===20 ? (r===20?'crit':r===1?'fail':'') : '';
+  logLine(`${name} (${r}${bonus>=0?'+':''}${bonus})`, tot, cls);
+}
+function rollAtk(name){
+  const r=d(20), tot=r+8;
+  logLine(`${name} to hit (${r}+8)`, tot, r===20?'crit':r===1?'fail':'');
+}
+function rollDmg(name,die,bonus){
+  const r=d(die), tot=r+bonus;
+  logLine(`${name} dmg (${r}+${bonus})`, tot);
+}
+function braceUp(){
+  const r=d(10), tot=r+11;
+  S.hpTmp=Math.max(S.hpTmp,tot);       // temp HP doesn't stack
+  setHpInputs(); refreshHp();
+  logLine(`Brace Up Temp HP (${r}+11)`, tot); save();
+}
+
+/* ============== CARDS ============== */
+function toggleCard(hd){
+  const c=hd.parentElement; c.classList.toggle("collapsed");
+  const idx=[...document.querySelectorAll(".card")].indexOf(c);
+  S.cards[idx]=c.classList.contains("collapsed"); save();
+}
+function restoreCards(){
+  const cards=document.querySelectorAll(".card");
+  for(const k in S.cards){ if(S.cards[k]&&cards[k]) cards[k].classList.add("collapsed"); }
+}
+
+/* ============== INIT ============== */
+function renderAll(){ renderAbilities(); renderSkills(); renderResources(); renderToggles(); }
+function hardReset(){ if(confirm("Reset all HP, resources, toggles and log to starting values?")){ localStorage.removeItem(KEY); location.reload(); } }
+
+renderAbilities(); renderSkills(); renderResources(); renderToggles();
+renderFeatures(); renderInventory();
+setHpInputs(); refreshHp(); restoreCards();
+document.getElementById("log").innerHTML = (S.log||[]).map(e=>
+  `<div class="e"><span class="t">${e.t}</span><span class="r ${e.cls}">${e.r}</span></div>`).join("");
+</script>
+</body>
+</html>

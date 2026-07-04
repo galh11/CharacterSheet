@@ -61,6 +61,35 @@ Beyond screenshot or text dump.
 - [x] JSON export / import.
 - [x] Visual polish + responsive behavior.
 
+### Phase H — Testing & QA  [x]
+- [x] Unit/component tests (Vitest + React Testing Library) for the model,
+      state, importer, and components.
+- [x] End-to-end tests (Playwright) for load, edit, drag, and persistence flows.
+- [x] Visual regression snapshots for view and edit modes.
+- [x] Coverage reporting (`npm run test:coverage`).
+
+### Phase I — Continuous integration  [~]
+- [~] GitHub Actions: run lint, build, unit tests, and e2e on push / PR.
+- [ ] Upload the Playwright HTML report as a build artifact.
+- [ ] Note: visual snapshots are Windows baselines, so CI runs functional e2e
+      only until Linux baselines are generated.
+
+### Phase J — Deployment  [ ]
+- [ ] Publish the static build (GitHub Pages / Vercel / Netlify).
+- [ ] Configure the Vite `base` path if using project-scoped GitHub Pages.
+
+### Phase K — Installable / offline (PWA)  [ ]
+- [ ] Web manifest + service worker for offline use and home-screen install
+      (handy as an at-the-table play aid on a phone/tablet).
+
+### Phase L — Data durability  [ ]
+- [ ] Versioned `localStorage` schema + migration path for `character-sheet:vN`.
+- [ ] Pre-commit hooks (husky + lint-staged) to run lint/tests before commits.
+
+### Phase M — Importer depth  [ ]
+- [ ] Parse attacks, inventory, and saves & skills tables from D&D Beyond.
+- [ ] Add tests for the OCR path (`import/ocr.ts`).
+
 ## Notes
 
 - Keep changes scoped per phase; commit at each phase boundary.

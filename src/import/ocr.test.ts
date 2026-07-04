@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import { meanLuminance, preprocessForOcr } from './ocr'
 
 // Each test imports a fresh copy of the module so its internal loaderPromise
 // cache doesn't leak between cases.
@@ -66,5 +67,43 @@ describe('recognizeImage', () => {
 
         const { recognizeImage } = await import('./ocr')
         await expect(recognizeImage(new Blob(['x']))).rejects.toThrow('Could not load the OCR library')
+    })
+})
+
+describe('meanLuminance', () => {
+    it('computes luminance for white and black pixels', () => {
+        expect(meanLuminance(new Uint8ClampedArray([255, 255, 255, 255]))).toBeCloseTo(255)
+        expect(meanLuminance(new Uint8ClampedArray([0, 0, 0, 255]))).toBe(0)
+    })
+
+    it('returns 0 for empty data', () => {
+        expect(meanLuminance(new Uint8ClampedArray([]))).toBe(0)
+    })
+})
+
+describe('preprocessForOcr', () => {
+    it('inverts a dark-background image so text becomes dark on light', () => {
+        // three dark background pixels + one light "text" pixel → mean < 110
+        const data = new Uint8ClampedArray([
+            10, 10, 10, 255, 10, 10, 10, 255, 10, 10, 10, 255, 240, 240, 240, 255,
+        ])
+        expect(preprocessForOcr(data)).toBe(true)
+        expect(data[0]).toBe(255) // dark background → white
+        expect(data[12]).toBe(0) // light text → black
+    })
+
+    it('does not invert an already light image', () => {
+        const data = new Uint8ClampedArray([
+            240, 240, 240, 255, 240, 240, 240, 255, 240, 240, 240, 255, 10, 10, 10, 255,
+        ])
+        expect(preprocessForOcr(data)).toBe(false)
+        expect(data[0]).toBe(255) // light background stays white
+        expect(data[12]).toBe(0) // dark text stays black
+    })
+
+    it('preserves the alpha channel', () => {
+        const data = new Uint8ClampedArray([10, 10, 10, 123])
+        preprocessForOcr(data)
+        expect(data[3]).toBe(123)
     })
 })

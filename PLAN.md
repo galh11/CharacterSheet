@@ -69,10 +69,11 @@ Beyond screenshot or text dump.
 - [x] Coverage reporting (`npm run test:coverage`).
 
 ### Phase I — Continuous integration  [~]
-- [~] GitHub Actions: run lint, build, unit tests, and e2e on push / PR.
-- [ ] Upload the Playwright HTML report as a build artifact.
-- [ ] Note: visual snapshots are Windows baselines, so CI runs functional e2e
+- [x] GitHub Actions: run lint, build, unit tests, and e2e on push / PR.
+- [x] Upload the Playwright HTML report as a build artifact.
+- [x] Note: visual snapshots are Windows baselines, so CI runs functional e2e
       only until Linux baselines are generated.
+- [ ] Verify the workflow goes green on the first push.
 
 ### Phase J — Deployment  [ ]
 - [ ] Publish the static build (GitHub Pages / Vercel / Netlify).

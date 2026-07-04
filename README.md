@@ -95,6 +95,16 @@ The [samples/](samples) folder holds reference D&D character data
 as fixtures/examples for the D&D Beyond import feature and are not part of the
 app bundle.
 
+## Deployment
+
+The app deploys to **GitHub Pages** at
+<https://galh11.github.io/CharacterSheet/>. The `deploy.yml` workflow builds and
+publishes `dist/` after CI passes on `main`. The Vite `base` is set to
+`/CharacterSheet/` for production builds (dev stays at `/`).
+
+First-time setup (one-time, in the repo): **Settings → Pages → Build and
+deployment → Source: GitHub Actions**.
+
 ## License
 
 

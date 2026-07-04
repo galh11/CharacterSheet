@@ -75,9 +75,11 @@ Beyond screenshot or text dump.
       only until Linux baselines are generated.
 - [ ] Verify the workflow goes green on the first push.
 
-### Phase J — Deployment  [ ]
-- [ ] Publish the static build (GitHub Pages / Vercel / Netlify).
-- [ ] Configure the Vite `base` path if using project-scoped GitHub Pages.
+### Phase J — Deployment  [~]
+- [x] Publish the static build to GitHub Pages via Actions (`deploy.yml`).
+- [x] Configure the Vite `base` path for project-scoped GitHub Pages.
+- [ ] Enable Pages (source: "GitHub Actions") in repo settings (one-time, manual).
+- [ ] Verify the live site loads at https://galh11.github.io/CharacterSheet/.
 
 ### Phase K — Installable / offline (PWA)  [ ]
 - [ ] Web manifest + service worker for offline use and home-screen install

@@ -214,7 +214,7 @@ export const parseCharacterText = (text: string): ParseResult => {
     const curHp = findNumber(text, [/CURRENT[^0-9]{0,6}(\d{1,3})/i, /(\d{1,3})\s*\/\s*\d{1,3}/])
     const speed = findNumber(text, [/Speed[^0-9]{0,8}(\d{1,3})/i, /(\d{1,3})\s*ft/i])
     const prof = findNumber(text, [/Proficiency\s*Bonus[^0-9+]{0,6}\+?(\d{1,2})/i, /\+(\d)\s*\n?\s*BONUS/i])
-    const initiative = findNumber(text, [/Initiative[^0-9+\-]{0,6}([+-]?\d{1,2})/i])
+    const initiative = findNumber(text, [/Initiative[^0-9+-]{0,6}([+-]?\d{1,2})/i])
 
     const combatFields: CharacterField[] = []
     if (ac !== null) combatFields.push(createField({ label: 'AC', type: 'number', value: String(ac) }))

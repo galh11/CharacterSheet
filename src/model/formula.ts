@@ -76,10 +76,13 @@ const tokenize = (input: string): Token[] => {
 /** Recursive-descent parser/evaluator over the token stream. */
 class Parser {
     private pos = 0
-    constructor(
-        private readonly tokens: Token[],
-        private readonly scope: Record<string, number>,
-    ) {}
+    private readonly tokens: Token[]
+    private readonly scope: Record<string, number>
+
+    constructor(tokens: Token[], scope: Record<string, number>) {
+        this.tokens = tokens
+        this.scope = scope
+    }
 
     evaluate(): number {
         const value = this.parseExpression()

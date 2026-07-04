@@ -53,3 +53,49 @@ describe('parseCharacterText', () => {
         expect(() => parseCharacterText('!@#$ random gibberish 12345')).not.toThrow()
     })
 })
+
+const RICH = `Aragorn
+Strength 16
+Dexterity 14
+Saving Throws
+Strength +8
+Constitution +6
+Actions
+Brass Knuckles, 5ft, +8, 1d4+5, Simple Light Push
+Dagger, 20/60, +8, 1d4+5, Finesse Light Thrown
+Inventory
+Backpack x1
+Rope 50 ft x1
+Torch x5`
+
+describe('parseCharacterText — attacks, inventory, saves', () => {
+    it('parses saving throws into a Saving Throws section', () => {
+        const { sheet } = parseCharacterText(RICH)
+        const saves = sheet.sections.find((s) => s.title === 'Saving Throws')
+        expect(saves).toBeDefined()
+        expect(saves?.fields.find((f) => f.label === 'STR Save')?.value).toBe('+8')
+        expect(saves?.fields.find((f) => f.label === 'CON Save')?.value).toBe('+6')
+    })
+
+    it('parses attack rows into an Actions section with to-hit and damage', () => {
+        const { sheet } = parseCharacterText(RICH)
+        const actions = sheet.sections.find((s) => s.title === 'Actions')
+        expect(actions).toBeDefined()
+        const knuckles = actions?.fields.find((f) => f.label === 'Brass Knuckles')
+        expect(knuckles?.value).toBe('+8 · 1d4+5')
+        expect(actions?.fields.map((f) => f.label)).toContain('Dagger')
+    })
+
+    it('does not treat hit-dice lines as attacks', () => {
+        const { sheet } = parseCharacterText('Hit Dice 8d10\nLevel 8')
+        expect(sheet.sections.find((s) => s.title === 'Actions')).toBeUndefined()
+    })
+
+    it('parses an Inventory block into item fields', () => {
+        const { sheet } = parseCharacterText(RICH)
+        const inventory = sheet.sections.find((s) => s.title === 'Inventory')
+        expect(inventory).toBeDefined()
+        expect(inventory?.fields.map((f) => f.label)).toContain('Backpack')
+        expect(inventory?.fields.find((f) => f.label === 'Torch')?.value).toBe('x5')
+    })
+})

@@ -163,6 +163,118 @@ const parseProficiencies = (text: string): CharacterField[] => {
     return fields
 }
 
+/** Parse saving throws, e.g. "STR Save +8" or a "Saving Throws" block. */
+const parseSaves = (text: string): CharacterField[] => {
+    const fields: CharacterField[] = []
+    const seen = new Set<string>()
+    const add = (label: string, value: string) => {
+        if (seen.has(label)) return
+        seen.add(label)
+        fields.push(createField({ label, type: 'text', value }))
+    }
+
+    // Inline form: "Strength Save +8" / "STR Saving Throw +8".
+    for (const ability of ABILITIES) {
+        for (const name of ability.names) {
+            const re = new RegExp(
+                `${name}\\b[^\\n]{0,20}?(?:save|saving throw)[^0-9+\\-]{0,6}([+-]\\d+)`,
+                'i',
+            )
+            const match = re.exec(text)
+            if (match) {
+                add(`${ability.label} Save`, match[1])
+                break
+            }
+        }
+    }
+
+    // Labeled block: "Saving Throws" heading followed by "<Ability> +N" lines.
+    const block = /saving throws?\s*[:\n]([\s\S]{0,400})/i.exec(text)?.[1]
+    if (block) {
+        for (const ability of ABILITIES) {
+            if (seen.has(`${ability.label} Save`)) continue
+            for (const name of ability.names) {
+                const match = new RegExp(`${name}\\b[^0-9+\\-]{0,8}([+-]\\d+)`, 'i').exec(block)
+                if (match) {
+                    add(`${ability.label} Save`, match[1])
+                    break
+                }
+            }
+        }
+    }
+
+    return fields
+}
+
+/** Parse attack rows: any line carrying both a to-hit (+N) and damage dice. */
+const parseAttacks = (text: string): CharacterField[] => {
+    const fields: CharacterField[] = []
+    const seen = new Set<string>()
+    const damageRe = /\b(\d+d\d+(?:\s*[+-]\s*\d+)?)\b/i
+    for (const raw of text.split(/\r?\n/)) {
+        const line = raw.trim()
+        const damage = damageRe.exec(line)
+        if (!damage) continue
+        const beforeDamage = line.slice(0, damage.index)
+        const hit = /([+-]\d+)/.exec(beforeDamage)
+        if (!hit) continue // require a to-hit so hit-dice lines don't match
+
+        // Name: text before the first comma, or before the first stat token.
+        let name = line.split(/[,\t·|]/)[0].trim()
+        if (name === line) {
+            const cut = line.search(/\s(?:[+-]\d|\d+\s*ft|\d+d\d)/i)
+            if (cut > 0) name = line.slice(0, cut).trim()
+        }
+        name = name.replace(/[,;:]$/, '').trim()
+        if (!name || !/[a-z]/i.test(name) || seen.has(name.toLowerCase())) continue
+        seen.add(name.toLowerCase())
+
+        const range = /(\d+\s*(?:ft|feet)|\d+\s*\/\s*\d+)/i.exec(line)?.[1]
+        fields.push(
+            createField({
+                label: name.slice(0, 40),
+                type: 'text',
+                value: `${hit[1]} · ${damage[1].replace(/\s+/g, '')}`,
+                description: (range ? `Range ${range}. ` : '') + line.slice(0, 180),
+            }),
+        )
+    }
+    return fields
+}
+
+/** Parse an "Inventory"/"Equipment" block into item fields (name + quantity). */
+const parseInventory = (text: string): CharacterField[] => {
+    const fields: CharacterField[] = []
+    const seen = new Set<string>()
+    const startRe = /^(?:inventory|equipment)\b/i
+    const stopRe = /^(?:actions?|attacks?|features?|traits?|spells?|proficiencies|saving throws?|skills|abilities)\b/i
+    let inBlock = false
+    for (const raw of text.split(/\r?\n/)) {
+        const line = raw.trim()
+        if (!line) continue
+        if (startRe.test(line)) {
+            inBlock = true
+            continue
+        }
+        if (!inBlock) continue
+        if (stopRe.test(line)) break
+
+        const match = /^(.+?)(?:\s+x?(\d+))?$/i.exec(line)
+        if (!match) continue
+        const name = match[1].replace(/[|,]/g, ' ').replace(/\s+/g, ' ').trim()
+        if (!name || !/[a-z]/i.test(name) || seen.has(name.toLowerCase())) continue
+        seen.add(name.toLowerCase())
+        fields.push(
+            createField({
+                label: name.slice(0, 40),
+                type: 'text',
+                value: match[2] ? `x${match[2]}` : '',
+            }),
+        )
+    }
+    return fields
+}
+
 export const parseCharacterText = (text: string): ParseResult => {
     const detected: string[] = []
     const sections: CharacterSection[] = []
@@ -244,6 +356,45 @@ export const parseCharacterText = (text: string): ParseResult => {
             description: 'Imported skill modifiers.',
             accent: '#10b981',
             fields: skillFields,
+        })
+    }
+
+    // Saving throws
+    const saveFields = parseSaves(text)
+    if (saveFields.length > 0) {
+        detected.push(`${saveFields.length} saving throws`)
+        place({
+            id: crypto.randomUUID(),
+            title: 'Saving Throws',
+            description: 'Imported saving throw modifiers.',
+            accent: '#0ea5e9',
+            fields: saveFields,
+        })
+    }
+
+    // Actions / attacks
+    const attackFields = parseAttacks(text)
+    if (attackFields.length > 0) {
+        detected.push(`${attackFields.length} attacks`)
+        place({
+            id: crypto.randomUUID(),
+            title: 'Actions',
+            description: 'To-hit · damage. Hover for range and notes.',
+            accent: '#f97316',
+            fields: attackFields,
+        })
+    }
+
+    // Inventory / equipment
+    const inventoryFields = parseInventory(text)
+    if (inventoryFields.length > 0) {
+        detected.push(`${inventoryFields.length} inventory items`)
+        place({
+            id: crypto.randomUUID(),
+            title: 'Inventory',
+            description: 'Imported equipment.',
+            accent: '#a3a3a3',
+            fields: inventoryFields,
         })
     }
 

@@ -90,9 +90,9 @@ Beyond screenshot or text dump.
 - [~] Pre-commit hooks: skipped — husky invokes `bash`, which resolves to the WSL
       launcher on this machine (admin prompt). CI enforces lint/build/tests instead.
 
-### Phase M — Importer depth  [ ]
-- [ ] Parse attacks, inventory, and saves & skills tables from D&D Beyond.
-- [ ] Add tests for the OCR path (`import/ocr.ts`).
+### Phase M — Importer depth  [x]
+- [x] Parse attacks, inventory, and saves & skills tables from D&D Beyond.
+- [x] Add tests for the OCR path (`import/ocr.ts`).
 
 ## Notes
 

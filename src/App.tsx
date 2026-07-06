@@ -1,17 +1,59 @@
 import { clsx } from 'clsx'
 import { useMemo, useRef, useState } from 'react'
-import { characterSheetSchema, createStarterSheet } from './model/characterSheet'
+import {
+    characterSheetSchema,
+    createStarterSheet,
+    type SectionLayout,
+} from './model/characterSheet'
 import { computeSheet, listReferences } from './model/compute'
-import { CanvasItem } from './components/CanvasItem'
+import { CanvasItem, type SnapGuide } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { QuickStartModal } from './components/QuickStartModal'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { useSheet } from './state/useSheet'
 
+const GAP = 16
+
+const overlaps = (a: SectionLayout, b: SectionLayout): boolean =>
+    a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+
+/** Push a rect straight down until it no longer overlaps any sibling. */
+const resolveOverlap = (rect: SectionLayout, others: SectionLayout[]): SectionLayout => {
+    let r = rect
+    for (let i = 0; i < 40; i++) {
+        const hit = others.find((o) => overlaps(r, o))
+        if (!hit) break
+        r = { ...r, y: hit.y + hit.h + GAP }
+    }
+    return r
+}
+
+/** Shelf-pack sections into rows that fit within maxWidth. */
+const tidyLayouts = (
+    items: { id: string; layout: SectionLayout }[],
+    maxWidth: number,
+): { id: string; layout: SectionLayout }[] => {
+    let x = GAP
+    let y = GAP
+    let rowH = 0
+    return items.map(({ id, layout }) => {
+        if (x > GAP && x + layout.w + GAP > maxWidth) {
+            x = GAP
+            y += rowH + GAP
+            rowH = 0
+        }
+        const next = { id, layout: { ...layout, x, y } }
+        x += layout.w + GAP
+        rowH = Math.max(rowH, layout.h)
+        return next
+    })
+}
+
 function App() {
     const [isEditMode, setIsEditMode] = useState(false)
     const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
+    const [guides, setGuides] = useState<SnapGuide[]>([])
     const importRef = useRef<HTMLInputElement>(null)
     const {
         sheet,
@@ -60,6 +102,19 @@ function App() {
         )
         return { width, height }
     }, [sheet.sections])
+
+    const commitLayout = (id: string, layout: SectionLayout) => {
+        const others = sheet.sections.filter((s) => s.id !== id).map((s) => s.layout)
+        setSectionLayout(id, resolveOverlap(layout, others))
+    }
+
+    const handleTidy = () => {
+        const maxWidth = Math.max(1200, ...sheet.sections.map((s) => s.layout.w + GAP * 2))
+        const items = sheet.sections.map((s) => ({ id: s.id, layout: s.layout }))
+        for (const { id, layout } of tidyLayouts(items, maxWidth)) {
+            setSectionLayout(id, layout)
+        }
+    }
 
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 p-6 md:p-10">
@@ -147,15 +202,25 @@ function App() {
             <section className="rounded-xl border border-slate-700 bg-slate-900/50 p-4 md:p-6">
                 <div className="mb-4 flex items-center justify-between gap-4">
                     <h2 className="m-0 text-lg font-semibold text-slate-100">Canvas</h2>
-                    {isEditMode && (
+                    <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            onClick={addSection}
-                            className="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
+                            onClick={handleTidy}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Auto-arrange sections into tidy rows"
                         >
-                            Add section
+                            Tidy
                         </button>
-                    )}
+                        {isEditMode && (
+                            <button
+                                type="button"
+                                onClick={addSection}
+                                className="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
+                            >
+                                Add section
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="overflow-auto">
@@ -170,8 +235,11 @@ function App() {
                             <CanvasItem
                                 key={section.id}
                                 layout={section.layout}
-                                isEditMode={isEditMode}
-                                onLayoutCommit={(layout) => setSectionLayout(section.id, layout)}
+                                siblings={sheet.sections
+                                    .filter((s) => s.id !== section.id)
+                                    .map((s) => s.layout)}
+                                onLayoutCommit={(layout) => commitLayout(section.id, layout)}
+                                onGuidesChange={setGuides}
                             >
                                 <SectionCard
                                     section={section}
@@ -186,6 +254,17 @@ function App() {
                                     onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
                                 />
                             </CanvasItem>
+                        ))}
+                        {guides.map((g, i) => (
+                            <div
+                                key={i}
+                                className="pointer-events-none absolute z-30 bg-cyan-400/70"
+                                style={
+                                    g.axis === 'x'
+                                        ? { left: g.pos, top: 0, width: 1, height: canvasSize.height }
+                                        : { top: g.pos, left: 0, height: 1, width: canvasSize.width }
+                                }
+                            />
                         ))}
                     </div>
                 </div>

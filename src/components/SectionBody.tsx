@@ -58,9 +58,15 @@ function Counter({ field, onUpdateField }: { field: CharacterField; onUpdateFiel
             <FieldLabel field={field} />
             <div className="flex items-center gap-1">
                 <button type="button" onClick={() => set(n - 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Decrease ${field.label}`}>−</button>
-                <span className="min-w-[3ch] text-center font-mono text-sm text-slate-100">
-                    {n}{field.max != null && <span className="text-slate-500">/{field.max}</span>}
-                </span>
+                <input
+                    value={field.value}
+                    onChange={(e) => onUpdateField(field.id, { value: e.target.value.replace(/[^0-9-]/g, '') })}
+                    onBlur={() => set(n)}
+                    inputMode="numeric"
+                    aria-label={field.label}
+                    className="w-9 rounded bg-slate-900/50 text-center font-mono text-sm text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                />
+                {field.max != null && <span className="font-mono text-sm text-slate-500">/{field.max}</span>}
                 <button type="button" onClick={() => set(n + 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
             </div>
         </div>

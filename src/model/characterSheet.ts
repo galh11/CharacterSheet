@@ -11,17 +11,28 @@ export const slugify = (value: string): string =>
         .replace(/[^a-z0-9]+/g, '_')
         .replace(/^_+|_+$/g, '')
 
-export const fieldTypeSchema = z.enum(['text', 'number', 'boolean', 'computed'])
+export const fieldTypeSchema = z.enum([
+    'text',
+    'number',
+    'boolean',
+    'computed',
+    'counter',
+    'resource',
+])
 export type FieldType = z.infer<typeof fieldTypeSchema>
 
 export const fieldSchema = z.object({
     id: z.string().min(1),
     label: z.string(),
     type: fieldTypeSchema,
-    /** Raw value for text/number/boolean; formula expression for computed. */
+    /** Raw value for text/number/boolean; formula for computed; count for counter/resource. */
     value: z.string(),
     /** Optional on-hover description / rules reminder. */
     description: z.string().default(''),
+    /** Upper bound for `resource` pips and `counter` clamping. */
+    max: z.number().optional(),
+    /** Free-form structured extras used by specialized section renderers. */
+    meta: z.record(z.string(), z.string()).optional(),
 })
 
 export const layoutSchema = z.object({
@@ -31,11 +42,16 @@ export const layoutSchema = z.object({
     h: z.number(),
 })
 
+/** How a section renders its fields. `default` is the classic label/value list. */
+export const sectionKindSchema = z.enum(['default', 'abilities', 'hp', 'skills', 'actions'])
+export type SectionKind = z.infer<typeof sectionKindSchema>
+
 export const sectionSchema = z.object({
     id: z.string().min(1),
     title: z.string(),
     description: z.string().default(''),
     accent: z.string().default('#8b5cf6'),
+    kind: sectionKindSchema.default('default'),
     fields: z.array(fieldSchema).default([]),
     layout: layoutSchema,
 })
@@ -82,6 +98,7 @@ export const createSection = (
     title: `Section ${index + 1}`,
     description: '',
     accent: accentForIndex(index),
+    kind: 'default',
     fields: [],
     layout: defaultLayout(index),
     ...overrides,

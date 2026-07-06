@@ -2,10 +2,12 @@ import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
 import type { FieldReference } from '../model/compute'
 import { Tooltip } from './Tooltip'
+import { SectionBody } from './SectionBody'
 import {
     type CharacterField,
     type CharacterSection,
     type FieldType,
+    type SectionKind,
 } from '../model/characterSheet'
 
 interface SectionCardProps {
@@ -14,7 +16,7 @@ interface SectionCardProps {
     results: Map<string, FormulaResult>
     references: FieldReference[]
     onUpdateSection: (
-        patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent'>>,
+        patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind'>>,
     ) => void
     onDeleteSection: () => void
     onAddField: () => void
@@ -23,7 +25,15 @@ interface SectionCardProps {
     onMoveField: (fieldId: string, direction: -1 | 1) => void
 }
 
-const FIELD_TYPES: FieldType[] = ['text', 'number', 'boolean', 'computed']
+const FIELD_TYPES: FieldType[] = ['text', 'number', 'boolean', 'computed', 'counter', 'resource']
+
+const SECTION_KINDS: { value: SectionKind; label: string }[] = [
+    { value: 'default', label: 'List' },
+    { value: 'abilities', label: 'Ability scores' },
+    { value: 'hp', label: 'HP tracker' },
+    { value: 'skills', label: 'Skills' },
+    { value: 'actions', label: 'Actions' },
+]
 
 const displayValue = (
     field: CharacterField,
@@ -79,20 +89,41 @@ export function SectionCard({
             </header>
 
             {isEditMode ? (
-                <input
-                    value={section.description}
-                    onChange={(event) => onUpdateSection({ description: event.target.value })}
-                    placeholder="Section description (optional)"
-                    className="mb-3 w-full rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300"
-                    aria-label="Section description"
-                />
+                <div className="mb-3 flex flex-col gap-2">
+                    <input
+                        value={section.description}
+                        onChange={(event) => onUpdateSection({ description: event.target.value })}
+                        placeholder="Section description (optional)"
+                        className="w-full rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300"
+                        aria-label="Section description"
+                    />
+                    <label className="flex items-center gap-2 text-xs text-slate-400">
+                        Layout
+                        <select
+                            value={section.kind}
+                            onChange={(event) => onUpdateSection({ kind: event.target.value as SectionKind })}
+                            className="rounded border border-slate-600 bg-slate-900 px-1 py-1 text-xs text-slate-200"
+                            aria-label="Section layout"
+                        >
+                            {SECTION_KINDS.map((k) => (
+                                <option key={k.value} value={k.value}>
+                                    {k.label}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
             ) : (
                 section.description && (
                     <p className="mt-0 mb-3 text-xs text-slate-400">{section.description}</p>
                 )
             )}
 
-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {!isEditMode && (
+                <SectionBody section={section} results={results} onUpdateField={onUpdateField} />
+            )}
+            {isEditMode && (
+                <ul className="m-0 flex list-none flex-col gap-2 p-0">
                 {section.fields.map((field) => {
                     const result = results.get(field.id)
                     const computedError = field.type === 'computed' && result && !result.ok
@@ -191,6 +222,21 @@ export function SectionCard({
                                         </button>
                                     </div>
 
+                                    {(field.type === 'counter' || field.type === 'resource') && (
+                                        <input
+                                            type="number"
+                                            value={field.max ?? ''}
+                                            onChange={(event) =>
+                                                onUpdateField(field.id, {
+                                                    max: event.target.value === '' ? undefined : Number(event.target.value),
+                                                })
+                                            }
+                                            placeholder="max (optional)"
+                                            className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-400"
+                                            aria-label="Max value"
+                                        />
+                                    )}
+
                                     <input
                                         value={field.description}
                                         onChange={(event) =>
@@ -268,7 +314,8 @@ export function SectionCard({
                 {section.fields.length === 0 && !isEditMode && (
                     <li className="text-xs italic text-slate-500">No fields yet.</li>
                 )}
-            </ul>
+                </ul>
+            )}
 
             {isEditMode && (
                 <button

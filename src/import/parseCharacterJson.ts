@@ -104,7 +104,7 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
     const detected: string[] = []
     const sections: CharacterSection[] = []
     let layoutIndex = 0
-    const place = (section: Omit<CharacterSection, 'layout'>) => {
+    const place = (section: Omit<CharacterSection, 'layout' | 'kind'> & { kind?: CharacterSection['kind'] }) => {
         const base = createSection(layoutIndex)
         sections.push({ ...base, ...section, layout: base.layout })
         layoutIndex++

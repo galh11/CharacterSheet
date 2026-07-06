@@ -1,0 +1,312 @@
+import { useState } from 'react'
+import { clsx } from 'clsx'
+import type { FormulaResult } from '../model/formula'
+import type { CharacterField, CharacterSection } from '../model/characterSheet'
+import { Tooltip } from './Tooltip'
+
+interface SectionBodyProps {
+    section: CharacterSection
+    results: Map<string, FormulaResult>
+    onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
+}
+
+const toNum = (v: string): number => {
+    const n = Number(v)
+    return Number.isFinite(n) ? n : 0
+}
+const signed = (n: number): string => (n >= 0 ? `+${n}` : String(n))
+const abilityMod = (score: number): number => Math.floor((score - 10) / 2)
+
+const displayValue = (field: CharacterField, results: Map<string, FormulaResult>): string => {
+    if (field.type === 'computed') {
+        const r = results.get(field.id)
+        return r?.ok && r.value !== null ? String(r.value) : '—'
+    }
+    if (field.type === 'boolean') return field.value === 'true' ? 'Yes' : 'No'
+    return field.value || '—'
+}
+
+/** Colour accents for damage-type pills. */
+const DAMAGE_COLORS: Record<string, string> = {
+    fire: 'bg-orange-500/20 text-orange-300 ring-orange-500/40',
+    cold: 'bg-cyan-500/20 text-cyan-300 ring-cyan-500/40',
+    force: 'bg-violet-500/20 text-violet-300 ring-violet-500/40',
+    radiant: 'bg-amber-400/20 text-amber-200 ring-amber-400/40',
+    necrotic: 'bg-emerald-800/30 text-emerald-300 ring-emerald-700/40',
+    lightning: 'bg-sky-500/20 text-sky-300 ring-sky-500/40',
+    thunder: 'bg-indigo-500/20 text-indigo-300 ring-indigo-500/40',
+    acid: 'bg-lime-500/20 text-lime-300 ring-lime-500/40',
+    poison: 'bg-green-600/20 text-green-300 ring-green-600/40',
+    psychic: 'bg-fuchsia-500/20 text-fuchsia-300 ring-fuchsia-500/40',
+    slashing: 'bg-rose-500/20 text-rose-300 ring-rose-500/40',
+    piercing: 'bg-amber-500/20 text-amber-300 ring-amber-500/40',
+    bludgeoning: 'bg-slate-400/20 text-slate-200 ring-slate-400/40',
+}
+const damageColor = (type?: string): string =>
+    (type && DAMAGE_COLORS[type.toLowerCase()]) || 'bg-slate-600/30 text-slate-200 ring-slate-500/40'
+
+/* ── Interactive field widgets ─────────────────────────────────────────── */
+
+function Counter({ field, onUpdateField }: { field: CharacterField; onUpdateField: SectionBodyProps['onUpdateField'] }) {
+    const n = toNum(field.value)
+    const set = (next: number) => {
+        const clamped = Math.max(0, field.max != null ? Math.min(field.max, next) : next)
+        onUpdateField(field.id, { value: String(clamped) })
+    }
+    return (
+        <div className="flex items-center justify-between gap-2">
+            <FieldLabel field={field} />
+            <div className="flex items-center gap-1">
+                <button type="button" onClick={() => set(n - 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Decrease ${field.label}`}>−</button>
+                <span className="min-w-[3ch] text-center font-mono text-sm text-slate-100">
+                    {n}{field.max != null && <span className="text-slate-500">/{field.max}</span>}
+                </span>
+                <button type="button" onClick={() => set(n + 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
+            </div>
+        </div>
+    )
+}
+
+function ResourcePips({ field, onUpdateField }: { field: CharacterField; onUpdateField: SectionBodyProps['onUpdateField'] }) {
+    const max = field.max ?? 0
+    const val = Math.max(0, Math.min(max, toNum(field.value)))
+    const set = (i: number) => onUpdateField(field.id, { value: String(val === i ? i - 1 : i) })
+    return (
+        <div className="flex items-center justify-between gap-2">
+            <FieldLabel field={field} />
+            <div className="flex flex-wrap items-center gap-1">
+                {Array.from({ length: max }, (_, idx) => idx + 1).map((i) => (
+                    <button
+                        key={i}
+                        type="button"
+                        onClick={() => set(i)}
+                        aria-label={`${field.label} ${i} of ${max}`}
+                        className={clsx(
+                            'h-3.5 w-3.5 rounded-full ring-1 transition-colors',
+                            i <= val ? 'bg-emerald-400 ring-emerald-300' : 'bg-transparent ring-slate-600 hover:ring-slate-400',
+                        )}
+                    />
+                ))}
+                {max === 0 && <span className="font-mono text-sm text-slate-100">{field.value || '—'}</span>}
+            </div>
+        </div>
+    )
+}
+
+function BoolToggle({ field, onUpdateField }: { field: CharacterField; onUpdateField: SectionBodyProps['onUpdateField'] }) {
+    const on = field.value === 'true'
+    return (
+        <div className="flex items-center justify-between gap-2">
+            <FieldLabel field={field} />
+            <button
+                type="button"
+                onClick={() => onUpdateField(field.id, { value: on ? 'false' : 'true' })}
+                role="switch"
+                aria-checked={on}
+                aria-label={field.label}
+                className={clsx('flex h-5 w-9 items-center rounded-full px-0.5 transition-colors', on ? 'bg-emerald-500' : 'bg-slate-700')}
+            >
+                <span className={clsx('h-4 w-4 rounded-full bg-white transition-transform', on && 'translate-x-4')} />
+            </button>
+        </div>
+    )
+}
+
+function FieldLabel({ field }: { field: CharacterField }) {
+    if (field.description) {
+        return (
+            <Tooltip content={field.description}>
+                <span className="cursor-help text-sm text-slate-300 underline decoration-dotted decoration-slate-600 underline-offset-4">
+                    {field.label}
+                </span>
+            </Tooltip>
+        )
+    }
+    return <span className="text-sm text-slate-400">{field.label}</span>
+}
+
+/* ── Section kinds ─────────────────────────────────────────────────────── */
+
+function DefaultList({ section, results, onUpdateField }: SectionBodyProps) {
+    if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No fields yet.</p>
+    return (
+        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {section.fields.map((field) => (
+                <li key={field.id}>
+                    {field.type === 'counter' ? (
+                        <Counter field={field} onUpdateField={onUpdateField} />
+                    ) : field.type === 'resource' ? (
+                        <ResourcePips field={field} onUpdateField={onUpdateField} />
+                    ) : field.type === 'boolean' ? (
+                        <BoolToggle field={field} onUpdateField={onUpdateField} />
+                    ) : (
+                        <div className="flex items-center justify-between gap-3 text-sm">
+                            <FieldLabel field={field} />
+                            <span className={clsx('font-mono', field.type === 'computed' ? (results.get(field.id)?.ok ? 'text-emerald-300' : 'text-rose-300') : 'text-slate-100')}>
+                                {displayValue(field, results)}
+                            </span>
+                        </div>
+                    )}
+                </li>
+            ))}
+        </ul>
+    )
+}
+
+function StatBlock({ section }: SectionBodyProps) {
+    return (
+        <div className="grid grid-cols-3 gap-2">
+            {section.fields.map((field) => {
+                const score = toNum(field.value)
+                const mod = abilityMod(score)
+                return (
+                    <div key={field.id} className="flex flex-col items-center rounded-lg border border-slate-700 bg-slate-900/70 py-2">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{field.label}</span>
+                        <span className="font-mono text-2xl font-bold leading-tight text-slate-100">{signed(mod)}</span>
+                        <span className="mt-0.5 rounded-full bg-slate-800 px-2 text-[11px] font-mono text-slate-300">{score}</span>
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
+function HpWidget({ section, onUpdateField }: SectionBodyProps) {
+    const [amount, setAmount] = useState('')
+    const byLabel = (l: string) => section.fields.find((f) => f.label.toLowerCase() === l)
+    const cur = byLabel('current hp')
+    const max = byLabel('max hp')
+    const temp = byLabel('temp hp')
+    const curN = cur ? toNum(cur.value) : 0
+    const maxN = max ? toNum(max.value) : 0
+    const tempN = temp ? toNum(temp.value) : 0
+    const pct = maxN > 0 ? Math.max(0, Math.min(100, (curN / maxN) * 100)) : 0
+
+    const apply = (sign: 1 | -1) => {
+        const amt = Math.abs(toNum(amount))
+        if (!amt || !cur) return
+        if (sign === -1) {
+            let dmg = amt
+            if (temp && tempN > 0) {
+                const absorbed = Math.min(tempN, dmg)
+                onUpdateField(temp.id, { value: String(tempN - absorbed) })
+                dmg -= absorbed
+            }
+            if (dmg > 0) onUpdateField(cur.id, { value: String(Math.max(0, curN - dmg)) })
+        } else {
+            onUpdateField(cur.id, { value: String(maxN > 0 ? Math.min(maxN, curN + amt) : curN + amt) })
+        }
+        setAmount('')
+    }
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex items-end justify-between">
+                <div>
+                    <span className="font-mono text-3xl font-bold text-slate-100">{curN}</span>
+                    <span className="font-mono text-lg text-slate-500"> / {maxN}</span>
+                </div>
+                {temp && (
+                    <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-medium text-cyan-300 ring-1 ring-cyan-500/40">
+                        +{tempN} temp
+                    </span>
+                )}
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+                <div className={clsx('h-full rounded-full transition-all', pct > 50 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-rose-500')} style={{ width: `${pct}%` }} />
+            </div>
+            <div className="flex items-center gap-1">
+                <input
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    inputMode="numeric"
+                    placeholder="amount"
+                    aria-label="HP amount"
+                    className="w-20 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
+                />
+                <button type="button" onClick={() => apply(-1)} className="rounded bg-rose-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-rose-500">Damage</button>
+                <button type="button" onClick={() => apply(1)} className="rounded bg-emerald-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-500">Heal</button>
+                {temp && (
+                    <input
+                        value={temp.value}
+                        onChange={(e) => onUpdateField(temp.id, { value: e.target.value.replace(/[^0-9]/g, '') })}
+                        inputMode="numeric"
+                        aria-label="Temp HP"
+                        title="Temp HP"
+                        className="ml-auto w-14 rounded border border-cyan-700/50 bg-slate-900 px-2 py-1 text-center text-sm text-cyan-200"
+                    />
+                )}
+            </div>
+        </div>
+    )
+}
+
+const profDot = (state?: string): { cls: string; title: string } => {
+    if (state === 'expertise') return { cls: 'bg-amber-400 ring-2 ring-amber-300/50', title: 'Expertise' }
+    if (state === 'proficient') return { cls: 'bg-emerald-400', title: 'Proficient' }
+    return { cls: 'bg-transparent ring-1 ring-slate-600', title: 'Not proficient' }
+}
+
+function SkillRows({ section }: SectionBodyProps) {
+    return (
+        <ul className="m-0 flex list-none flex-col p-0">
+            {section.fields.map((field) => {
+                const ability = field.meta?.ability
+                const dot = profDot(field.meta?.prof)
+                const adv = field.meta?.adv
+                return (
+                    <li key={field.id} className="flex items-center gap-2 border-b border-slate-800/70 py-1 last:border-0 text-sm">
+                        <span className={clsx('h-2.5 w-2.5 shrink-0 rounded-full', dot.cls)} title={dot.title} />
+                        <span className="text-slate-200">{field.label}</span>
+                        {ability && <span className="text-[10px] font-semibold uppercase text-slate-500">{ability}</span>}
+                        {adv && (
+                            <Tooltip content={adv}>
+                                <span className="grid h-4 w-4 cursor-help place-items-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-500/40">A</span>
+                            </Tooltip>
+                        )}
+                        <span className="ml-auto font-mono text-slate-100">{field.value}</span>
+                    </li>
+                )
+            })}
+        </ul>
+    )
+}
+
+function ActionCards({ section }: SectionBodyProps) {
+    return (
+        <div className="flex flex-col gap-2">
+            {section.fields.map((field) => {
+                const m = field.meta ?? {}
+                const hasMeta = m.hit || m.damage || m.type || m.extra || m.range
+                return (
+                    <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-medium text-slate-100">{field.label}</span>
+                            {m.hit && <span className="rounded-md bg-slate-700/70 px-1.5 py-0.5 font-mono text-xs text-slate-100 ring-1 ring-slate-600">{m.hit}</span>}
+                            {m.damage && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.type))}>{m.damage}{m.type ? ` ${m.type}` : ''}</span>}
+                            {m.extra && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.extraType))}>{m.extra}</span>}
+                            {m.range && <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">{m.range}</span>}
+                            {!hasMeta && field.value && <span className="font-mono text-xs text-slate-300">{field.value}</span>}
+                        </div>
+                        {field.description && <p className="m-0 mt-1 text-xs leading-snug text-slate-400">{field.description}</p>}
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
+export function SectionBody(props: SectionBodyProps) {
+    switch (props.section.kind) {
+        case 'abilities':
+            return <StatBlock {...props} />
+        case 'hp':
+            return <HpWidget {...props} />
+        case 'skills':
+            return <SkillRows {...props} />
+        case 'actions':
+            return <ActionCards {...props} />
+        default:
+            return <DefaultList {...props} />
+    }
+}

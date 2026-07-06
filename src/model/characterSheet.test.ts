@@ -53,4 +53,34 @@ describe('characterSheetSchema', () => {
         const parsed = characterSheetSchema.safeParse({ name: 'No id or sections' })
         expect(parsed.success).toBe(false)
     })
+
+    it('defaults section kind and accepts counter/resource fields with max and meta', () => {
+        const parsed = characterSheetSchema.safeParse({
+            id: 'sheet-1',
+            name: 'Rich',
+            sections: [
+                {
+                    id: 'section-1',
+                    title: 'Resources',
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [
+                        { id: 'f1', label: 'Moxie', type: 'resource', value: '2', max: 5 },
+                        {
+                            id: 'f2',
+                            label: 'Athletics',
+                            type: 'text',
+                            value: '+11',
+                            meta: { ability: 'STR', prof: 'expertise' },
+                        },
+                    ],
+                },
+            ],
+        })
+        expect(parsed.success).toBe(true)
+        if (parsed.success) {
+            expect(parsed.data.sections[0].kind).toBe('default')
+            expect(parsed.data.sections[0].fields[0].max).toBe(5)
+            expect(parsed.data.sections[0].fields[1].meta?.ability).toBe('STR')
+        }
+    })
 })

@@ -22,8 +22,14 @@ interface SectionBodyProps {
     /** slug -> numeric value, for proficiency-aware skills and CON-based healing. */
     scope?: Record<string, number>
     rollMode?: D20Mode
+    /** Situational bonus added to every d20 roll (attack/skill/save/initiative). */
+    bonus?: number
     onRoll?: (entry: Omit<RollLogEntry, 'id'>) => void
     onHeal?: (amount: number) => void
+    /** Spend `amount` from the resource field with the given slug. */
+    onSpend?: (slug: string, amount: number) => void
+    /** Apply temporary HP (kept if higher). */
+    onTempHp?: (amount: number) => void
 }
 
 const toNum = (v: string): number => {
@@ -317,7 +323,7 @@ const profDot = (state?: string): { cls: string; title: string } => {
     return { cls: 'bg-transparent ring-1 ring-slate-600', title: 'Not proficient' }
 }
 
-function SkillRows({ section, scope, rollMode, onRoll }: SectionBodyProps) {
+function SkillRows({ section, scope, rollMode, bonus, onRoll }: SectionBodyProps) {
     /** Resolve a skill's modifier: auto from ability + proficiency, or manual value. */
     const skillMod = (field: CharacterField): number => {
         const m = field.meta ?? {}
@@ -333,11 +339,12 @@ function SkillRows({ section, scope, rollMode, onRoll }: SectionBodyProps) {
     }
     const roll = (field: CharacterField) => {
         const mod = skillMod(field)
+        const sit = bonus ?? 0
         const isSave = section.title.toLowerCase().includes('sav')
-        const r = rollD20(mod, rollMode ?? 'normal')
+        const r = rollD20(mod + sit, rollMode ?? 'normal')
         onRoll?.({
             title: `${field.label} ${isSave ? 'save' : 'check'}`,
-            detail: `d20${r.mode !== 'normal' ? ` (${r.rolls.join('/')})` : ''} → ${r.natural} ${signed(mod)} = ${r.total}`,
+            detail: `d20${r.mode !== 'normal' ? ` (${r.rolls.join('/')})` : ''} → ${r.natural} ${signed(mod)}${sit ? ` ${signed(sit)} sit` : ''} = ${r.total}`,
             total: r.total,
             kind: isSave ? 'save' : 'check',
             crit: r.crit,
@@ -372,17 +379,18 @@ function SkillRows({ section, scope, rollMode, onRoll }: SectionBodyProps) {
     )
 }
 
-function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, onRoll, onSpend, onTempHp }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     /** Extra damage is active unless it is gated on a toggle (meta.extraWhen) that is off. */
     const extraActive = (m: Record<string, string>) => !m.extraWhen || (scope?.[m.extraWhen] ?? 0) > 0
+    const sit = bonus ?? 0
     const rollAttack = (field: CharacterField) => {
         const mod = parseModifier(val(field.meta?.hit))
-        const r = rollD20(mod, rollMode ?? 'normal')
+        const r = rollD20(mod + sit, rollMode ?? 'normal')
         onRoll?.({
             title: `${field.label} — attack`,
-            detail: `d20${r.mode !== 'normal' ? ` (${r.rolls.join('/')})` : ''} → ${r.natural} ${signed(mod)} = ${r.total}`,
+            detail: `d20${r.mode !== 'normal' ? ` (${r.rolls.join('/')})` : ''} → ${r.natural} ${signed(mod)}${sit ? ` ${signed(sit)} sit` : ''} = ${r.total}`,
             total: r.total,
             kind: 'attack',
             crit: r.crit,
@@ -403,6 +411,18 @@ function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
             kind: 'damage',
         })
     }
+    const spend = (field: CharacterField) => {
+        const m = field.meta ?? {}
+        const amount = Number(m.cost) || 1
+        onSpend?.(m.costField!, amount)
+        onRoll?.({ title: field.label, detail: `Spent ${amount} ${m.costLabel || m.costField}`, total: amount, kind: 'raw' })
+    }
+    const rollTemp = (field: CharacterField) => {
+        const m = field.meta ?? {}
+        const r = rollExpr(val(m.temp))
+        onTempHp?.(r.total)
+        onRoll?.({ title: `${field.label} — temp HP`, detail: `${formatRoll(r)} (kept if higher)`, total: r.total, kind: 'heal' })
+    }
     return (
         <div className="flex flex-col gap-2">
             {section.fields.map((field) => {
@@ -414,6 +434,9 @@ function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
                 const hasMeta = hit || damage || m.type || extra || m.range
                 const canAttack = Boolean(m.hit)
                 const canDamage = Boolean(m.damage || m.extra)
+                const canSpend = Boolean(m.costField)
+                const canTemp = Boolean(m.temp)
+                const showRow = canAttack || canDamage || canSpend || canTemp
                 return (
                     <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -429,11 +452,28 @@ function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
                             {m.range && <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">{m.range}</span>}
                             {!hasMeta && field.value && <span className="font-mono text-xs text-slate-300">{field.value}</span>}
                         </div>
-                        {(canAttack || canDamage) && onRoll && (
+                        {showRow && onRoll && (
                             <div className="mt-1.5 flex flex-wrap gap-1 print:hidden">
                                 {canAttack && <button type="button" onClick={() => rollAttack(field)} className="rounded bg-cyan-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-cyan-500">🎲 Attack</button>}
                                 {canDamage && <button type="button" onClick={() => rollFieldDamage(field, false)} className="rounded bg-rose-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-rose-500">🎲 Damage</button>}
                                 {canDamage && <button type="button" onClick={() => rollFieldDamage(field, true)} className="rounded border border-amber-500/50 px-2 py-0.5 text-[11px] font-medium text-amber-300 hover:bg-amber-900/30" title="Roll damage with doubled dice (critical hit)">Crit</button>}
+                                {canTemp && <button type="button" onClick={() => rollTemp(field)} className="rounded bg-cyan-700/70 px-2 py-0.5 text-[11px] font-medium text-cyan-100 hover:bg-cyan-600">🎲 Temp HP</button>}
+                                {canSpend && (
+                                    <button
+                                        type="button"
+                                        onClick={() => spend(field)}
+                                        disabled={(scope?.[m.costField!] ?? 0) < (Number(m.cost) || 1)}
+                                        className={clsx(
+                                            'rounded px-2 py-0.5 text-[11px] font-medium',
+                                            (scope?.[m.costField!] ?? 0) >= (Number(m.cost) || 1)
+                                                ? 'bg-fuchsia-600/80 text-white hover:bg-fuchsia-500'
+                                                : 'cursor-not-allowed bg-slate-800 text-slate-600',
+                                        )}
+                                        title={`Spend ${Number(m.cost) || 1} ${m.costLabel || m.costField}`}
+                                    >
+                                        −{Number(m.cost) || 1} {m.costLabel || 'spend'}
+                                    </button>
+                                )}
                             </div>
                         )}
                         {field.description && <p className="m-0 mt-1 text-xs leading-snug text-slate-400">{field.description}</p>}
@@ -612,7 +652,7 @@ function SpellSlots({ section, onUpdateField }: SectionBodyProps) {
     )
 }
 
-function Initiative({ section, onUpdateField, onUpdateSection, rollMode, onRoll }: SectionBodyProps) {
+function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, onRoll }: SectionBodyProps) {
     const turn = section.meta?.turn
     const sorted = [...section.fields].sort((a, b) => toNum(b.value) - toNum(a.value))
     const setTurn = (id: string | undefined) => onUpdateSection?.({ meta: { ...section.meta, turn: id ?? '' } })
@@ -624,9 +664,10 @@ function Initiative({ section, onUpdateField, onUpdateSection, rollMode, onRoll 
     }
     const rollInit = (field: CharacterField) => {
         const mod = parseModifier(field.meta?.mod)
-        const r = rollD20(mod, rollMode ?? 'normal')
+        const sit = bonus ?? 0
+        const r = rollD20(mod + sit, rollMode ?? 'normal')
         onUpdateField(field.id, { value: String(r.total) })
-        onRoll?.({ title: `${field.label} — initiative`, detail: `d20 → ${r.natural} ${signed(mod)} = ${r.total}`, total: r.total, kind: 'check' })
+        onRoll?.({ title: `${field.label} — initiative`, detail: `d20 → ${r.natural} ${signed(mod)}${sit ? ` ${signed(sit)} sit` : ''} = ${r.total}`, total: r.total, kind: 'check' })
     }
     if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No combatants yet.</p>
     return (

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
     createField,
     createSection,
+    slugify,
     type CharacterField,
     type CharacterSection,
     type CharacterSheet,
@@ -185,6 +186,67 @@ export const useSheet = () => {
         [commit],
     )
 
+    /** Spend `amount` from the first resource/counter field whose slug matches. */
+    const spendResource = useCallback(
+        (slug: string, amount = 1) => {
+            commit((c) => {
+                let done = false
+                return {
+                    ...c,
+                    sections: c.sections.map((section) => ({
+                        ...section,
+                        fields: section.fields.map((field) => {
+                            if (done || slugify(field.label) !== slug) return field
+                            if (field.type !== 'resource' && field.type !== 'counter') return field
+                            done = true
+                            return { ...field, value: String(Math.max(0, (Number(field.value) || 0) - amount)) }
+                        }),
+                    })),
+                }
+            })
+        },
+        [commit],
+    )
+
+    /** Apply temporary HP. Temp HP does not stack, so keep whichever is larger. */
+    const applyTempHp = useCallback(
+        (amount: number) => {
+            if (amount <= 0) return
+            commit((c) => ({
+                ...c,
+                sections: c.sections.map((section) => {
+                    const temp = section.fields.find((f) => f.label.toLowerCase() === 'temp hp')
+                    if (!temp) return section
+                    const next = Math.max(Number(temp.value) || 0, amount)
+                    return {
+                        ...section,
+                        fields: section.fields.map((f) => (f.id === temp.id ? { ...f, value: String(next) } : f)),
+                    }
+                }),
+            }))
+        },
+        [commit],
+    )
+
+    /** Update a field by id WITHOUT recording undo history (for derived/auto values). */
+    const setFieldValueSilent = useCallback((fieldId: string, value: string) => {
+        setHist((h) => {
+            let changed = false
+            const sections = h.sheet.sections.map((s) => ({
+                ...s,
+                fields: s.fields.map((f) => {
+                    if (f.id === fieldId && f.value !== value) {
+                        changed = true
+                        return { ...f, value }
+                    }
+                    return f
+                }),
+            }))
+            if (!changed) return h
+            return { ...h, sheet: { ...h.sheet, sections } }
+        })
+    }, [])
+
     const addField = useCallback(
         (sectionId: string, overrides: Partial<CharacterField> = {}) => {
             mapSections((section) =>
@@ -253,6 +315,9 @@ export const useSheet = () => {
         duplicateSection,
         rest,
         healHp,
+        spendResource,
+        applyTempHp,
+        setFieldValueSilent,
         addField,
         updateField,
         deleteField,

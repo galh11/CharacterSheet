@@ -235,4 +235,32 @@ describe('useSheet', () => {
         expect(findVal(result.current, 'd12')).toBe('1')
         expect(findVal(result.current, 'l1')).toBe('0')
     })
+
+    it('spendResource decrements the matching resource, clamped at zero', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet()))
+        act(() => result.current.spendResource('moxie', 1))
+        expect(fieldVal(result.current, 'mox')).toBe('0')
+        act(() => result.current.spendResource('luck', 1)) // luck is already 0
+        expect(fieldVal(result.current, 'luck')).toBe('0')
+    })
+
+    it('applyTempHp keeps the larger value (temp HP does not stack)', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet())) // temp starts at 5
+        act(() => result.current.applyTempHp(3))
+        expect(fieldVal(result.current, 'tmp')).toBe('5')
+        act(() => result.current.applyTempHp(10))
+        expect(fieldVal(result.current, 'tmp')).toBe('10')
+    })
+
+    it('setFieldValueSilent updates without adding undo history', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet())) // 1 undo step
+        act(() => result.current.setFieldValueSilent('tmp', '7'))
+        expect(fieldVal(result.current, 'tmp')).toBe('7')
+        // A single undo reverts the replaceSheet — the silent edit added no step.
+        act(() => result.current.undo())
+        expect(result.current.canUndo).toBe(false)
+    })
 })

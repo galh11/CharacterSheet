@@ -6,6 +6,10 @@ interface RollLogProps {
     entries: RollLogEntry[]
     rollMode: D20Mode
     onRollModeChange: (mode: D20Mode) => void
+    bonus: number
+    onBonusChange: (bonus: number) => void
+    luck?: number
+    onSpendLuck: () => void
     onClear: () => void
 }
 
@@ -25,7 +29,7 @@ const kindColor: Record<RollLogEntry['kind'], string> = {
 }
 
 /** Floating panel showing recent dice rolls plus the advantage/disadvantage toggle. */
-export function RollLog({ entries, rollMode, onRollModeChange, onClear }: RollLogProps) {
+export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusChange, luck, onSpendLuck, onClear }: RollLogProps) {
     const [open, setOpen] = useState(true)
     return (
         <div className="fixed bottom-4 right-4 z-40 w-72 rounded-xl border border-slate-700 bg-slate-950/95 shadow-xl backdrop-blur print:hidden">
@@ -63,7 +67,40 @@ export function RollLog({ entries, rollMode, onRollModeChange, onClear }: RollLo
                 </button>
             </div>
             {open && (
-                <div className="max-h-64 overflow-auto px-3 py-2">
+                <>
+                    <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-1.5 text-xs">
+                        <label className="flex items-center gap-1 text-slate-400">
+                            Situational
+                            <input
+                                type="number"
+                                value={bonus === 0 ? '' : bonus}
+                                onChange={(e) => onBonusChange(Number(e.target.value) || 0)}
+                                placeholder="+0"
+                                aria-label="Situational modifier"
+                                className="w-12 rounded border border-slate-700 bg-slate-900 px-1 py-0.5 text-center font-mono text-slate-100"
+                            />
+                        </label>
+                        {bonus !== 0 && (
+                            <button type="button" onClick={() => onBonusChange(0)} className="rounded border border-slate-700 px-1 text-slate-400 hover:bg-slate-800">
+                                clear
+                            </button>
+                        )}
+                        {luck != null && (
+                            <button
+                                type="button"
+                                onClick={onSpendLuck}
+                                disabled={luck <= 0}
+                                className={clsx(
+                                    'ml-auto rounded px-2 py-0.5 text-[11px] font-medium',
+                                    luck > 0 ? 'bg-amber-500/80 text-slate-950 hover:bg-amber-400' : 'cursor-not-allowed bg-slate-800 text-slate-600',
+                                )}
+                                title="Spend a Luck Point (Advantage / reroll)"
+                            >
+                                🍀 Luck ({luck})
+                            </button>
+                        )}
+                    </div>
+                    <div className="max-h-64 overflow-auto px-3 py-2">
                     {entries.length === 0 ? (
                         <p className="m-0 text-xs italic text-slate-500">Click an attack, skill, save or hit die to roll.</p>
                     ) : (
@@ -94,7 +131,8 @@ export function RollLog({ entries, rollMode, onRollModeChange, onClear }: RollLo
                             Clear
                         </button>
                     )}
-                </div>
+                    </div>
+                </>
             )}
         </div>
     )

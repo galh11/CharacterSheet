@@ -184,18 +184,42 @@ S('Bonus Actions', 'actions', [
         description: 'You can make an Unarmed Strike as a Bonus Action.',
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
     }),
-    F('Haymaker (1 Moxie)', 'text', '', { description: 'On a hit, deal maximum damage and regain the Moxie Point.' }),
-    F('One-Two Punch (1 Moxie)', 'text', '', { description: 'Make two Unarmed Strikes as a Bonus Action.' }),
-    F('Stick and Move (1 Moxie)', 'text', '', { description: 'Make an Unarmed Strike and Dash or Disengage.' }),
-    F('Brace Up (1 Moxie)', 'text', '', { description: 'Temp HP = 1d10 + level(8) + CON mod = 1d10 + {8 + con_mod}.' }),
-    F('Large Form (1/Long)', 'text', '', { description: 'Become Large 10 min: advantage on STR checks, +10 ft Speed.' }),
-    F('Dig Deep (1/Long)', 'text', '', { description: '10 min: resistance to Bludgeoning/Piercing/Slashing; ignore exhaustion < 6. Restore by gaining 1 exhaustion.' }),
+    F('Haymaker', 'text', '', {
+        description: 'On a hit, deal maximum damage and regain the Moxie Point.',
+        meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie' },
+    }),
+    F('One-Two Punch', 'text', '', {
+        description: 'Make two Unarmed Strikes as a Bonus Action.',
+        meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie' },
+    }),
+    F('Stick and Move', 'text', '', {
+        description: 'Make an Unarmed Strike and Dash or Disengage.',
+        meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie' },
+    }),
+    F('Brace Up', 'text', '', {
+        description: 'Temp HP = fisticuffs die + level(8) + CON mod. Costs 1 Moxie.',
+        meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie', temp: '1d10 + {8 + con_mod}' },
+    }),
+    F('Large Form', 'text', '', {
+        description: 'Become Large 10 min: advantage on STR checks, +10 ft Speed.',
+        meta: { cost: '1', costField: 'large_form', costLabel: 'use' },
+    }),
+    F('Dig Deep', 'text', '', {
+        description: '10 min: resistance to Bludgeoning/Piercing/Slashing; ignore exhaustion < 6. Restore by gaining 1 exhaustion.',
+        meta: { cost: '1', costField: 'dig_deep', costLabel: 'use' },
+    }),
 ], '#06b6d4')
 
 // 11. Reactions.
 S('Reactions', 'actions', [
-    F('Bloodied But Unbowed (1/Short)', 'text', '', { description: 'When you take damage: regain all Moxie. If Bloodied, gain Temp HP = 4 × level = {4 * 8}.' }),
-    F('Meat Shield (1 Moxie)', 'text', '', { description: 'When a creature misses you, force it to reroll against a creature you are Grappling.' }),
+    F('Bloodied But Unbowed', 'text', '', {
+        description: 'When you take damage: regain all Moxie. If Bloodied, gain Temp HP = 4 × level. Once per Short/Long Rest.',
+        meta: { cost: '1', costField: 'bloodied_but_unbowed', costLabel: 'use', temp: '{4 * 8}' },
+    }),
+    F('Meat Shield', 'text', '', {
+        description: 'When a creature misses you, force it to reroll against a creature you are Grappling. Costs 1 Moxie.',
+        meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie' },
+    }),
 ])
 
 // 12. Features & traits (level 8: core Pugilist + Squared Circle + race + feats).

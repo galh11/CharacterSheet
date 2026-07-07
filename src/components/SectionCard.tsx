@@ -18,8 +18,11 @@ interface SectionCardProps {
     references: FieldReference[]
     scope?: Record<string, number>
     rollMode?: D20Mode
+    bonus?: number
     onRoll?: (entry: Omit<RollLogEntry, 'id'>) => void
     onHeal?: (amount: number) => void
+    onSpend?: (slug: string, amount: number) => void
+    onTempHp?: (amount: number) => void
     onUpdateSection: (
         patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'meta'>>,
     ) => void
@@ -65,8 +68,11 @@ export function SectionCard({
     references,
     scope,
     rollMode,
+    bonus,
     onRoll,
     onHeal,
+    onSpend,
+    onTempHp,
     onUpdateSection,
     onDeleteSection,
     onDuplicateSection,
@@ -169,8 +175,11 @@ export function SectionCard({
                     onUpdateSection={onUpdateSection}
                     scope={scope}
                     rollMode={rollMode}
+                    bonus={bonus}
                     onRoll={onRoll}
                     onHeal={onHeal}
+                    onSpend={onSpend}
+                    onTempHp={onTempHp}
                 />
             )}
             {isEditMode && (
@@ -360,7 +369,7 @@ export function SectionCard({
 
                                         {section.kind === 'actions' && (
                                             <div className="mt-2 grid grid-cols-3 gap-1">
-                                                {(['hit', 'damage', 'type', 'extra', 'extraType', 'range', 'extraWhen'] as const).map((k) => (
+                                                {(['hit', 'damage', 'type', 'extra', 'extraType', 'range', 'extraWhen', 'temp', 'cost', 'costField', 'costLabel'] as const).map((k) => (
                                                     <input
                                                         key={k}
                                                         value={field.meta?.[k] ?? ''}

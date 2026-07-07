@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
     characterSheetSchema,
     createStarterSheet,
+    slugify,
     type SectionLayout,
 } from './model/characterSheet'
 import { computeSheet, listReferences } from './model/compute'
@@ -34,7 +35,15 @@ function App() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [presets, setPresets] = useState<Presets>(() => loadPresets())
     const [rollMode, setRollMode] = useState<D20Mode>('normal')
-    const [rollLog, setRollLog] = useState<RollLogEntry[]>([])
+    const [situational, setSituational] = useState(0)
+    const [rollLog, setRollLog] = useState<RollLogEntry[]>(() => {
+        try {
+            const raw = localStorage.getItem('character-sheet:rolllog:v1')
+            return raw ? (JSON.parse(raw) as RollLogEntry[]) : []
+        } catch {
+            return []
+        }
+    })
     const importRef = useRef<HTMLInputElement>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
@@ -52,6 +61,9 @@ function App() {
         duplicateSection,
         rest,
         healHp,
+        spendResource,
+        applyTempHp,
+        setFieldValueSilent,
         addField,
         updateField,
         deleteField,
@@ -61,13 +73,62 @@ function App() {
     const validation = useMemo(() => characterSheetSchema.safeParse(sheet), [sheet])
     const computed = useMemo(() => computeSheet(sheet), [sheet])
     const references = useMemo(() => listReferences(sheet, computed), [sheet, computed])
-    const scope = useMemo(
-        () => Object.fromEntries(references.map((r) => [r.slug, r.value])),
-        [references],
-    )
+    const scope = useMemo(() => {
+        const s = Object.fromEntries(references.map((r) => [r.slug, r.value]))
+        // Overlay resource/counter counts (e.g. moxie_points, luck_points) so
+        // action costs and the Luck button can read live remaining values.
+        for (const section of sheet.sections) {
+            for (const field of section.fields) {
+                if (field.type === 'resource' || field.type === 'counter') {
+                    const n = Number(field.value)
+                    if (!Number.isNaN(n)) s[slugify(field.label)] = n
+                }
+            }
+        }
+        return s
+    }, [references, sheet])
 
     const pushRoll = (entry: Omit<RollLogEntry, 'id'>) =>
         setRollLog((log) => [{ ...entry, id: crypto.randomUUID() }, ...log].slice(0, 40))
+
+    // Persist the roll log across reloads.
+    useEffect(() => {
+        try {
+            localStorage.setItem('character-sheet:rolllog:v1', JSON.stringify(rollLog))
+        } catch {
+            /* ignore quota errors */
+        }
+    }, [rollLog])
+
+    // Auto-set the "Bloodied" toggle when Current HP drops to half of Max HP or below.
+    useEffect(() => {
+        for (const section of sheet.sections) {
+            const cur = section.fields.find((f) => f.label.toLowerCase() === 'current hp')
+            const max = section.fields.find((f) => f.label.toLowerCase() === 'max hp')
+            if (!cur || !max) continue
+            const maxN = Number(max.value) || 0
+            if (maxN <= 0) continue
+            const bloodied = (Number(cur.value) || 0) <= maxN / 2
+            for (const s of sheet.sections) {
+                const flag = s.fields.find((f) => f.label.toLowerCase() === 'bloodied' && f.type === 'boolean')
+                if (flag) {
+                    const want = bloodied ? 'true' : 'false'
+                    if (flag.value !== want) setFieldValueSilent(flag.id, want)
+                }
+            }
+            break
+        }
+    }, [sheet, setFieldValueSilent])
+
+    const spendLuck = () => {
+        const left = scope['luck_points'] ?? 0
+        if (left <= 0) {
+            setNotice('No Luck Points left.')
+            return
+        }
+        spendResource('luck_points', 1)
+        pushRoll({ title: 'Luck Point', detail: `Spent 1 — reroll or gain Advantage (${left - 1} left)`, total: left - 1, kind: 'raw' })
+    }
 
     const handleImport = async (file: File | undefined) => {
         if (!file) return
@@ -472,8 +533,11 @@ function App() {
                                     references={references}
                                     scope={scope}
                                     rollMode={rollMode}
+                                    bonus={situational}
                                     onRoll={pushRoll}
                                     onHeal={healHp}
+                                    onSpend={spendResource}
+                                    onTempHp={applyTempHp}
                                     onUpdateSection={(patch) => updateSection(section.id, patch)}
                                     onDeleteSection={() => deleteSection(section.id)}
                                     onDuplicateSection={() => duplicateSection(section.id)}
@@ -514,6 +578,10 @@ function App() {
                 entries={rollLog}
                 rollMode={rollMode}
                 onRollModeChange={setRollMode}
+                bonus={situational}
+                onBonusChange={setSituational}
+                luck={scope['luck_points']}
+                onSpendLuck={spendLuck}
                 onClear={() => setRollLog([])}
             />
         </main>

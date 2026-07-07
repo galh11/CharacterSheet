@@ -68,9 +68,25 @@ describe('useSheet', () => {
     it('autosaves changes to localStorage', () => {
         const { result } = renderHook(() => useSheet())
         act(() => result.current.renameSheet('Saved Hero'))
-        const raw = localStorage.getItem('character-sheet:v1')
+        const raw = localStorage.getItem(`character-sheet:char:${result.current.activeId}`)
         expect(raw).not.toBeNull()
         expect(JSON.parse(raw!).sheet.name).toBe('Saved Hero')
+    })
+
+    it('creates, switches between, and deletes characters', () => {
+        const { result } = renderHook(() => useSheet())
+        const firstId = result.current.activeId
+        act(() => result.current.newCharacter())
+        const secondId = result.current.activeId
+        expect(secondId).not.toBe(firstId)
+        expect(result.current.characters).toHaveLength(2)
+
+        act(() => result.current.switchCharacter(firstId))
+        expect(result.current.activeId).toBe(firstId)
+
+        act(() => result.current.deleteCharacter(secondId))
+        expect(result.current.characters.some((c) => c.id === secondId)).toBe(false)
+        expect(result.current.characters).toHaveLength(1)
     })
 
     it('undoes and redoes a change', () => {

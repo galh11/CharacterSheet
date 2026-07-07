@@ -8,7 +8,15 @@ import {
     type CharacterSheet,
     type SectionLayout,
 } from '../model/characterSheet'
-import { loadSheet, saveSheet } from './persistence'
+import {
+    getActiveSheet,
+    persistActive,
+    listCharacters,
+    switchCharacter as rosterSwitch,
+    createCharacter,
+    removeCharacter,
+    type RosterEntry,
+} from './roster'
 
 interface History {
     sheet: CharacterSheet
@@ -20,15 +28,39 @@ const LIMIT = 60
 
 /**
  * Central sheet state plus all mutation operations, with undo/redo history.
- * Autosaves to localStorage whenever the sheet changes.
+ * Autosaves the active character to localStorage whenever the sheet changes.
  */
 export const useSheet = () => {
-    const [hist, setHist] = useState<History>(() => ({ sheet: loadSheet(), past: [], future: [] }))
+    const [hist, setHist] = useState<History>(() => ({ sheet: getActiveSheet().sheet, past: [], future: [] }))
+    const [activeId, setActiveId] = useState<string>(() => getActiveSheet().id)
+    const [characters, setCharacters] = useState<RosterEntry[]>(() => listCharacters())
     const sheet = hist.sheet
 
     useEffect(() => {
-        saveSheet(sheet)
+        persistActive(sheet)
     }, [sheet])
+
+    const switchCharacter = useCallback((id: string) => {
+        const next = rosterSwitch(id)
+        if (!next) return
+        setHist({ sheet: next, past: [], future: [] })
+        setActiveId(id)
+        setCharacters(listCharacters())
+    }, [])
+
+    const newCharacter = useCallback(() => {
+        const { id, sheet: fresh } = createCharacter()
+        setHist({ sheet: fresh, past: [], future: [] })
+        setActiveId(id)
+        setCharacters(listCharacters())
+    }, [])
+
+    const deleteCharacter = useCallback((id: string) => {
+        const { id: nextId, sheet: nextSheet } = removeCharacter(id)
+        setHist({ sheet: nextSheet, past: [], future: [] })
+        setActiveId(nextId)
+        setCharacters(listCharacters())
+    }, [])
 
     /** Apply an update and record the previous state for undo. */
     const commit = useCallback((updater: (s: CharacterSheet) => CharacterSheet) => {
@@ -302,6 +334,11 @@ export const useSheet = () => {
 
     return {
         sheet,
+        characters,
+        activeId,
+        switchCharacter,
+        newCharacter,
+        deleteCharacter,
         canUndo: hist.past.length > 0,
         canRedo: hist.future.length > 0,
         undo,

@@ -48,6 +48,11 @@ function App() {
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
         sheet,
+        characters,
+        activeId,
+        switchCharacter,
+        newCharacter,
+        deleteCharacter,
         canUndo,
         canRedo,
         undo,
@@ -155,6 +160,14 @@ function App() {
             setNotice('Share link copied to clipboard.')
         } catch {
             window.prompt('Copy this share link:', url)
+        }
+    }
+
+    const handleDeleteCharacter = () => {
+        const name = characters.find((c) => c.id === activeId)?.name ?? 'this character'
+        if (window.confirm(`Delete “${name}”? This cannot be undone.`)) {
+            deleteCharacter(activeId)
+            setNotice('Character deleted.')
         }
     }
 
@@ -289,6 +302,27 @@ function App() {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        <select
+                            value={activeId}
+                            onChange={(event) => switchCharacter(event.target.value)}
+                            className="max-w-[10rem] rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
+                            aria-label="Active character"
+                            title="Switch character"
+                        >
+                            {characters.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {(c.id === activeId ? sheet.name : c.name) || 'Unnamed'}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            type="button"
+                            onClick={newCharacter}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Create a new character"
+                        >
+                            + New
+                        </button>
                         <button
                             type="button"
                             onClick={undo}
@@ -382,6 +416,14 @@ function App() {
                             className="rounded-md border border-rose-700/50 px-3 py-2 text-sm text-rose-300 hover:bg-rose-900/40"
                         >
                             Reset
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDeleteCharacter}
+                            className="rounded-md border border-rose-700/50 px-3 py-2 text-sm text-rose-300 hover:bg-rose-900/40"
+                            title="Delete this character"
+                        >
+                            Delete char
                         </button>
                         <button
                             type="button"

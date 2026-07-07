@@ -292,7 +292,7 @@ export const parseCharacterText = (text: string): ParseResult => {
     const detected: string[] = []
     const sections: CharacterSection[] = []
     let layoutIndex = 0
-    const place = (section: Omit<CharacterSection, 'layout' | 'kind'> & { layout?: CharacterSection['layout']; kind?: CharacterSection['kind'] }) => {
+    const place = (section: Omit<CharacterSection, 'layout' | 'kind' | 'scale'> & { layout?: CharacterSection['layout']; kind?: CharacterSection['kind']; scale?: CharacterSection['scale'] }) => {
         const base = createSection(layoutIndex)
         sections.push({ ...base, ...section, layout: section.layout ?? base.layout })
         layoutIndex++

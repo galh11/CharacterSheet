@@ -52,6 +52,8 @@ export const sectionSchema = z.object({
     description: z.string().default(''),
     accent: z.string().default('#8b5cf6'),
     kind: sectionKindSchema.default('default'),
+    /** Content zoom for the whole section (text + widgets). */
+    scale: z.number().default(1),
     fields: z.array(fieldSchema).default([]),
     layout: layoutSchema,
 })
@@ -99,6 +101,7 @@ export const createSection = (
     description: '',
     accent: accentForIndex(index),
     kind: 'default',
+    scale: 1,
     fields: [],
     layout: defaultLayout(index),
     ...overrides,

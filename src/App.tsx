@@ -235,10 +235,12 @@ function App() {
                             <CanvasItem
                                 key={section.id}
                                 layout={section.layout}
+                                scale={section.scale}
                                 siblings={sheet.sections
                                     .filter((s) => s.id !== section.id)
                                     .map((s) => s.layout)}
                                 onLayoutCommit={(layout) => commitLayout(section.id, layout)}
+                                onScaleChange={(scale) => updateSection(section.id, { scale })}
                                 onGuidesChange={setGuides}
                             >
                                 <SectionCard

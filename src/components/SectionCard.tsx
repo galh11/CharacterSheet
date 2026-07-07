@@ -16,7 +16,7 @@ interface SectionCardProps {
     results: Map<string, FormulaResult>
     references: FieldReference[]
     onUpdateSection: (
-        patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind'>>,
+        patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale'>>,
     ) => void
     onDeleteSection: () => void
     onAddField: () => void
@@ -59,10 +59,13 @@ export function SectionCard({
     onDeleteField,
     onMoveField,
 }: SectionCardProps) {
+    const setMeta = (field: CharacterField, key: string, value: string) =>
+        onUpdateField(field.id, { meta: { ...field.meta, [key]: value } })
+
     return (
         <article
             className="flex h-full min-h-full flex-col rounded-lg border border-slate-700 bg-slate-950/60 p-4"
-            style={{ borderTopColor: section.accent, borderTopWidth: 3 }}
+            style={{ borderTopColor: section.accent, borderTopWidth: 3, zoom: section.scale }}
         >
             <header className="mb-2 flex items-start justify-between gap-2">
                 {isEditMode ? (
@@ -247,10 +250,54 @@ export function SectionCard({
                                             aria-label="Field description"
                                         />
 
-                                        {field.type === 'computed' && (
-                                            <div className="mt-2">
-                                                <div className="flex items-center gap-2 text-[11px]">
-                                                    <span className="text-slate-500">=</span>
+                                    {section.kind === 'skills' && (
+                                        <div className="mt-2 grid grid-cols-2 gap-1">
+                                            <input
+                                                value={field.meta?.ability ?? ''}
+                                                onChange={(event) => setMeta(field, 'ability', event.target.value)}
+                                                placeholder="ability (e.g. STR)"
+                                                className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                aria-label="Skill ability"
+                                            />
+                                            <select
+                                                value={field.meta?.prof ?? 'none'}
+                                                onChange={(event) => setMeta(field, 'prof', event.target.value)}
+                                                className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                aria-label="Proficiency"
+                                            >
+                                                <option value="none">not proficient</option>
+                                                <option value="proficient">proficient</option>
+                                                <option value="expertise">expertise</option>
+                                            </select>
+                                            <input
+                                                value={field.meta?.adv ?? ''}
+                                                onChange={(event) => setMeta(field, 'adv', event.target.value)}
+                                                placeholder="advantage note (optional)"
+                                                className="col-span-2 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                aria-label="Advantage"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {section.kind === 'actions' && (
+                                        <div className="mt-2 grid grid-cols-3 gap-1">
+                                            {(['hit', 'damage', 'type', 'extra', 'extraType', 'range'] as const).map((k) => (
+                                                <input
+                                                    key={k}
+                                                    value={field.meta?.[k] ?? ''}
+                                                    onChange={(event) => setMeta(field, k, event.target.value)}
+                                                    placeholder={k}
+                                                    className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                    aria-label={`Action ${k}`}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {field.type === 'computed' && (
+                                        <div className="mt-2">
+                                            <div className="flex items-center gap-2 text-[11px]">
+                                                <span className="text-slate-500">=</span>
                                                     {result?.ok ? (
                                                         <span className="font-mono text-emerald-300">{result.value}</span>
                                                     ) : (

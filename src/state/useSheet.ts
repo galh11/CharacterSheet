@@ -36,7 +36,7 @@ export const useSheet = () => {
     const updateSection = useCallback(
         (
             sectionId: string,
-            patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'layout'>>,
+            patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'layout'>>,
         ) => {
             mapSections((section) =>
                 section.id === sectionId ? { ...section, ...patch } : section,

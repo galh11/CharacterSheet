@@ -11,7 +11,10 @@ interface CanvasItemProps {
     layout: SectionLayout
     /** Other sections' rects, used as snap targets. */
     siblings: SectionLayout[]
+    /** Content zoom (1 = 100%). */
+    scale?: number
     onLayoutCommit: (layout: SectionLayout) => void
+    onScaleChange?: (scale: number) => void
     /** Reports active alignment guides while dragging (empty on release). */
     onGuidesChange?: (guides: SnapGuide[]) => void
     children: ReactNode
@@ -21,7 +24,6 @@ const MIN_W = 180
 const MIN_H = 80
 const GRID = 8
 const SNAP = 7
-const HANDLE_H = 20
 
 const snapGrid = (v: number) => Math.round(v / GRID) * GRID
 
@@ -55,9 +57,10 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, onLayoutCommit, onGuidesChange, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, scale = 1, onLayoutCommit, onScaleChange, onGuidesChange, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
+    const rootRef = useRef<HTMLDivElement>(null)
     const contentRef = useRef<HTMLDivElement>(null)
 
     const current = live ?? layout
@@ -106,15 +109,54 @@ export function CanvasItem({ layout, siblings, onLayoutCommit, onGuidesChange, c
         onGuidesChange?.([])
     }
 
-    const fitToContent = () => {
-        const el = contentRef.current
-        if (!el) return
-        const h = Math.max(MIN_H, el.scrollHeight + HANDLE_H + 4)
+    /** Shrink-wrap the height to the content's natural height. */
+    const fitHeight = () => {
+        const root = rootRef.current
+        const content = contentRef.current
+        if (!root || !content) return
+        const pr = root.style.height
+        const pc = content.style.height
+        root.style.height = 'auto'
+        content.style.height = 'auto'
+        const h = Math.max(MIN_H, Math.round(root.offsetHeight))
+        root.style.height = pr
+        content.style.height = pc
         onLayoutCommit({ ...layout, h })
+    }
+
+    /** Shrink-wrap the width to the content's natural width (capped). */
+    const fitWidth = () => {
+        const root = rootRef.current
+        const content = contentRef.current
+        if (!root || !content) return
+        const pr = root.style.width
+        const pc = content.style.width
+        root.style.width = 'max-content'
+        content.style.width = 'max-content'
+        const w = Math.min(720, Math.max(MIN_W, Math.round(root.offsetWidth)))
+        root.style.width = pr
+        content.style.width = pc
+        onLayoutCommit({ ...layout, w })
+    }
+
+    /** Arrow-key nudge when the handle is focused (Shift = grid step). */
+    const nudge = (event: React.KeyboardEvent) => {
+        const step = event.shiftKey ? GRID : 1
+        let { x, y } = layout
+        switch (event.key) {
+            case 'ArrowLeft': x = Math.max(0, x - step); break
+            case 'ArrowRight': x += step; break
+            case 'ArrowUp': y = Math.max(0, y - step); break
+            case 'ArrowDown': y += step; break
+            default: return
+        }
+        event.preventDefault()
+        onLayoutCommit({ ...layout, x, y })
     }
 
     return (
         <div
+            ref={rootRef}
             className={clsx('group absolute', live && 'z-20 select-none')}
             style={{ left: current.x, top: current.y, width: current.w, height: current.h }}
             onPointerMove={onPointerMove}
@@ -123,19 +165,18 @@ export function CanvasItem({ layout, siblings, onLayoutCommit, onGuidesChange, c
         >
             <div
                 onPointerDown={(e) => beginDrag('move', e)}
-                className="flex h-5 cursor-move items-center gap-2 rounded-t-lg bg-slate-800/70 px-2 text-[10px] tracking-widest text-slate-500 opacity-40 transition-opacity group-hover:opacity-100"
-                title="Drag to move"
+                tabIndex={0}
+                onKeyDown={nudge}
+                className="flex h-5 cursor-move items-center gap-1 rounded-t-lg bg-slate-800/70 px-2 text-[10px] tracking-widest text-slate-500 opacity-40 transition-opacity focus:opacity-100 focus:outline focus:outline-1 focus:outline-cyan-500 group-hover:opacity-100"
+                title="Drag to move — arrow keys nudge (Shift = grid)"
             >
                 <span>⠿</span>
-                <button
-                    type="button"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={fitToContent}
-                    className="ml-auto rounded px-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
-                    title="Fit height to content"
-                >
-                    ⤢ fit
-                </button>
+                <div className="ml-auto flex items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()}>
+                    <button type="button" onClick={() => onScaleChange?.(Math.max(0.6, Math.round((scale - 0.1) * 10) / 10))} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Smaller text">A−</button>
+                    <button type="button" onClick={() => onScaleChange?.(Math.min(1.8, Math.round((scale + 0.1) * 10) / 10))} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Larger text">A+</button>
+                    <button type="button" onClick={fitHeight} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit height to content">↕</button>
+                    <button type="button" onClick={fitWidth} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit width to content">↔</button>
+                </div>
             </div>
             <div ref={contentRef} className="h-[calc(100%-1.25rem)] overflow-auto rounded-b-lg">
                 {children}

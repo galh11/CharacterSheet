@@ -296,8 +296,8 @@ S('Notable Gear', 'default', [
 
 // 18. Currency (steppers). Bone Marks is a homebrew denomination.
 S('Currency', 'currency', [
-    F('GP', 'number', 1080, { description: 'Consolidated from 108 pp (1 pp = 10 gp).' }),
-    F('Bone Marks', 'number', 0, { description: 'Homebrew currency.' }),
+    F('Bone Marks', 'number', 108, { description: 'Homebrew currency.' }),
+    F('GP', 'number', 0),
 ], '#f59e0b')
 
 // 19. Equipment — consumables and mundane gear.

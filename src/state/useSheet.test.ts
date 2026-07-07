@@ -114,4 +114,51 @@ describe('useSheet', () => {
         expect(clone.fields[0]?.id).not.toBe(first.fields[0]?.id)
         expect(clone.layout.x).toBe(first.layout.x + 24)
     })
+
+    const restSheet = () => ({
+        id: 's',
+        name: 'T',
+        sections: [
+            {
+                id: 'sec',
+                title: 'X',
+                description: '',
+                accent: '#000',
+                kind: 'default' as const,
+                scale: 1,
+                layout: { x: 0, y: 0, w: 1, h: 1 },
+                fields: [
+                    { id: 'hp', label: 'Current HP', type: 'number' as const, value: '3', description: '' },
+                    { id: 'mx', label: 'Max HP', type: 'number' as const, value: '20', description: '' },
+                    { id: 'tmp', label: 'Temp HP', type: 'number' as const, value: '5', description: '' },
+                    { id: 'ex', label: 'Exhaustion', type: 'counter' as const, value: '2', description: '' },
+                    { id: 'mox', label: 'Moxie', type: 'resource' as const, value: '1', max: 5, description: '', meta: { recharge: 'short' } },
+                    { id: 'luck', label: 'Luck', type: 'resource' as const, value: '0', max: 3, description: '', meta: { recharge: 'long' } },
+                ],
+            },
+        ],
+    })
+    const fieldVal = (api: ReturnType<typeof useSheet>, id: string) =>
+        api.sheet.sections[0].fields.find((f) => f.id === id)?.value
+
+    it('long rest restores HP, clears temp, reduces exhaustion, and refills resources', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet()))
+        act(() => result.current.rest('long'))
+        expect(fieldVal(result.current, 'hp')).toBe('20')
+        expect(fieldVal(result.current, 'tmp')).toBe('0')
+        expect(fieldVal(result.current, 'ex')).toBe('1')
+        expect(fieldVal(result.current, 'mox')).toBe('5')
+        expect(fieldVal(result.current, 'luck')).toBe('3')
+    })
+
+    it('short rest only refills short-rest resources and leaves HP alone', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet()))
+        act(() => result.current.rest('short'))
+        expect(fieldVal(result.current, 'mox')).toBe('5') // short → refilled
+        expect(fieldVal(result.current, 'luck')).toBe('0') // long → unchanged
+        expect(fieldVal(result.current, 'hp')).toBe('3') // HP untouched
+        expect(fieldVal(result.current, 'tmp')).toBe('5')
+    })
 })

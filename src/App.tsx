@@ -45,6 +45,7 @@ function App() {
         addSection,
         deleteSection,
         duplicateSection,
+        rest,
         addField,
         updateField,
         deleteField,
@@ -213,6 +214,22 @@ function App() {
                             title="Redo (Ctrl+Shift+Z)"
                         >
                             ↷ Redo
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => rest('short')}
+                            className="rounded-md border border-amber-700/50 px-3 py-2 text-sm text-amber-200 hover:bg-amber-900/30"
+                            title="Short rest — refill short-rest resources"
+                        >
+                            Short rest
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => rest('long')}
+                            className="rounded-md border border-indigo-700/50 px-3 py-2 text-sm text-indigo-200 hover:bg-indigo-900/30"
+                            title="Long rest — restore HP, clear temp HP, reduce exhaustion, refill resources"
+                        >
+                            Long rest
                         </button>
                         <button
                             type="button"

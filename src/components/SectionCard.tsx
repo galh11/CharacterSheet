@@ -265,64 +265,67 @@ export function SectionCard({
                                             />
                                         )}
 
-                                        <input
-                                            value={field.description}
-                                            onChange={(event) =>
-                                                onUpdateField(field.id, { description: event.target.value })
-                                            }
-                                            placeholder="On-hover description (optional)"
-                                            className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-400"
-                                            aria-label="Field description"
-                                        />
+                                    {field.type === 'resource' && (
+                                        <select
+                                            value={field.meta?.recharge ?? 'long'}
+                                            onChange={(event) => setMeta(field, 'recharge', event.target.value)}
+                                            className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                            aria-label="Recharge"
+                                        >
+                                            <option value="short">Recharges on short rest</option>
+                                            <option value="long">Recharges on long rest</option>
+                                            <option value="none">Manual only</option>
+                                        </select>
+                                    )}
 
                                     {section.kind === 'skills' && (
                                         <div className="mt-2 grid grid-cols-2 gap-1">
                                             <input
                                                 value={field.meta?.ability ?? ''}
-                                                onChange={(event) => setMeta(field, 'ability', event.target.value)}
-                                                placeholder="ability (e.g. STR)"
-                                                className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
-                                                aria-label="Skill ability"
-                                            />
-                                            <select
-                                                value={field.meta?.prof ?? 'none'}
-                                                onChange={(event) => setMeta(field, 'prof', event.target.value)}
-                                                className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
-                                                aria-label="Proficiency"
-                                            >
-                                                <option value="none">not proficient</option>
-                                                <option value="proficient">proficient</option>
-                                                <option value="expertise">expertise</option>
-                                            </select>
-                                            <input
-                                                value={field.meta?.adv ?? ''}
-                                                onChange={(event) => setMeta(field, 'adv', event.target.value)}
-                                                placeholder="advantage note (optional)"
-                                                className="col-span-2 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
-                                                aria-label="Advantage"
-                                            />
-                                        </div>
-                                    )}
-
-                                    {section.kind === 'actions' && (
-                                        <div className="mt-2 grid grid-cols-3 gap-1">
-                                            {(['hit', 'damage', 'type', 'extra', 'extraType', 'range'] as const).map((k) => (
-                                                <input
-                                                    key={k}
-                                                    value={field.meta?.[k] ?? ''}
-                                                    onChange={(event) => setMeta(field, k, event.target.value)}
-                                                    placeholder={k}
+                                                    onChange={(event) => setMeta(field, 'ability', event.target.value)}
+                                                    placeholder="ability (e.g. STR)"
                                                     className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
-                                                    aria-label={`Action ${k}`}
+                                                    aria-label="Skill ability"
                                                 />
-                                            ))}
-                                        </div>
-                                    )}
+                                                <select
+                                                    value={field.meta?.prof ?? 'none'}
+                                                    onChange={(event) => setMeta(field, 'prof', event.target.value)}
+                                                    className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                    aria-label="Proficiency"
+                                                >
+                                                    <option value="none">not proficient</option>
+                                                    <option value="proficient">proficient</option>
+                                                    <option value="expertise">expertise</option>
+                                                </select>
+                                                <input
+                                                    value={field.meta?.adv ?? ''}
+                                                    onChange={(event) => setMeta(field, 'adv', event.target.value)}
+                                                    placeholder="advantage note (optional)"
+                                                    className="col-span-2 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                    aria-label="Advantage"
+                                                />
+                                            </div>
+                                        )}
 
-                                    {field.type === 'computed' && (
-                                        <div className="mt-2">
-                                            <div className="flex items-center gap-2 text-[11px]">
-                                                <span className="text-slate-500">=</span>
+                                        {section.kind === 'actions' && (
+                                            <div className="mt-2 grid grid-cols-3 gap-1">
+                                                {(['hit', 'damage', 'type', 'extra', 'extraType', 'range'] as const).map((k) => (
+                                                    <input
+                                                        key={k}
+                                                        value={field.meta?.[k] ?? ''}
+                                                        onChange={(event) => setMeta(field, k, event.target.value)}
+                                                        placeholder={k}
+                                                        className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                        aria-label={`Action ${k}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {field.type === 'computed' && (
+                                            <div className="mt-2">
+                                                <div className="flex items-center gap-2 text-[11px]">
+                                                    <span className="text-slate-500">=</span>
                                                     {result?.ok ? (
                                                         <span className="font-mono text-emerald-300">{result.value}</span>
                                                     ) : (

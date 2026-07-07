@@ -49,7 +49,7 @@ export function CanvasItem({ layout, siblings, scale = 1, selected, onLayoutComm
     const beginDrag = (mode: 'move' | 'resize', event: React.PointerEvent) => {
         event.preventDefault()
         event.stopPropagation()
-        ;(event.target as HTMLElement).setPointerCapture(event.pointerId)
+            ; (event.target as HTMLElement).setPointerCapture(event.pointerId)
         drag.current = { mode, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: layout }
         moved.current = false
         setLive(layout)

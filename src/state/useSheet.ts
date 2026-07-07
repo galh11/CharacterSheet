@@ -113,6 +113,43 @@ export const useSheet = () => {
         [commit],
     )
 
+    /**
+     * Apply a short or long rest across the whole sheet.
+     * Long rest: Current HP → Max HP, Temp HP → 0, Exhaustion −1, and every
+     * resource refills (unless its recharge is "none"). Short rest: only
+     * resources tagged recharge "short" refill; HP is untouched.
+     */
+    const rest = useCallback(
+        (kind: 'short' | 'long') => {
+            commit((c) => ({
+                ...c,
+                sections: c.sections.map((section) => {
+                    const maxHp = section.fields.find((f) => f.label.toLowerCase() === 'max hp')?.value
+                    return {
+                        ...section,
+                        fields: section.fields.map((field) => {
+                            const label = field.label.toLowerCase()
+                            if (kind === 'long') {
+                                if (label === 'current hp' && maxHp != null) return { ...field, value: maxHp }
+                                if (label === 'temp hp') return { ...field, value: '0' }
+                                if (label === 'exhaustion') {
+                                    return { ...field, value: String(Math.max(0, (Number(field.value) || 0) - 1)) }
+                                }
+                            }
+                            if (field.type === 'resource' && field.max != null) {
+                                const recharge = field.meta?.recharge ?? 'long'
+                                if (kind === 'long' && recharge !== 'none') return { ...field, value: String(field.max) }
+                                if (kind === 'short' && recharge === 'short') return { ...field, value: String(field.max) }
+                            }
+                            return field
+                        }),
+                    }
+                }),
+            }))
+        },
+        [commit],
+    )
+
     const addField = useCallback(
         (sectionId: string, overrides: Partial<CharacterField> = {}) => {
             mapSections((section) =>
@@ -179,6 +216,7 @@ export const useSheet = () => {
         addSection,
         deleteSection,
         duplicateSection,
+        rest,
         addField,
         updateField,
         deleteField,

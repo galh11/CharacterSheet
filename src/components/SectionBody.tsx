@@ -79,7 +79,17 @@ function ResourcePips({ field, onUpdateField }: { field: CharacterField; onUpdat
     const set = (i: number) => onUpdateField(field.id, { value: String(val === i ? i - 1 : i) })
     return (
         <div className="flex items-center justify-between gap-2">
-            <FieldLabel field={field} />
+            <div className="flex items-center gap-1.5">
+                <FieldLabel field={field} />
+                {field.meta?.recharge && field.meta.recharge !== 'none' && (
+                    <span
+                        className="rounded bg-slate-800 px-1 text-[9px] font-semibold uppercase text-slate-400"
+                        title={field.meta.recharge === 'short' ? 'Recharges on a short rest' : 'Recharges on a long rest'}
+                    >
+                        {field.meta.recharge === 'short' ? 'SR' : 'LR'}
+                    </span>
+                )}
+            </div>
             <div className="flex flex-wrap items-center gap-1">
                 {Array.from({ length: max }, (_, idx) => idx + 1).map((i) => (
                     <button
@@ -208,9 +218,26 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
     return (
         <div className="flex flex-col gap-2">
             <div className="flex items-end justify-between">
-                <div>
-                    <span className="font-mono text-3xl font-bold text-slate-100">{curN}</span>
-                    <span className="font-mono text-lg text-slate-500"> / {maxN}</span>
+                <div className="flex items-end gap-1">
+                    {cur && (
+                        <input
+                            value={cur.value}
+                            onChange={(e) => onUpdateField(cur.id, { value: e.target.value.replace(/[^0-9]/g, '') })}
+                            inputMode="numeric"
+                            aria-label="Current HP"
+                            className="w-16 rounded bg-slate-900/40 text-center font-mono text-3xl font-bold text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                        />
+                    )}
+                    <span className="pb-1 font-mono text-lg text-slate-500">/</span>
+                    {max && (
+                        <input
+                            value={max.value}
+                            onChange={(e) => onUpdateField(max.id, { value: e.target.value.replace(/[^0-9]/g, '') })}
+                            inputMode="numeric"
+                            aria-label="Max HP"
+                            className="w-12 rounded bg-slate-900/30 pb-1 text-center font-mono text-lg text-slate-400 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                        />
+                    )}
                 </div>
                 {temp && (
                     <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-xs font-medium text-cyan-300 ring-1 ring-cyan-500/40">

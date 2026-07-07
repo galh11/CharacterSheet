@@ -12,3 +12,18 @@ body {
   background-color: #0f172a;
   color: #e2e8f0;
 }
+
+/* Compact, ink-friendly print / PDF export. */
+@media print {
+  html,
+  body,
+  #root {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .overflow-auto {
+    overflow: visible !important;
+  }
+}
+

@@ -67,7 +67,7 @@ export const useSheet = () => {
     const updateSection = useCallback(
         (
             sectionId: string,
-            patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'layout'>>,
+            patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'layout' | 'meta'>>,
         ) => {
             mapSections((section) => (section.id === sectionId ? { ...section, ...patch } : section))
         },
@@ -135,6 +135,14 @@ export const useSheet = () => {
                                 if (label === 'exhaustion') {
                                     return { ...field, value: String(Math.max(0, (Number(field.value) || 0) - 1)) }
                                 }
+                                // Hit dice, spell slots and death saves reset on a long rest.
+                                if (section.kind === 'hitdice' && field.max != null) {
+                                    return { ...field, value: String(field.max) }
+                                }
+                                if (section.kind === 'spellslots' && field.max != null) {
+                                    return { ...field, value: String(field.max) }
+                                }
+                                if (section.kind === 'deathsaves') return { ...field, value: '0' }
                             }
                             if (field.type === 'resource' && field.max != null) {
                                 const recharge = field.meta?.recharge ?? 'long'
@@ -143,6 +151,33 @@ export const useSheet = () => {
                             }
                             return field
                         }),
+                    }
+                }),
+            }))
+        },
+        [commit],
+    )
+
+    /**
+     * Heal the character's HP tracker by `amount`, capped at Max HP. Finds the
+     * section that owns both a "current hp" and a "max hp" field. Used by the
+     * hit-dice widget and any cross-section healing.
+     */
+    const healHp = useCallback(
+        (amount: number) => {
+            if (amount <= 0) return
+            commit((c) => ({
+                ...c,
+                sections: c.sections.map((section) => {
+                    const cur = section.fields.find((f) => f.label.toLowerCase() === 'current hp')
+                    const max = section.fields.find((f) => f.label.toLowerCase() === 'max hp')
+                    if (!cur || !max) return section
+                    const curN = Number(cur.value) || 0
+                    const maxN = Number(max.value) || 0
+                    const next = maxN > 0 ? Math.min(maxN, curN + amount) : curN + amount
+                    return {
+                        ...section,
+                        fields: section.fields.map((f) => (f.id === cur.id ? { ...f, value: String(next) } : f)),
                     }
                 }),
             }))
@@ -217,6 +252,7 @@ export const useSheet = () => {
         deleteSection,
         duplicateSection,
         rest,
+        healHp,
         addField,
         updateField,
         deleteField,

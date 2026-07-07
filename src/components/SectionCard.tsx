@@ -1,6 +1,7 @@
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
 import type { FieldReference } from '../model/compute'
+import type { D20Mode, RollLogEntry } from '../model/dice'
 import { Tooltip } from './Tooltip'
 import { SectionBody } from './SectionBody'
 import {
@@ -15,8 +16,12 @@ interface SectionCardProps {
     isEditMode: boolean
     results: Map<string, FormulaResult>
     references: FieldReference[]
+    scope?: Record<string, number>
+    rollMode?: D20Mode
+    onRoll?: (entry: Omit<RollLogEntry, 'id'>) => void
+    onHeal?: (amount: number) => void
     onUpdateSection: (
-        patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale'>>,
+        patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'meta'>>,
     ) => void
     onDeleteSection: () => void
     onDuplicateSection: () => void
@@ -34,6 +39,11 @@ const SECTION_KINDS: { value: SectionKind; label: string }[] = [
     { value: 'hp', label: 'HP tracker' },
     { value: 'skills', label: 'Skills' },
     { value: 'actions', label: 'Actions' },
+    { value: 'hitdice', label: 'Hit dice' },
+    { value: 'deathsaves', label: 'Death saves' },
+    { value: 'conditions', label: 'Conditions' },
+    { value: 'spellslots', label: 'Spell slots' },
+    { value: 'initiative', label: 'Initiative' },
 ]
 
 const displayValue = (
@@ -53,6 +63,10 @@ export function SectionCard({
     isEditMode,
     results,
     references,
+    scope,
+    rollMode,
+    onRoll,
+    onHeal,
     onUpdateSection,
     onDeleteSection,
     onDuplicateSection,
@@ -148,7 +162,16 @@ export function SectionCard({
             )}
 
             {!isEditMode && (
-                <SectionBody section={section} results={results} onUpdateField={onUpdateField} />
+                <SectionBody
+                    section={section}
+                    results={results}
+                    onUpdateField={onUpdateField}
+                    onUpdateSection={onUpdateSection}
+                    scope={scope}
+                    rollMode={rollMode}
+                    onRoll={onRoll}
+                    onHeal={onHeal}
+                />
             )}
             {isEditMode && (
                 <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -265,23 +288,23 @@ export function SectionCard({
                                             />
                                         )}
 
-                                    {field.type === 'resource' && (
-                                        <select
-                                            value={field.meta?.recharge ?? 'long'}
-                                            onChange={(event) => setMeta(field, 'recharge', event.target.value)}
-                                            className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
-                                            aria-label="Recharge"
-                                        >
-                                            <option value="short">Recharges on short rest</option>
-                                            <option value="long">Recharges on long rest</option>
-                                            <option value="none">Manual only</option>
-                                        </select>
-                                    )}
+                                        {field.type === 'resource' && (
+                                            <select
+                                                value={field.meta?.recharge ?? 'long'}
+                                                onChange={(event) => setMeta(field, 'recharge', event.target.value)}
+                                                className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                aria-label="Recharge"
+                                            >
+                                                <option value="short">Recharges on short rest</option>
+                                                <option value="long">Recharges on long rest</option>
+                                                <option value="none">Manual only</option>
+                                            </select>
+                                        )}
 
-                                    {section.kind === 'skills' && (
-                                        <div className="mt-2 grid grid-cols-2 gap-1">
-                                            <input
-                                                value={field.meta?.ability ?? ''}
+                                        {section.kind === 'skills' && (
+                                            <div className="mt-2 grid grid-cols-2 gap-1">
+                                                <input
+                                                    value={field.meta?.ability ?? ''}
                                                     onChange={(event) => setMeta(field, 'ability', event.target.value)}
                                                     placeholder="ability (e.g. STR)"
                                                     className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
@@ -304,7 +327,35 @@ export function SectionCard({
                                                     className="col-span-2 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
                                                     aria-label="Advantage"
                                                 />
+                                                <label className="col-span-2 flex items-center gap-2 text-[11px] text-slate-400">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={field.meta?.auto === 'true'}
+                                                        onChange={(event) => setMeta(field, 'auto', event.target.checked ? 'true' : 'false')}
+                                                    />
+                                                    Auto modifier (ability + proficiency)
+                                                </label>
                                             </div>
+                                        )}
+
+                                        {section.kind === 'hitdice' && (
+                                            <input
+                                                value={field.meta?.die ?? ''}
+                                                onChange={(event) => setMeta(field, 'die', event.target.value)}
+                                                placeholder="die type (e.g. d12)"
+                                                className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                aria-label="Hit die type"
+                                            />
+                                        )}
+
+                                        {section.kind === 'initiative' && (
+                                            <input
+                                                value={field.meta?.mod ?? ''}
+                                                onChange={(event) => setMeta(field, 'mod', event.target.value)}
+                                                placeholder="initiative modifier (e.g. +2)"
+                                                className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                aria-label="Initiative modifier"
+                                            />
                                         )}
 
                                         {section.kind === 'actions' && (
@@ -321,6 +372,26 @@ export function SectionCard({
                                                 ))}
                                             </div>
                                         )}
+
+                                        <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+                                            Tag colour
+                                            <input
+                                                type="color"
+                                                value={field.meta?.color ?? '#64748b'}
+                                                onChange={(event) => setMeta(field, 'color', event.target.value)}
+                                                className="h-5 w-7 cursor-pointer rounded border border-slate-700 bg-slate-900"
+                                                aria-label="Field tag colour"
+                                            />
+                                            {field.meta?.color && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setMeta(field, 'color', '')}
+                                                    className="rounded border border-slate-700 px-1 text-slate-400 hover:bg-slate-800"
+                                                >
+                                                    clear
+                                                </button>
+                                            )}
+                                        </label>
 
                                         {field.type === 'computed' && (
                                             <div className="mt-2">

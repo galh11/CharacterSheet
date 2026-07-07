@@ -43,7 +43,18 @@ export const layoutSchema = z.object({
 })
 
 /** How a section renders its fields. `default` is the classic label/value list. */
-export const sectionKindSchema = z.enum(['default', 'abilities', 'hp', 'skills', 'actions'])
+export const sectionKindSchema = z.enum([
+    'default',
+    'abilities',
+    'hp',
+    'skills',
+    'actions',
+    'hitdice',
+    'deathsaves',
+    'conditions',
+    'spellslots',
+    'initiative',
+])
 export type SectionKind = z.infer<typeof sectionKindSchema>
 
 export const sectionSchema = z.object({
@@ -54,6 +65,8 @@ export const sectionSchema = z.object({
     kind: sectionKindSchema.default('default'),
     /** Content zoom for the whole section (text + widgets). */
     scale: z.number().default(1),
+    /** Free-form structured extras used by specialized section renderers. */
+    meta: z.record(z.string(), z.string()).optional(),
     fields: z.array(fieldSchema).default([]),
     layout: layoutSchema,
 })

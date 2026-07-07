@@ -19,9 +19,11 @@ import {
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { QuickStartModal } from './components/QuickStartModal'
+import { RollLog } from './components/RollLog'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { loadPresets, savePresets, type Presets } from './state/presets'
 import { useSheet } from './state/useSheet'
+import type { D20Mode, RollLogEntry } from './model/dice'
 
 function App() {
     const [isEditMode, setIsEditMode] = useState(false)
@@ -30,6 +32,8 @@ function App() {
     const [guides, setGuides] = useState<SnapGuide[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [presets, setPresets] = useState<Presets>(() => loadPresets())
+    const [rollMode, setRollMode] = useState<D20Mode>('normal')
+    const [rollLog, setRollLog] = useState<RollLogEntry[]>([])
     const importRef = useRef<HTMLInputElement>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
@@ -46,6 +50,7 @@ function App() {
         deleteSection,
         duplicateSection,
         rest,
+        healHp,
         addField,
         updateField,
         deleteField,
@@ -55,6 +60,13 @@ function App() {
     const validation = useMemo(() => characterSheetSchema.safeParse(sheet), [sheet])
     const computed = useMemo(() => computeSheet(sheet), [sheet])
     const references = useMemo(() => listReferences(sheet, computed), [sheet, computed])
+    const scope = useMemo(
+        () => Object.fromEntries(references.map((r) => [r.slug, r.value])),
+        [references],
+    )
+
+    const pushRoll = (entry: Omit<RollLogEntry, 'id'>) =>
+        setRollLog((log) => [{ ...entry, id: crypto.randomUUID() }, ...log].slice(0, 40))
 
     const handleImport = async (file: File | undefined) => {
         if (!file) return
@@ -264,6 +276,14 @@ function App() {
                         />
                         <button
                             type="button"
+                            onClick={() => window.print()}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Print or save the sheet as a PDF"
+                        >
+                            Print
+                        </button>
+                        <button
+                            type="button"
                             onClick={handleReset}
                             className="rounded-md border border-rose-700/50 px-3 py-2 text-sm text-rose-300 hover:bg-rose-900/40"
                         >
@@ -417,6 +437,10 @@ function App() {
                                     isEditMode={isEditMode}
                                     results={computed}
                                     references={references}
+                                    scope={scope}
+                                    rollMode={rollMode}
+                                    onRoll={pushRoll}
+                                    onHeal={healHp}
                                     onUpdateSection={(patch) => updateSection(section.id, patch)}
                                     onDeleteSection={() => deleteSection(section.id)}
                                     onDuplicateSection={() => duplicateSection(section.id)}
@@ -452,6 +476,13 @@ function App() {
                     }}
                 />
             )}
+
+            <RollLog
+                entries={rollLog}
+                rollMode={rollMode}
+                onRollModeChange={setRollMode}
+                onClear={() => setRollLog([])}
+            />
         </main>
     )
 }

@@ -161,4 +161,78 @@ describe('useSheet', () => {
         expect(fieldVal(result.current, 'hp')).toBe('3') // HP untouched
         expect(fieldVal(result.current, 'tmp')).toBe('5')
     })
+
+    it('heals current HP up to max', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet()))
+        act(() => result.current.healHp(5))
+        expect(fieldVal(result.current, 'hp')).toBe('8')
+        act(() => result.current.healHp(100))
+        expect(fieldVal(result.current, 'hp')).toBe('20')
+    })
+
+    const recoverySheet = () => ({
+        id: 's',
+        name: 'T',
+        sections: [
+            {
+                id: 'hd',
+                title: 'Hit Dice',
+                description: '',
+                accent: '#000',
+                kind: 'hitdice' as const,
+                scale: 1,
+                layout: { x: 0, y: 0, w: 1, h: 1 },
+                fields: [{ id: 'd12', label: 'd12', type: 'resource' as const, value: '1', max: 5, description: '' }],
+            },
+            {
+                id: 'sl',
+                title: 'Spell Slots',
+                description: '',
+                accent: '#000',
+                kind: 'spellslots' as const,
+                scale: 1,
+                layout: { x: 0, y: 0, w: 1, h: 1 },
+                fields: [{ id: 'l1', label: '1st', type: 'resource' as const, value: '0', max: 4, description: '' }],
+            },
+            {
+                id: 'ds',
+                title: 'Death Saves',
+                description: '',
+                accent: '#000',
+                kind: 'deathsaves' as const,
+                scale: 1,
+                layout: { x: 0, y: 0, w: 1, h: 1 },
+                fields: [
+                    { id: 'succ', label: 'Successes', type: 'counter' as const, value: '2', max: 3, description: '' },
+                    { id: 'fail', label: 'Failures', type: 'counter' as const, value: '1', max: 3, description: '' },
+                ],
+            },
+        ],
+    })
+    const findVal = (api: ReturnType<typeof useSheet>, id: string) => {
+        for (const s of api.sheet.sections) {
+            const f = s.fields.find((x) => x.id === id)
+            if (f) return f.value
+        }
+        return undefined
+    }
+
+    it('long rest refills hit dice and spell slots and clears death saves', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(recoverySheet()))
+        act(() => result.current.rest('long'))
+        expect(findVal(result.current, 'd12')).toBe('5')
+        expect(findVal(result.current, 'l1')).toBe('4')
+        expect(findVal(result.current, 'succ')).toBe('0')
+        expect(findVal(result.current, 'fail')).toBe('0')
+    })
+
+    it('short rest leaves hit dice and spell slots untouched', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(recoverySheet()))
+        act(() => result.current.rest('short'))
+        expect(findVal(result.current, 'd12')).toBe('1')
+        expect(findVal(result.current, 'l1')).toBe('0')
+    })
 })

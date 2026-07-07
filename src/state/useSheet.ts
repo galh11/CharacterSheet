@@ -8,6 +8,7 @@ import {
     type CharacterSheet,
     type SectionLayout,
 } from '../model/characterSheet'
+import type { SectionTemplate } from './templates'
 import {
     getActiveSheet,
     persistActive,
@@ -130,6 +131,26 @@ export const useSheet = () => {
     const addSection = useCallback(() => {
         commit((c) => ({ ...c, sections: [...c.sections, createSection(c.sections.length)] }), 'Add section')
     }, [commit])
+
+    const addTemplateSection = useCallback(
+        (template: SectionTemplate) => {
+            commit(
+                (c) => ({
+                    ...c,
+                    sections: [
+                        ...c.sections,
+                        createSection(c.sections.length, {
+                            title: template.title,
+                            kind: template.kind,
+                            fields: template.fields.map((f) => createField(f)),
+                        }),
+                    ],
+                }),
+                `Add ${template.label}`,
+            )
+        },
+        [commit],
+    )
 
     const deleteSection = useCallback(
         (sectionId: string) => {
@@ -364,6 +385,7 @@ export const useSheet = () => {
         updateSection,
         setSectionLayout,
         addSection,
+        addTemplateSection,
         deleteSection,
         duplicateSection,
         rest,

@@ -26,6 +26,7 @@ import { loadPresets, savePresets, type Presets } from './state/presets'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
 import { getActiveId } from './state/roster'
 import { pushBackup, listBackups, restoreBackup } from './state/backups'
+import { SECTION_TEMPLATES } from './state/templates'
 import { useSheet } from './state/useSheet'
 import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode, RollLogEntry } from './model/dice'
@@ -82,6 +83,7 @@ function App() {
         updateSection,
         setSectionLayout,
         addSection,
+        addTemplateSection,
         deleteSection,
         duplicateSection,
         rest,
@@ -729,6 +731,25 @@ function App() {
                             >
                                 Add section
                             </button>
+                        )}
+                        {isEditMode && (
+                            <select
+                                aria-label="Add section from template"
+                                value=""
+                                onChange={(e) => {
+                                    const tpl = SECTION_TEMPLATES.find((t) => t.id === e.target.value)
+                                    if (tpl) addTemplateSection(tpl)
+                                    e.target.value = ''
+                                }}
+                                className="rounded-md border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-slate-200 hover:bg-slate-700"
+                            >
+                                <option value="">+ Template…</option>
+                                {SECTION_TEMPLATES.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.label}
+                                    </option>
+                                ))}
+                            </select>
                         )}
                     </div>
                 </div>

@@ -907,6 +907,55 @@ function CurrencyWidget({ section, onUpdateField }: SectionBodyProps) {
     )
 }
 
+function TimersWidget({ section, onUpdateField }: SectionBodyProps) {
+    if (section.fields.length === 0)
+        return <p className="text-xs italic text-slate-500">No active buffs. Add a field per effect; its value is rounds remaining.</p>
+    const set = (field: CharacterField, rounds: number) =>
+        onUpdateField(field.id, { value: String(Math.max(0, rounds)) })
+    const advanceAll = () => {
+        for (const field of section.fields) {
+            const r = toNum(field.value)
+            if (r > 0) onUpdateField(field.id, { value: String(r - 1) })
+        }
+    }
+    const anyActive = section.fields.some((f) => toNum(f.value) > 0)
+    return (
+        <div className="flex flex-col gap-1.5">
+            <button
+                type="button"
+                onClick={advanceAll}
+                disabled={!anyActive}
+                className="self-start rounded-md bg-indigo-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40"
+                title="Reduce every active timer by one round"
+            >
+                ⏱ Next round
+            </button>
+            {section.fields.map((field) => {
+                const rounds = toNum(field.value)
+                const expired = rounds <= 0
+                return (
+                    <div key={field.id} className={clsx('flex items-center gap-2 text-sm', expired && 'opacity-45')}>
+                        <FieldLabel field={field} />
+                        {expired && <span className="text-[10px] uppercase tracking-wide text-slate-500">expired</span>}
+                        <div className="ml-auto flex items-center gap-1">
+                            <button type="button" onClick={() => set(field, rounds - 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Decrease ${field.label}`}>−</button>
+                            <input
+                                value={field.value}
+                                onChange={(e) => onUpdateField(field.id, { value: e.target.value.replace(/[^0-9]/g, '') })}
+                                inputMode="numeric"
+                                aria-label={`${field.label} rounds remaining`}
+                                className="w-12 rounded bg-slate-900/50 text-center font-mono text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                            />
+                            <span className="text-xs text-slate-500">rd</span>
+                            <button type="button" onClick={() => set(field, rounds + 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
 export function SectionBody(props: SectionBodyProps) {
     switch (props.section.kind) {
         case 'abilities':
@@ -929,6 +978,8 @@ export function SectionBody(props: SectionBodyProps) {
             return <Initiative {...props} />
         case 'currency':
             return <CurrencyWidget {...props} />
+        case 'timers':
+            return <TimersWidget {...props} />
         default:
             return <DefaultList {...props} />
     }

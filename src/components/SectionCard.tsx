@@ -100,21 +100,33 @@ export function SectionCard({
                         className="w-full rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-300"
                         aria-label="Section description"
                     />
-                    <label className="flex items-center gap-2 text-xs text-slate-400">
-                        Layout
-                        <select
-                            value={section.kind}
-                            onChange={(event) => onUpdateSection({ kind: event.target.value as SectionKind })}
-                            className="rounded border border-slate-600 bg-slate-900 px-1 py-1 text-xs text-slate-200"
-                            aria-label="Section layout"
-                        >
-                            {SECTION_KINDS.map((k) => (
-                                <option key={k.value} value={k.value}>
-                                    {k.label}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
+                    <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs text-slate-400">
+                            Layout
+                            <select
+                                value={section.kind}
+                                onChange={(event) => onUpdateSection({ kind: event.target.value as SectionKind })}
+                                className="rounded border border-slate-600 bg-slate-900 px-1 py-1 text-xs text-slate-200"
+                                aria-label="Section layout"
+                            >
+                                {SECTION_KINDS.map((k) => (
+                                    <option key={k.value} value={k.value}>
+                                        {k.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="flex items-center gap-2 text-xs text-slate-400">
+                            Color
+                            <input
+                                type="color"
+                                value={section.accent}
+                                onChange={(event) => onUpdateSection({ accent: event.target.value })}
+                                className="h-6 w-8 cursor-pointer rounded border border-slate-600 bg-slate-900"
+                                aria-label="Section color"
+                            />
+                        </label>
+                    </div>
                 </div>
             ) : (
                 section.description && (

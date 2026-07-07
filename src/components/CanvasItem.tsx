@@ -1,10 +1,14 @@
 import { clsx } from 'clsx'
-import { useRef, useState, type ReactNode } from 'react'
+import { useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import type { SectionLayout } from '../model/characterSheet'
 
 export interface SnapGuide {
     axis: 'x' | 'y'
     pos: number
+}
+
+export interface CanvasItemHandle {
+    measureHeight: () => number
 }
 
 interface CanvasItemProps {
@@ -13,10 +17,14 @@ interface CanvasItemProps {
     siblings: SectionLayout[]
     /** Content zoom (1 = 100%). */
     scale?: number
+    selected?: boolean
     onLayoutCommit: (layout: SectionLayout) => void
     onScaleChange?: (scale: number) => void
     /** Reports active alignment guides while dragging (empty on release). */
     onGuidesChange?: (guides: SnapGuide[]) => void
+    /** Fired on a click (no drag) of the handle; additive = Shift/Ctrl held. */
+    onSelect?: (additive: boolean) => void
+    handleRef?: React.Ref<CanvasItemHandle>
     children: ReactNode
 }
 
@@ -57,9 +65,10 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, scale = 1, onLayoutCommit, onScaleChange, onGuidesChange, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, scale = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
+    const moved = useRef(false)
     const rootRef = useRef<HTMLDivElement>(null)
     const contentRef = useRef<HTMLDivElement>(null)
 
@@ -70,6 +79,7 @@ export function CanvasItem({ layout, siblings, scale = 1, onLayoutCommit, onScal
         event.stopPropagation()
         ;(event.target as HTMLElement).setPointerCapture(event.pointerId)
         drag.current = { mode, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: layout }
+        moved.current = false
         setLive(layout)
     }
 
@@ -78,6 +88,7 @@ export function CanvasItem({ layout, siblings, scale = 1, onLayoutCommit, onScal
         if (state.mode === 'idle' || state.pointerId !== event.pointerId) return
         const dx = event.clientX - state.startX
         const dy = event.clientY - state.startY
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved.current = true
         const guides: SnapGuide[] = []
 
         if (state.mode === 'move') {
@@ -103,17 +114,22 @@ export function CanvasItem({ layout, siblings, scale = 1, onLayoutCommit, onScal
     const endDrag = (event: React.PointerEvent) => {
         const state = drag.current
         if (state.mode === 'idle' || state.pointerId !== event.pointerId) return
+        const wasClick = state.mode === 'move' && !moved.current
         drag.current = { mode: 'idle' }
-        if (live) onLayoutCommit(live)
+        if (wasClick) {
+            onSelect?.(event.shiftKey || event.ctrlKey || event.metaKey)
+        } else if (live) {
+            onLayoutCommit(live)
+        }
         setLive(null)
         onGuidesChange?.([])
     }
 
-    /** Shrink-wrap the height to the content's natural height. */
-    const fitHeight = () => {
+    /** Measure the content's natural height (without committing). */
+    const measureHeight = (): number => {
         const root = rootRef.current
         const content = contentRef.current
-        if (!root || !content) return
+        if (!root || !content) return layout.h
         const pr = root.style.height
         const pc = content.style.height
         root.style.height = 'auto'
@@ -121,8 +137,13 @@ export function CanvasItem({ layout, siblings, scale = 1, onLayoutCommit, onScal
         const h = Math.max(MIN_H, Math.round(root.offsetHeight))
         root.style.height = pr
         content.style.height = pc
-        onLayoutCommit({ ...layout, h })
+        return h
     }
+
+    useImperativeHandle(handleRef, () => ({ measureHeight }))
+
+    /** Shrink-wrap the height to the content's natural height. */
+    const fitHeight = () => onLayoutCommit({ ...layout, h: measureHeight() })
 
     /** Shrink-wrap the width to the content's natural width (capped). */
     const fitWidth = () => {
@@ -157,7 +178,7 @@ export function CanvasItem({ layout, siblings, scale = 1, onLayoutCommit, onScal
     return (
         <div
             ref={rootRef}
-            className={clsx('group absolute', live && 'z-20 select-none')}
+            className={clsx('group absolute rounded-lg', live && 'z-20 select-none', selected && 'z-10 ring-2 ring-cyan-400')}
             style={{ left: current.x, top: current.y, width: current.w, height: current.h }}
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}

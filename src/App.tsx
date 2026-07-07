@@ -6,7 +6,7 @@ import {
     type SectionLayout,
 } from './model/characterSheet'
 import { computeSheet, listReferences } from './model/compute'
-import { CanvasItem, type SnapGuide } from './components/CanvasItem'
+import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { QuickStartModal } from './components/QuickStartModal'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
@@ -54,7 +54,9 @@ function App() {
     const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
     const [guides, setGuides] = useState<SnapGuide[]>([])
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const importRef = useRef<HTMLInputElement>(null)
+    const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
         sheet,
         replaceSheet,
@@ -113,6 +115,70 @@ function App() {
         const items = sheet.sections.map((s) => ({ id: s.id, layout: s.layout }))
         for (const { id, layout } of tidyLayouts(items, maxWidth)) {
             setSectionLayout(id, layout)
+        }
+    }
+
+    const handleFitAll = () => {
+        for (const s of sheet.sections) {
+            const h = fitRefs.current.get(s.id)?.measureHeight()
+            if (h != null) setSectionLayout(s.id, { ...s.layout, h })
+        }
+    }
+
+    const handleSelect = (id: string, additive: boolean) => {
+        setSelectedIds((prev) => {
+            const next = new Set(additive ? prev : [])
+            if (additive && prev.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+    }
+
+    const selectedRects = () => sheet.sections.filter((s) => selectedIds.has(s.id))
+
+    const align = (edge: 'left' | 'hcenter' | 'right' | 'top' | 'vmiddle' | 'bottom') => {
+        const secs = selectedRects()
+        if (secs.length < 2) return
+        const rects = secs.map((s) => s.layout)
+        const minX = Math.min(...rects.map((r) => r.x))
+        const maxR = Math.max(...rects.map((r) => r.x + r.w))
+        const minY = Math.min(...rects.map((r) => r.y))
+        const maxB = Math.max(...rects.map((r) => r.y + r.h))
+        const cx = (minX + maxR) / 2
+        const cy = (minY + maxB) / 2
+        for (const s of secs) {
+            const l = s.layout
+            const patch =
+                edge === 'left' ? { x: minX }
+                    : edge === 'right' ? { x: maxR - l.w }
+                        : edge === 'hcenter' ? { x: Math.round(cx - l.w / 2) }
+                            : edge === 'top' ? { y: minY }
+                                : edge === 'bottom' ? { y: maxB - l.h }
+                                    : { y: Math.round(cy - l.h / 2) }
+            setSectionLayout(s.id, { ...l, ...patch })
+        }
+    }
+
+    const match = (dim: 'w' | 'h') => {
+        const secs = selectedRects()
+        if (secs.length < 2) return
+        const val = secs[0].layout[dim]
+        for (const s of secs) setSectionLayout(s.id, { ...s.layout, [dim]: val })
+    }
+
+    const distribute = (axis: 'h' | 'v') => {
+        const key = axis === 'h' ? 'x' : 'y'
+        const size = axis === 'h' ? 'w' : 'h'
+        const secs = [...selectedRects()].sort((a, b) => a.layout[key] - b.layout[key])
+        if (secs.length < 3) return
+        const first = secs[0].layout[key]
+        const lastEnd = secs[secs.length - 1].layout[key] + secs[secs.length - 1].layout[size]
+        const totalSize = secs.reduce((n, s) => n + s.layout[size], 0)
+        const gap = (lastEnd - first - totalSize) / (secs.length - 1)
+        let cursor = first
+        for (const s of secs) {
+            setSectionLayout(s.id, { ...s.layout, [key]: Math.round(cursor) })
+            cursor += s.layout[size] + gap
         }
     }
 
@@ -211,6 +277,14 @@ function App() {
                         >
                             Tidy
                         </button>
+                        <button
+                            type="button"
+                            onClick={handleFitAll}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Shrink every section's height to its content"
+                        >
+                            Fit all
+                        </button>
                         {isEditMode && (
                             <button
                                 type="button"
@@ -223,8 +297,42 @@ function App() {
                     </div>
                 </div>
 
+                {selectedIds.size > 0 && (
+                    <div className="mb-3 flex flex-wrap items-center gap-1 rounded-md border border-cyan-800/50 bg-slate-900/60 p-2 text-xs text-slate-300">
+                        <span className="mr-1 font-medium text-cyan-300">{selectedIds.size} selected</span>
+                        {(
+                            [
+                                ['left', 'Left'],
+                                ['hcenter', 'Center'],
+                                ['right', 'Right'],
+                                ['top', 'Top'],
+                                ['vmiddle', 'Middle'],
+                                ['bottom', 'Bottom'],
+                            ] as const
+                        ).map(([edge, label]) => (
+                            <button
+                                key={edge}
+                                type="button"
+                                onClick={() => align(edge)}
+                                className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800"
+                                title={`Align ${label.toLowerCase()} (2+ selected)`}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                        <button type="button" onClick={() => match('w')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Match width to first selected">Match W</button>
+                        <button type="button" onClick={() => match('h')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Match height to first selected">Match H</button>
+                        <button type="button" onClick={() => distribute('h')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Distribute horizontally (3+ selected)">Dist H</button>
+                        <button type="button" onClick={() => distribute('v')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Distribute vertically (3+ selected)">Dist V</button>
+                        <button type="button" onClick={() => setSelectedIds(new Set())} className="ml-auto rounded border border-slate-700 px-2 py-1 text-slate-400 hover:bg-slate-800">Clear</button>
+                    </div>
+                )}
+
                 <div className="overflow-auto">
                     <div
+                        onPointerDown={(e) => {
+                            if (e.target === e.currentTarget) setSelectedIds(new Set())
+                        }}
                         className={clsx(
                             'relative rounded-lg',
                             isEditMode && 'bg-[radial-gradient(circle,_rgba(148,163,184,0.12)_1px,_transparent_1px)] [background-size:16px_16px]',
@@ -236,12 +344,18 @@ function App() {
                                 key={section.id}
                                 layout={section.layout}
                                 scale={section.scale}
+                                selected={selectedIds.has(section.id)}
                                 siblings={sheet.sections
                                     .filter((s) => s.id !== section.id)
                                     .map((s) => s.layout)}
                                 onLayoutCommit={(layout) => commitLayout(section.id, layout)}
                                 onScaleChange={(scale) => updateSection(section.id, { scale })}
                                 onGuidesChange={setGuides}
+                                onSelect={(additive) => handleSelect(section.id, additive)}
+                                handleRef={(h) => {
+                                    if (h) fitRefs.current.set(section.id, h)
+                                    else fitRefs.current.delete(section.id)
+                                }}
                             >
                                 <SectionCard
                                     section={section}

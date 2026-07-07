@@ -118,48 +118,48 @@ Numbers match that review so items can be picked by number. Legend: ✅ approved
 (to build) · ❌ declined · ⏳ deferred/needs decision · [x] already shipped.
 
 Rolling & combat
-- [ ] **1** ✅ Death-save **auto-roll** button (nat 20 = 1 HP, nat 1 = 2 fails).
+- [x] **1** ✅ Death-save **auto-roll** button (nat 20 = 1 HP, nat 1 = 2 fails).
 - [ ] **2** ❌ Roll vs a target AC/DC (Hit/Miss).
-- [ ] **3** ✅ Group / repeat rolls (roll a check N times).
-- [ ] **4** ✅ Preset situational modifiers (Bless +1d4, Guidance +1d4, cover −2/−5).
-- [ ] **5** ✅ Damage-type resistance / vulnerability (halve/double on the HP Damage button).
+- [x] **3** ✅ Group / repeat rolls (roll a check N times).
+- [x] **4** ✅ Preset situational modifiers (Bless +1d4, Guidance +1d4, cover −2/−5).
+- [x] **5** ✅ Damage-type resistance / vulnerability (halve/double on the HP Damage button).
 - [ ] **6** ⏳ Reroll 1s/2s — Yad lacks the feature; build later as a generic
       per-action option only if a character has it.
 
 Automation & mechanics
-- [ ] **7** ✅ Exhaustion effect reminder from the Exhaustion counter.
-- [ ] **8** ✅ Active-state toggles that apply a bonus (Dig Deep, Down But Not Out).
-- [ ] **9** ✅ Auto-restore Dig Deep when you take a level of exhaustion.
-- [ ] **10** ✅ Active-buff timers (rounds/minutes countdowns for Large Form, Dig Deep…).
-- [ ] **11** ✅ Short-rest prompt to spend hit dice inline.
-- [ ] **12** ✅ Encumbrance vs the computed carrying capacity.
+- [x] **7** ✅ Exhaustion effect reminder from the Exhaustion counter.
+- [x] **8** ✅ Active-state toggles that apply a bonus (Dig Deep, Down But Not Out).
+- [x] **9** ✅ Auto-restore Dig Deep when you take a level of exhaustion.
+- [x] **10** ✅ Active-buff timers (rounds/minutes countdowns for Large Form, Dig Deep…).
+- [x] **11** ✅ Short-rest prompt to spend hit dice inline.
+- [x] **12** ✅ Encumbrance vs the computed carrying capacity.
 
 Sheet & data management
-- [ ] **13** ✅ Duplicate a whole character in the roster.
-- [ ] **14** ✅ Level-up helper (bump level → proficiency, HP max, hit-dice count).
-- [ ] **15** ✅ Per-character roll log (instead of one global log).
-- [ ] **16** ✅ Undo/redo entries with labels ("Undo: HP change").
-- [ ] **17** ✅ Auto-backup / local version history with restore.
+- [x] **13** ✅ Duplicate a whole character in the roster.
+- [x] **14** ✅ Level-up helper (bump level → proficiency, HP max, hit-dice count).
+- [x] **15** ✅ Per-character roll log (instead of one global log).
+- [x] **16** ✅ Undo/redo entries with labels ("Undo: HP change").
+- [x] **17** ✅ Auto-backup / local version history with restore.
 - [ ] **18** ❌ Bulk import characters.
 
 Sharing & polish
 - [ ] **19** ❌ Read-only DM share link.
-- [ ] **20** ✅ Export the layout to PDF/PNG.
+- [x] **20** ✅ Export the layout to PDF/PNG.
 - [ ] **21** ❌ QR code for the share link.
-- [ ] **22** ✅ Search / filter bar to jump to any field or action.
-- [ ] **23** ✅ Pin sections to top in stack view.
-- [ ] **24** ✅ Density toggle: Compact ↔ Normal ↔ Comfortable (both directions).
+- [x] **22** ✅ Search / filter bar to jump to any field or action.
+- [x] **23** ✅ Pin sections to top in stack view.
+- [x] **24** ✅ Density toggle: Compact ↔ Normal ↔ Comfortable (both directions).
 - [ ] **25** ❌ Keyboard shortcuts.
-- [ ] **26** ✅ Section templates (insert ready-made Attacks/Spellcasting/etc.).
-- [ ] **27** ✅ Per-character colour theme (accent palette).
+- [x] **26** ✅ Section templates (insert ready-made Attacks/Spellcasting/etc.).
+- [x] **27** ✅ Per-character colour theme (accent palette).
 
 D&D extras
 - [ ] **28** ⏳ Spell **cards** (distinct from the spell-slots tracker we shipped):
       name/level/range/save/damage + a cast button that spends a slot. Not
       relevant to Yad (no spells); build when a caster is added.
-- [ ] **29** ✅ Conditions library (one-click add common conditions with rules text).
-- [ ] **30** ✅ Prominent **Inspiration** toggle (today it's only a generic boolean/condition).
-- [ ] **31** ✅ Rest log (history of rests and what recovered).
+- [x] **29** ✅ Conditions library (one-click add common conditions with rules text).
+- [x] **30** ✅ Prominent **Inspiration** toggle (today it's only a generic boolean/condition).
+- [x] **31** ✅ Rest log (history of rests and what recovered).
 - [ ] **32** ❌ Monster/NPC quick cards for the DM.
 
 ## Notes

@@ -280,6 +280,41 @@ describe('useSheet', () => {
         expect(fieldVal(result.current, 'tmp')).toBe('10')
     })
 
+    it('restoreResource refills a resource to max and adds one to the cost counter', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet())) // moxie 1/5, exhaustion 2
+        act(() => result.current.restoreResource('moxie', 'exhaustion'))
+        expect(fieldVal(result.current, 'mox')).toBe('5')
+        expect(fieldVal(result.current, 'ex')).toBe('3')
+    })
+
+    it('restoreResource works without a cost counter', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet()))
+        act(() => result.current.restoreResource('moxie'))
+        expect(fieldVal(result.current, 'mox')).toBe('5')
+        expect(fieldVal(result.current, 'ex')).toBe('2')
+    })
+
+    it('addTemplateSection appends a section with the template kind and fields', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet()))
+        const before = result.current.sheet.sections.length
+        act(() =>
+            result.current.addTemplateSection({
+                id: 'timers',
+                label: 'Buff timers',
+                title: 'Buff Timers',
+                kind: 'timers',
+                fields: [],
+            }),
+        )
+        const sections = result.current.sheet.sections
+        expect(sections.length).toBe(before + 1)
+        expect(sections[sections.length - 1].kind).toBe('timers')
+        expect(sections[sections.length - 1].title).toBe('Buff Timers')
+    })
+
     it('setFieldValueSilent updates without adding undo history', () => {
         const { result } = renderHook(() => useSheet())
         act(() => result.current.replaceSheet(restSheet())) // 1 undo step

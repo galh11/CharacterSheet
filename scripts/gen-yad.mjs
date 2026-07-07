@@ -172,8 +172,8 @@ S('Attacks', 'actions', [
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'bludgeoning', range: '5 ft' },
     }),
     F('Flame Tongue Handaxe', 'text', '', {
-        description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action (toggle “Flame Tongue” in Conditions) to add 2d6 fire.',
-        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', range: '20/60' },
+        description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action with the 🔥 Flame Tongue toggle to add 2d6 fire.',
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', extraLabel: 'Flame Tongue', range: '20/60' },
     }),
     F('Javelin', 'text', '', {
         description: 'Thrown weapon (uses the d10 fisticuffs die).',

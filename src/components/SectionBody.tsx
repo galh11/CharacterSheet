@@ -36,6 +36,8 @@ interface SectionBodyProps {
     onSpend?: (slug: string, amount: number) => void
     /** Refill a resource to max, optionally paying a cost by adding 1 to a counter. */
     onRestore?: (refillSlug: string, costSlug?: string) => void
+    /** Toggle a boolean activation flag anywhere on the sheet, by slug. */
+    onToggleFlag?: (slug: string) => void
     /** Apply temporary HP (kept if higher). */
     onTempHp?: (amount: number) => void
     /** Add a field to this section with the given overrides. */
@@ -497,7 +499,7 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onTempHp }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onToggleFlag, onTempHp }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     /** Extra damage is active unless it is gated on a toggle (meta.extraWhen) that is off. */
@@ -563,7 +565,9 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
                 const canSpend = Boolean(m.costField)
                 const canTemp = Boolean(m.temp)
                 const canRestore = Boolean(m.refill)
-                const showRow = canAttack || canDamage || canSpend || canTemp || canRestore
+                const canToggle = Boolean(m.extraWhen)
+                const showRow = canAttack || canDamage || canSpend || canTemp || canRestore || canToggle
+                const toggleLabel = m.extraLabel || (m.extraWhen ? m.extraWhen.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : '')
                 return (
                     <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -581,6 +585,24 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
                         </div>
                         {showRow && onRoll && (
                             <div className="mt-1.5 flex flex-wrap gap-1 print:hidden">
+                                {canToggle && onToggleFlag && (
+                                    <button
+                                        type="button"
+                                        onClick={() => onToggleFlag(m.extraWhen!)}
+                                        role="switch"
+                                        aria-checked={extraOn}
+                                        aria-label={toggleLabel}
+                                        className={clsx(
+                                            'rounded px-2 py-0.5 text-[11px] font-medium ring-1 transition-colors',
+                                            extraOn
+                                                ? 'bg-amber-400/20 text-amber-200 ring-amber-400/60'
+                                                : 'bg-slate-800 text-slate-400 ring-slate-700 hover:text-slate-200',
+                                        )}
+                                        title={extraOn ? `${toggleLabel} active — click to turn off` : `Activate ${toggleLabel}`}
+                                    >
+                                        {extraOn ? '🔥' : '○'} {toggleLabel}
+                                    </button>
+                                )}
                                 {canAttack && <button type="button" onClick={() => rollAttack(field)} className="rounded bg-cyan-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-cyan-500">🎲 Attack</button>}
                                 {canDamage && <button type="button" onClick={() => rollFieldDamage(field, false)} className="rounded bg-rose-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-rose-500">🎲 Damage</button>}
                                 {canDamage && <button type="button" onClick={() => rollFieldDamage(field, true)} className="rounded border border-amber-500/50 px-2 py-0.5 text-[11px] font-medium text-amber-300 hover:bg-amber-900/30" title="Roll damage with doubled dice (critical hit)">Crit</button>}

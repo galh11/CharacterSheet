@@ -1,7 +1,6 @@
 import { clsx } from 'clsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-    characterSheetSchema,
     createStarterSheet,
     slugify,
     type SectionLayout,
@@ -13,7 +12,6 @@ import {
     alignEdge,
     matchDimension,
     distribute as distributeLayout,
-    GAP,
     type Placed,
     type AlignEdge,
 } from './model/layout'
@@ -21,6 +19,7 @@ import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/
 import { SectionCard } from './components/SectionCard'
 import { QuickStartModal } from './components/QuickStartModal'
 import { RollLog } from './components/RollLog'
+import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { loadPresets, savePresets, type Presets } from './state/presets'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
@@ -64,6 +63,7 @@ function App() {
     })
     const importRef = useRef<HTMLInputElement>(null)
     const captureRef = useRef<HTMLDivElement>(null)
+    const canvasScrollRef = useRef<HTMLDivElement>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
         sheet,
@@ -83,6 +83,7 @@ function App() {
         renameSheet,
         updateSection,
         setSectionLayout,
+        setSectionLayouts,
         addSection,
         addTemplateSection,
         deleteSection,
@@ -90,6 +91,7 @@ function App() {
         rest,
         healHp,
         spendResource,
+        toggleField,
         restoreResource,
         applyTempHp,
         setFieldValueSilent,
@@ -99,7 +101,6 @@ function App() {
         moveField,
     } = useSheet()
 
-    const validation = useMemo(() => characterSheetSchema.safeParse(sheet), [sheet])
     const computed = useMemo(() => computeSheet(sheet), [sheet])
     const references = useMemo(() => listReferences(sheet, computed), [sheet, computed])
     const scope = useMemo(() => {
@@ -312,19 +313,23 @@ function App() {
     }
 
     const handleTidy = () => {
-        const maxWidth = Math.max(1200, ...sheet.sections.map((s) => s.layout.w + GAP * 2))
+        const width = canvasScrollRef.current?.clientWidth ?? 1200
         const items = sheet.sections.map((s) => ({ id: s.id, layout: s.layout }))
-        for (const { id, layout } of tidyLayouts(items, maxWidth)) {
-            setSectionLayout(id, layout)
-        }
+        setSectionLayouts(tidyLayouts(items, width))
     }
 
     const handleFitAll = () => {
-        for (const s of sheet.sections) {
+        // Measure each card's natural content size, then masonry-pack the new
+        // sizes so nothing overlaps and vertical gaps stay small. Widths are
+        // clamped so one text-heavy card can't blow out the column width.
+        const items = sheet.sections.map((s) => {
             const handle = fitRefs.current.get(s.id)
-            if (!handle) continue
-            setSectionLayout(s.id, { ...s.layout, w: handle.measureWidth(), h: handle.measureHeight() })
-        }
+            const w = handle ? Math.min(320, handle.measureWidth()) : s.layout.w
+            const h = handle ? handle.measureHeight() : s.layout.h
+            return { id: s.id, layout: { ...s.layout, w, h } }
+        })
+        const width = canvasScrollRef.current?.clientWidth ?? 1200
+        setSectionLayouts(tidyLayouts(items, width))
     }
 
     const handleSelect = (id: string, additive: boolean) => {
@@ -421,6 +426,9 @@ function App() {
         })
 
     const densityZoom = density === 'compact' ? 0.9 : density === 'comfortable' ? 1.12 : 1
+    // Only zoom the free canvas in play mode; edit mode stays at 1:1 so dragging
+    // (handles are edit-only) never has to correct for a zoom factor.
+    const canvasZoom = isEditMode ? 1 : densityZoom
     const matchesQuery = (section: (typeof sheet.sections)[number]) => {
         const q = query.trim().toLowerCase()
         if (!q) return true
@@ -449,6 +457,7 @@ function App() {
             onHeal={healHp}
             onSpend={spendResource}
             onRestore={restoreResource}
+            onToggleFlag={toggleField}
             onTempHp={applyTempHp}
             onUpdateSection={(patch) => updateSection(section.id, patch)}
             onDeleteSection={() => deleteSection(section.id)}
@@ -498,40 +507,31 @@ function App() {
                                 </option>
                             ))}
                         </select>
-                        <button
-                            type="button"
-                            onClick={newCharacter}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Create a new character"
-                        >
-                            + New
-                        </button>
-                        <button
-                            type="button"
-                            onClick={duplicateCharacter}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Duplicate the current character"
-                        >
-                            Duplicate
-                        </button>
-                        {listBackups(activeId).length > 0 && (
-                            <select
-                                value=""
-                                onChange={(event) => {
-                                    if (event.target.value) handleRestore(Number(event.target.value))
-                                }}
-                                className="max-w-[9rem] rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
-                                aria-label="Restore a saved version"
-                                title="Restore an earlier auto-saved version"
-                            >
-                                <option value="">History…</option>
-                                {listBackups(activeId).map((b) => (
-                                    <option key={b.ts} value={b.ts}>
-                                        {new Date(b.ts).toLocaleString()}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
+                        <Menu label="Character ▾" title="Character actions" align="left">
+                            {(close) => (
+                                <>
+                                    <MenuItem onClick={() => { newCharacter(); close() }}>+ New character</MenuItem>
+                                    <MenuItem onClick={() => { duplicateCharacter(); close() }}>Duplicate character</MenuItem>
+                                    {listBackups(activeId).length > 0 && (
+                                        <>
+                                            <MenuDivider />
+                                            <MenuLabel>Restore earlier version</MenuLabel>
+                                            {listBackups(activeId).map((b) => (
+                                                <MenuItem key={b.ts} onClick={() => { handleRestore(b.ts); close() }}>
+                                                    {new Date(b.ts).toLocaleString()}
+                                                </MenuItem>
+                                            ))}
+                                        </>
+                                    )}
+                                    <MenuDivider />
+                                    <MenuItem danger onClick={() => { handleReset(); close() }}>Reset to starter sheet</MenuItem>
+                                    <MenuItem danger onClick={() => { handleDeleteCharacter(); close() }}>Delete character</MenuItem>
+                                </>
+                            )}
+                        </Menu>
+
+                        <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+
                         <button
                             type="button"
                             onClick={undo}
@@ -541,8 +541,9 @@ function App() {
                                 canUndo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
                             )}
                             title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'}
+                            aria-label="Undo"
                         >
-                            ↶ Undo
+                            ↶
                         </button>
                         <button
                             type="button"
@@ -553,9 +554,11 @@ function App() {
                                 canRedo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
                             )}
                             title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)'}
+                            aria-label="Redo"
                         >
-                            ↷ Redo
-                        </button>                        {inspirationField && (
+                            ↷
+                        </button>
+                        {inspirationField && (
                             <button
                                 type="button"
                                 onClick={toggleInspiration}
@@ -569,22 +572,19 @@ function App() {
                             >
                                 ★ Inspiration
                             </button>
-                        )}                        <button
-                            type="button"
-                            onClick={() => doRest('short')}
-                            className="rounded-md border border-amber-700/50 px-3 py-2 text-sm text-amber-200 hover:bg-amber-900/30"
-                            title="Short rest — refill short-rest resources"
-                        >
-                            Short rest
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => doRest('long')}
-                            className="rounded-md border border-indigo-700/50 px-3 py-2 text-sm text-indigo-200 hover:bg-indigo-900/30"
-                            title="Long rest — restore HP, clear temp HP, reduce exhaustion, refill resources"
-                        >
-                            Long rest
-                        </button>
+                        )}
+                        <Menu label="Rest ▾" title="Take a short or long rest">
+                            {(close) => (
+                                <>
+                                    <MenuItem onClick={() => { doRest('short'); close() }} title="Refill short-rest resources">
+                                        Short rest
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
+                                        Long rest
+                                    </MenuItem>
+                                </>
+                            )}
+                        </Menu>
                         {levelField && (
                             <button
                                 type="button"
@@ -602,20 +602,33 @@ function App() {
                         >
                             Quick start
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => exportSheetToFile(sheet)}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                        >
-                            Export
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => importRef.current?.click()}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                        >
-                            Import
-                        </button>
+
+                        <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+
+                        <Menu label="⋯ More" title="Import, export, and share" align="right">
+                            {(close) => (
+                                <>
+                                    <MenuLabel>Data</MenuLabel>
+                                    <MenuItem onClick={() => { exportSheetToFile(sheet); close() }} title="Download this sheet as JSON">
+                                        Export JSON
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { importRef.current?.click(); close() }} title="Load a sheet from a JSON file">
+                                        Import JSON…
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { void handleShare(); close() }} title="Copy a shareable link that contains this whole sheet">
+                                        Copy share link
+                                    </MenuItem>
+                                    <MenuDivider />
+                                    <MenuLabel>Export image</MenuLabel>
+                                    <MenuItem onClick={() => { window.print(); close() }} title="Print or save the sheet as a PDF">
+                                        Print / PDF
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { void handleExportPng(); close() }} title="Export the canvas as a PNG image">
+                                        Export PNG
+                                    </MenuItem>
+                                </>
+                            )}
+                        </Menu>
                         <input
                             ref={importRef}
                             type="file"
@@ -626,14 +639,6 @@ function App() {
                                 event.target.value = ''
                             }}
                         />
-                        <button
-                            type="button"
-                            onClick={() => void handleShare()}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Copy a shareable link that contains this whole sheet"
-                        >
-                            Share
-                        </button>
                         <label className="flex items-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
                             <input
                                 type="color"
@@ -643,37 +648,6 @@ function App() {
                                 className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
                             />
                         </label>
-                        <button
-                            type="button"
-                            onClick={() => window.print()}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Print or save the sheet as a PDF"
-                        >
-                            Print
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => void handleExportPng()}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Export the canvas as a PNG image"
-                        >
-                            PNG
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleReset}
-                            className="rounded-md border border-rose-700/50 px-3 py-2 text-sm text-rose-300 hover:bg-rose-900/40"
-                        >
-                            Reset
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleDeleteCharacter}
-                            className="rounded-md border border-rose-700/50 px-3 py-2 text-sm text-rose-300 hover:bg-rose-900/40"
-                            title="Delete this character"
-                        >
-                            Delete char
-                        </button>
                         <button
                             type="button"
                             onClick={() => setIsEditMode((current) => !current)}
@@ -689,11 +663,8 @@ function App() {
                     </div>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
-                    <span>Sections: {sheet.sections.length}</span>
-                    <span className={validation.success ? 'text-emerald-300' : 'text-rose-300'}>
-                        Model: {validation.success ? 'valid' : 'invalid'}
-                    </span>
+                <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
+                    <span title="Your sheet is saved automatically in this browser">✓ Autosaved locally</span>
                     {notice && <span className="text-cyan-300">{notice}</span>}
                 </div>
             </header>
@@ -716,7 +687,7 @@ function App() {
                             type="button"
                             onClick={() => setDensity((d) => (d === 'compact' ? 'normal' : d === 'normal' ? 'comfortable' : 'compact'))}
                             className="rounded-md border border-slate-600 px-3 py-2 text-sm capitalize text-slate-200 hover:bg-slate-800"
-                            title="Cycle display density (stack view)"
+                            title="Cycle display density — Compact / Normal / Comfortable"
                         >
                             {density}
                         </button>
@@ -734,7 +705,7 @@ function App() {
                                     type="button"
                                     onClick={handleTidy}
                                     className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Auto-arrange sections into tidy rows"
+                                    title="Auto-arrange sections into compact columns"
                                 >
                                     Tidy
                                 </button>
@@ -742,7 +713,7 @@ function App() {
                                     type="button"
                                     onClick={handleFitAll}
                                     className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Shrink every section to its content (width + height)"
+                                    title="Shrink every section to its content, then arrange them compactly"
                                 >
                                     Fit all
                                 </button>
@@ -844,7 +815,7 @@ function App() {
                         ))}
                     </div>
                 ) : (
-                    <div className="overflow-auto">
+                    <div ref={canvasScrollRef} className="overflow-auto">
                         <div
                             ref={captureRef}
                             onPointerDown={(e) => {
@@ -854,13 +825,15 @@ function App() {
                                 'relative rounded-lg',
                                 isEditMode && 'bg-[radial-gradient(circle,_rgba(148,163,184,0.12)_1px,_transparent_1px)] [background-size:16px_16px]',
                             )}
-                            style={{ width: canvasSize.width, height: canvasSize.height }}
+                            style={{ width: canvasSize.width, height: canvasSize.height, zoom: canvasZoom }}
                         >
                             {visibleSections.map((section) => (
                                 <CanvasItem
                                     key={section.id}
                                     layout={section.layout}
                                     scale={section.scale}
+                                    zoom={canvasZoom}
+                                    editable={isEditMode}
                                     selected={selectedIds.has(section.id)}
                                     siblings={sheet.sections
                                         .filter((s) => s.id !== section.id)

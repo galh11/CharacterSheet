@@ -66,21 +66,22 @@ export const resolveOverlap = (
     return r
 }
 
-/** Shelf-pack sections into rows that fit within maxWidth. */
+/** Masonry-pack sections into columns that fit within maxWidth, placing each
+ *  card into the currently-shortest column so cards of varying heights stay
+ *  compact (no tall shelf gaps). Order is preserved as much as possible. */
 export const tidyLayouts = (items: Placed[], maxWidth: number, gap = GAP): Placed[] => {
-    let x = gap
-    let y = gap
-    let rowH = 0
+    if (items.length === 0) return items
+    const colWidth = Math.max(...items.map((i) => i.layout.w))
+    const cols = Math.max(1, Math.floor((maxWidth - gap) / (colWidth + gap)))
+    const heights = new Array(cols).fill(gap)
     return items.map(({ id, layout }) => {
-        if (x > gap && x + layout.w + gap > maxWidth) {
-            x = gap
-            y += rowH + gap
-            rowH = 0
-        }
-        const next = { id, layout: { ...layout, x, y } }
-        x += layout.w + gap
-        rowH = Math.max(rowH, layout.h)
-        return next
+        // Pick the shortest column (ties: leftmost) for a balanced, gap-free fill.
+        let c = 0
+        for (let i = 1; i < cols; i++) if (heights[i] < heights[c]) c = i
+        const x = gap + c * (colWidth + gap)
+        const y = heights[c]
+        heights[c] = y + layout.h + gap
+        return { id, layout: { ...layout, x, y } }
     })
 }
 

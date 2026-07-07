@@ -63,12 +63,21 @@ describe('resolveOverlap', () => {
 })
 
 describe('tidyLayouts', () => {
-    it('wraps sections into rows within maxWidth', () => {
+    it('packs sections into columns within maxWidth', () => {
         const items = [placed('a', 0, 0, 200, 100), placed('b', 0, 0, 200, 100), placed('c', 0, 0, 200, 100)]
-        const out = tidyLayouts(items, 500, 16) // two per row (16 + 200 + 16 + 200 = 432 < 500; third wraps)
+        const out = tidyLayouts(items, 500, 16) // two columns (16 + 200 + 16 + 200 = 432 < 500)
         expect(out[0].layout).toMatchObject({ x: 16, y: 16 })
         expect(out[1].layout).toMatchObject({ x: 232, y: 16 })
         expect(out[2].layout).toMatchObject({ x: 16, y: 132 })
+    })
+
+    it('masonry: a tall first card sends the next card to the shorter column', () => {
+        const items = [placed('a', 0, 0, 200, 300), placed('b', 0, 0, 200, 100), placed('c', 0, 0, 200, 100)]
+        const out = tidyLayouts(items, 500, 16) // two columns
+        // a fills column 0 (tall); b starts column 1; c goes back to whichever is shorter (column 1).
+        expect(out[0].layout).toMatchObject({ x: 16, y: 16 })
+        expect(out[1].layout).toMatchObject({ x: 232, y: 16 })
+        expect(out[2].layout).toMatchObject({ x: 232, y: 132 })
     })
 })
 

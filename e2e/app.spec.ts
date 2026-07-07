@@ -24,9 +24,9 @@ test('entering edit mode reveals the drag handles', async ({ page }) => {
 test('adding a section increases the section count', async ({ page }) => {
     await page.getByRole('button', { name: 'Edit' }).click()
 
-    await expect(page.getByText(/^Sections: 3$/)).toBeVisible()
+    await expect(page.locator('article')).toHaveCount(3)
     await page.getByRole('button', { name: 'Add section' }).click()
-    await expect(page.getByText(/^Sections: 4$/)).toBeVisible()
+    await expect(page.locator('article')).toHaveCount(4)
 })
 
 test('dragging a section moves it on the canvas', async ({ page }) => {
@@ -52,10 +52,10 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {
     await page.getByRole('button', { name: 'Edit' }).click()
     await page.getByRole('button', { name: 'Add section' }).click()
-    await expect(page.getByText(/^Sections: 4$/)).toBeVisible()
+    await expect(page.locator('article')).toHaveCount(4)
 
     await page.reload()
 
     // The sheet is autosaved to localStorage, so the count persists.
-    await expect(page.getByText(/^Sections: 4$/)).toBeVisible()
+    await expect(page.locator('article')).toHaveCount(4)
 })

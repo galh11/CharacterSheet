@@ -128,6 +128,21 @@ export const useSheet = () => {
         [mapSections],
     )
 
+    /** Apply many layouts in a single history step (for Tidy / Fit all). */
+    const setSectionLayouts = useCallback(
+        (updates: { id: string; layout: SectionLayout }[]) => {
+            const byId = new Map(updates.map((u) => [u.id, u.layout]))
+            commit(
+                (c) => ({
+                    ...c,
+                    sections: c.sections.map((s) => (byId.has(s.id) ? { ...s, layout: byId.get(s.id)! } : s)),
+                }),
+                'Arrange',
+            )
+        },
+        [commit],
+    )
+
     const addSection = useCallback(() => {
         commit((c) => ({ ...c, sections: [...c.sections, createSection(c.sections.length)] }), 'Add section')
     }, [commit])
@@ -274,6 +289,28 @@ export const useSheet = () => {
         [commit],
     )
 
+    /** Toggle the first boolean field whose slug matches (e.g. an activation flag
+     *  like Flame Tongue that an action gates its extra damage on). */
+    const toggleField = useCallback(
+        (slug: string) => {
+            commit((c) => {
+                let done = false
+                return {
+                    ...c,
+                    sections: c.sections.map((section) => ({
+                        ...section,
+                        fields: section.fields.map((field) => {
+                            if (done || field.type !== 'boolean' || slugify(field.label) !== slug) return field
+                            done = true
+                            return { ...field, value: field.value === 'true' ? 'false' : 'true' }
+                        }),
+                    })),
+                }
+            }, 'Toggle')
+        },
+        [commit],
+    )
+
     /** Refill a resource to its max and, optionally, pay a cost by adding 1 to a counter
      *  (e.g. Dig Deep: restore the feature in exchange for a level of exhaustion). */
     const restoreResource = useCallback(
@@ -411,6 +448,7 @@ export const useSheet = () => {
         renameSheet,
         updateSection,
         setSectionLayout,
+        setSectionLayouts,
         addSection,
         addTemplateSection,
         deleteSection,
@@ -418,6 +456,7 @@ export const useSheet = () => {
         rest,
         healHp,
         spendResource,
+        toggleField,
         restoreResource,
         applyTempHp,
         setFieldValueSilent,

@@ -61,6 +61,7 @@ S('Character', 'default', [
     F('Race', 'text', 'Goliath (Hill Giant)'),
     F('Size', 'text', 'Medium (Large in Large Form)'),
     F('Class', 'text', 'Pugilist 8'),
+    F('Level', 'number', 8, { description: 'Character level. Use “Level up” in the toolbar to increment, then update HP max, hit dice, and features.' }),
     F('Subclass', 'text', 'Squared Circle'),
     F('Background', 'text', 'Wayfarer'),
     F('Inspiration', 'boolean', 'false', { description: 'Spend to reroll any d20. Toggle from the star in the toolbar.' }),

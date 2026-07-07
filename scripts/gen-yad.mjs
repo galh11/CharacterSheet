@@ -79,7 +79,7 @@ S('Modifiers', 'default', [
 
 // 3. Combat — AC, initiative, speed, passive perception (all computed where possible).
 S('Combat', 'default', [
-    F('AC', 'computed', '12 + dex_mod + 1', { description: 'Reinforced Studded Leather (12 +1) + DEX.' }),
+    F('AC', 'computed', '12 + con_mod', { description: 'Iron Chin: base AC = 12 + CON mod while in Light or no armor and no shield. DEX does not apply.' }),
     F('Initiative', 'computed', 'dex_mod'),
     F('Speed', 'number', 35, { description: 'Climb 35 ft (Athlete). +10 ft while in Large Form.' }),
     F('Passive Perception', 'computed', '10 + wis_mod'),

@@ -23,6 +23,8 @@ interface SectionCardProps {
     onHeal?: (amount: number) => void
     onSpend?: (slug: string, amount: number) => void
     onTempHp?: (amount: number) => void
+    collapsed?: boolean
+    onToggleCollapse?: () => void
     onUpdateSection: (
         patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'meta'>>,
     ) => void
@@ -74,6 +76,8 @@ export function SectionCard({
     onHeal,
     onSpend,
     onTempHp,
+    collapsed,
+    onToggleCollapse,
     onUpdateSection,
     onDeleteSection,
     onDuplicateSection,
@@ -91,6 +95,17 @@ export function SectionCard({
             style={{ borderTopColor: section.accent, borderTopWidth: 3, zoom: section.scale }}
         >
             <header className="mb-2 flex items-start justify-between gap-2">
+                {onToggleCollapse && (
+                    <button
+                        type="button"
+                        onClick={onToggleCollapse}
+                        className="shrink-0 rounded px-1 text-slate-400 hover:bg-slate-800"
+                        aria-label={collapsed ? 'Expand section' : 'Collapse section'}
+                        title={collapsed ? 'Expand' : 'Collapse'}
+                    >
+                        {collapsed ? '▸' : '▾'}
+                    </button>
+                )}
                 {isEditMode ? (
                     <input
                         value={section.title}
@@ -125,6 +140,8 @@ export function SectionCard({
                 )}
             </header>
 
+            {!collapsed && (
+                <>
             {isEditMode ? (
                 <div className="mb-3 flex flex-col gap-2">
                     <input
@@ -481,6 +498,8 @@ export function SectionCard({
                 >
                     + Add field
                 </button>
+            )}
+                </>
             )}
         </article>
     )

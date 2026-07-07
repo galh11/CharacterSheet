@@ -36,6 +36,8 @@ function App() {
     const [presets, setPresets] = useState<Presets>(() => loadPresets())
     const [rollMode, setRollMode] = useState<D20Mode>('normal')
     const [situational, setSituational] = useState(0)
+    const [stackView, setStackView] = useState(false)
+    const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [rollLog, setRollLog] = useState<RollLogEntry[]>(() => {
         try {
             const raw = localStorage.getItem('character-sheet:rolllog:v1')
@@ -281,6 +283,39 @@ function App() {
         return () => window.removeEventListener('keydown', onKey)
     }, [undo, redo])
 
+    const toggleCollapse = (id: string) =>
+        setCollapsed((prev) => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+
+    const renderCard = (section: (typeof sheet.sections)[number], collapsible: boolean) => (
+        <SectionCard
+            section={section}
+            isEditMode={isEditMode}
+            results={computed}
+            references={references}
+            scope={scope}
+            rollMode={rollMode}
+            bonus={situational}
+            onRoll={pushRoll}
+            onHeal={healHp}
+            onSpend={spendResource}
+            onTempHp={applyTempHp}
+            onUpdateSection={(patch) => updateSection(section.id, patch)}
+            onDeleteSection={() => deleteSection(section.id)}
+            onDuplicateSection={() => duplicateSection(section.id)}
+            onAddField={() => addField(section.id)}
+            onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
+            onDeleteField={(fieldId) => deleteField(section.id, fieldId)}
+            onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
+            collapsed={collapsible ? collapsed.has(section.id) : undefined}
+            onToggleCollapse={collapsible ? () => toggleCollapse(section.id) : undefined}
+        />
+    )
+
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 p-6 md:p-10">
             <header className="rounded-xl border border-slate-700 bg-slate-900/75 p-6">
@@ -452,7 +487,17 @@ function App() {
             <section className="rounded-xl border border-slate-700 bg-slate-900/50 p-4 md:p-6">
                 <div className="mb-4 flex items-center justify-between gap-4">
                     <h2 className="m-0 text-lg font-semibold text-slate-100">Canvas</h2>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setStackView((v) => !v)}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Toggle between the free canvas and a responsive stacked layout"
+                        >
+                            {stackView ? 'Canvas view' : 'Stack view'}
+                        </button>
+                        {!stackView && (
+                            <>
                         <button
                             type="button"
                             onClick={handleTidy}
@@ -495,6 +540,8 @@ function App() {
                                     </option>
                                 ))}
                             </select>
+                        )}
+                            </>
                         )}
                         {isEditMode && (
                             <button
@@ -539,6 +586,13 @@ function App() {
                     </div>
                 )}
 
+                {stackView ? (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {sheet.sections.map((section) => (
+                            <div key={section.id}>{renderCard(section, true)}</div>
+                        ))}
+                    </div>
+                ) : (
                 <div className="overflow-auto">
                     <div
                         onPointerDown={(e) => {
@@ -568,26 +622,7 @@ function App() {
                                     else fitRefs.current.delete(section.id)
                                 }}
                             >
-                                <SectionCard
-                                    section={section}
-                                    isEditMode={isEditMode}
-                                    results={computed}
-                                    references={references}
-                                    scope={scope}
-                                    rollMode={rollMode}
-                                    bonus={situational}
-                                    onRoll={pushRoll}
-                                    onHeal={healHp}
-                                    onSpend={spendResource}
-                                    onTempHp={applyTempHp}
-                                    onUpdateSection={(patch) => updateSection(section.id, patch)}
-                                    onDeleteSection={() => deleteSection(section.id)}
-                                    onDuplicateSection={() => duplicateSection(section.id)}
-                                    onAddField={() => addField(section.id)}
-                                    onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
-                                    onDeleteField={(fieldId) => deleteField(section.id, fieldId)}
-                                    onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
-                                />
+                                {renderCard(section, false)}
                             </CanvasItem>
                         ))}
                         {guides.map((g, i) => (
@@ -603,6 +638,7 @@ function App() {
                         ))}
                     </div>
                 </div>
+                )}
             </section>
 
             {showQuickStart && (

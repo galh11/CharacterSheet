@@ -101,36 +101,36 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                         )}
                     </div>
                     <div className="max-h-64 overflow-auto px-3 py-2">
-                    {entries.length === 0 ? (
-                        <p className="m-0 text-xs italic text-slate-500">Click an attack, skill, save or hit die to roll.</p>
-                    ) : (
-                        <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-                            {entries.map((e) => (
-                                <li key={e.id} className="flex items-start gap-2 border-b border-slate-800/60 pb-1.5 last:border-0">
-                                    <div className="min-w-0 flex-1">
-                                        <div className={clsx('truncate text-xs font-medium', kindColor[e.kind])}>
-                                            {e.title}
-                                            {e.crit === 'hit' && <span className="ml-1 text-emerald-400">CRIT!</span>}
-                                            {e.crit === 'miss' && <span className="ml-1 text-rose-400">MISS!</span>}
+                        {entries.length === 0 ? (
+                            <p className="m-0 text-xs italic text-slate-500">Click an attack, skill, save or hit die to roll.</p>
+                        ) : (
+                            <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                                {entries.map((e) => (
+                                    <li key={e.id} className="flex items-start gap-2 border-b border-slate-800/60 pb-1.5 last:border-0">
+                                        <div className="min-w-0 flex-1">
+                                            <div className={clsx('truncate text-xs font-medium', kindColor[e.kind])}>
+                                                {e.title}
+                                                {e.crit === 'hit' && <span className="ml-1 text-emerald-400">CRIT!</span>}
+                                                {e.crit === 'miss' && <span className="ml-1 text-rose-400">MISS!</span>}
+                                            </div>
+                                            <div className="truncate font-mono text-[11px] text-slate-400">{e.detail}</div>
                                         </div>
-                                        <div className="truncate font-mono text-[11px] text-slate-400">{e.detail}</div>
-                                    </div>
-                                    <span className="mt-0.5 shrink-0 rounded bg-slate-800 px-1.5 py-0.5 font-mono text-sm font-bold text-slate-100">
-                                        {e.total}
-                                    </span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    {entries.length > 0 && (
-                        <button
-                            type="button"
-                            onClick={onClear}
-                            className="mt-2 w-full rounded border border-slate-700 py-1 text-[11px] text-slate-400 hover:bg-slate-800"
-                        >
-                            Clear
-                        </button>
-                    )}
+                                        <span className="mt-0.5 shrink-0 rounded bg-slate-800 px-1.5 py-0.5 font-mono text-sm font-bold text-slate-100">
+                                            {e.total}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        {entries.length > 0 && (
+                            <button
+                                type="button"
+                                onClick={onClear}
+                                className="mt-2 w-full rounded border border-slate-700 py-1 text-[11px] text-slate-400 hover:bg-slate-800"
+                            >
+                                Clear
+                            </button>
+                        )}
                     </div>
                 </>
             )}

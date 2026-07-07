@@ -66,22 +66,71 @@ export const resolveOverlap = (
     return r
 }
 
-/** Masonry-pack sections into columns that fit within maxWidth, placing each
- *  card into the currently-shortest column so cards of varying heights stay
- *  compact (no tall shelf gaps). Order is preserved as much as possible. */
+/** Tightly top-left "skyline" bin-pack: each card is dropped into the highest
+ *  (smallest y) then leftmost position where it fits within maxWidth, resting on
+ *  the contour of the cards already placed. Tiles of differing widths and heights
+ *  end up flush against each other in both rows and columns — like a stack
+ *  view, but preserving each card's own size. Order is preserved as a tiebreak. */
 export const tidyLayouts = (items: Placed[], maxWidth: number, gap = GAP): Placed[] => {
     if (items.length === 0) return items
-    const colWidth = Math.max(...items.map((i) => i.layout.w))
-    const cols = Math.max(1, Math.floor((maxWidth - gap) / (colWidth + gap)))
-    const heights = new Array(cols).fill(gap)
+    const left = gap
+    const innerWidth = Math.max(1, maxWidth - 2 * gap)
+    const right = left + innerWidth
+    // The skyline is the top contour, stored as sorted segments over [left, right).
+    let sky: { x: number; width: number; y: number }[] = [{ x: left, width: innerWidth, y: gap }]
+
+    const maxYOver = (x0: number, x1: number): number => {
+        let y = 0
+        for (const s of sky) {
+            if (s.x + s.width <= x0 || s.x >= x1) continue
+            if (s.y > y) y = s.y
+        }
+        return y
+    }
+    const raise = (x0: number, x1: number, newY: number) => {
+        const next: typeof sky = []
+        for (const s of sky) {
+            const end = s.x + s.width
+            if (end <= x0 || s.x >= x1) {
+                next.push(s)
+                continue
+            }
+            if (s.x < x0) next.push({ x: s.x, width: x0 - s.x, y: s.y })
+            if (end > x1) next.push({ x: x1, width: end - x1, y: s.y })
+        }
+        next.push({ x: x0, width: x1 - x0, y: newY })
+        next.sort((a, b) => a.x - b.x)
+        // Merge neighbouring segments that ended up at the same height.
+        const merged: typeof sky = []
+        for (const s of next) {
+            const last = merged[merged.length - 1]
+            if (last && last.y === s.y && Math.abs(last.x + last.width - s.x) < 0.001) last.width += s.width
+            else merged.push({ ...s })
+        }
+        sky = merged
+    }
+
     return items.map(({ id, layout }) => {
-        // Pick the shortest column (ties: leftmost) for a balanced, gap-free fill.
-        let c = 0
-        for (let i = 1; i < cols; i++) if (heights[i] < heights[c]) c = i
-        const x = gap + c * (colWidth + gap)
-        const y = heights[c]
-        heights[c] = y + layout.h + gap
-        return { id, layout: { ...layout, x, y } }
+        const bw = layout.w
+        const bh = layout.h
+        const candidates = new Set<number>([left, ...sky.map((s) => s.x)])
+        let bestX = left
+        let bestY = Infinity
+        for (const x of candidates) {
+            // Skip positions that would overflow the container (except the left fallback).
+            if (x > left && x + bw > right + 0.001) continue
+            const y = maxYOver(x, Math.min(x + bw, right))
+            if (y < bestY || (y === bestY && x < bestX)) {
+                bestY = y
+                bestX = x
+            }
+        }
+        if (!isFinite(bestY)) {
+            bestX = left
+            bestY = maxYOver(left, right)
+        }
+        raise(bestX, Math.min(bestX + bw + gap, right), bestY + bh + gap)
+        return { id, layout: { ...layout, x: bestX, y: bestY } }
     })
 }
 

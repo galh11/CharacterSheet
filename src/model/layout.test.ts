@@ -79,6 +79,16 @@ describe('tidyLayouts', () => {
         expect(out[1].layout).toMatchObject({ x: 232, y: 16 })
         expect(out[2].layout).toMatchObject({ x: 232, y: 132 })
     })
+
+    it('skyline: a narrow card packs into the space beside a wider card', () => {
+        const items = [placed('wide', 0, 0, 300, 100), placed('n1', 0, 0, 150, 100), placed('n2', 0, 0, 150, 100)]
+        const out = tidyLayouts(items, 500, 16) // inner width 468
+        // wide takes the left; n1 fits in the remaining space to its right on the same row;
+        // the top row is then full, so n2 drops to the next row at the left.
+        expect(out[0].layout).toMatchObject({ x: 16, y: 16 })
+        expect(out[1].layout).toMatchObject({ x: 332, y: 16 })
+        expect(out[2].layout).toMatchObject({ x: 16, y: 132 })
+    })
 })
 
 describe('alignEdge', () => {

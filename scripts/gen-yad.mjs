@@ -212,7 +212,7 @@ S('Bonus Actions', 'actions', [
     }),
     F('Dig Deep', 'text', '', {
         description: '10 min: resistance to Bludgeoning/Piercing/Slashing; ignore exhaustion < 6. Restore by gaining 1 exhaustion.',
-        meta: { cost: '1', costField: 'dig_deep', costLabel: 'use' },
+        meta: { cost: '1', costField: 'dig_deep', costLabel: 'use', refill: 'dig_deep', refillCost: 'exhaustion', refillLabel: 'Dig Deep', refillCostLabel: 'Exhaustion' },
     }),
 ], '#06b6d4')
 

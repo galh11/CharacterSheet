@@ -34,6 +34,8 @@ interface SectionBodyProps {
     onHeal?: (amount: number) => void
     /** Spend `amount` from the resource field with the given slug. */
     onSpend?: (slug: string, amount: number) => void
+    /** Refill a resource to max, optionally paying a cost by adding 1 to a counter. */
+    onRestore?: (refillSlug: string, costSlug?: string) => void
     /** Apply temporary HP (kept if higher). */
     onTempHp?: (amount: number) => void
     /** Add a field to this section with the given overrides. */
@@ -495,7 +497,7 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onTempHp }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onTempHp }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     /** Extra damage is active unless it is gated on a toggle (meta.extraWhen) that is off. */
@@ -541,6 +543,12 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
         onTempHp?.(r.total)
         onRoll?.({ title: `${field.label} — temp HP`, detail: `${formatRoll(r)} (kept if higher)`, total: r.total, kind: 'heal' })
     }
+    const restore = (field: CharacterField) => {
+        const m = field.meta ?? {}
+        onRestore?.(m.refill!, m.refillCost || undefined)
+        const cost = m.refillCost ? ` (+1 ${m.refillCostLabel || m.refillCost})` : ''
+        onRoll?.({ title: field.label, detail: `Restored ${m.refillLabel || m.refill}${cost}`, total: 0, kind: 'heal' })
+    }
     return (
         <div className="flex flex-col gap-2">
             {section.fields.map((field) => {
@@ -554,7 +562,8 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
                 const canDamage = Boolean(m.damage || m.extra)
                 const canSpend = Boolean(m.costField)
                 const canTemp = Boolean(m.temp)
-                const showRow = canAttack || canDamage || canSpend || canTemp
+                const canRestore = Boolean(m.refill)
+                const showRow = canAttack || canDamage || canSpend || canTemp || canRestore
                 return (
                     <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -590,6 +599,16 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
                                         title={`Spend ${Number(m.cost) || 1} ${m.costLabel || m.costField}`}
                                     >
                                         −{Number(m.cost) || 1} {m.costLabel || 'spend'}
+                                    </button>
+                                )}
+                                {canRestore && (
+                                    <button
+                                        type="button"
+                                        onClick={() => restore(field)}
+                                        className="rounded bg-emerald-700/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-emerald-600"
+                                        title={`Restore ${m.refillLabel || m.refill}${m.refillCost ? ` (+1 ${m.refillCostLabel || m.refillCost})` : ''}`}
+                                    >
+                                        ↻ Restore
                                     </button>
                                 )}
                             </div>

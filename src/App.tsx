@@ -63,6 +63,7 @@ function App() {
         }
     })
     const importRef = useRef<HTMLInputElement>(null)
+    const captureRef = useRef<HTMLDivElement>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
         sheet,
@@ -89,6 +90,7 @@ function App() {
         rest,
         healHp,
         spendResource,
+        restoreResource,
         applyTempHp,
         setFieldValueSilent,
         addField,
@@ -200,6 +202,21 @@ function App() {
             total: 0,
             kind: 'raw',
         })
+        if (kind === 'short') setNotice('Short rest taken — spend Hit Dice on the Hit Dice card to heal.')
+    }
+
+    const levelField = (() => {
+        for (const s of sheet.sections) {
+            const f = s.fields.find((x) => x.label.toLowerCase() === 'level')
+            if (f) return { sectionId: s.id, field: f }
+        }
+        return null
+    })()
+    const handleLevelUp = () => {
+        if (!levelField) return
+        const next = (Number(levelField.field.value) || 0) + 1
+        updateField(levelField.sectionId, levelField.field.id, { value: String(next) })
+        setNotice(`Leveled up to ${next}. Update HP max, hit dice, and features as needed.`)
     }
 
     const inspirationField = (() => {
@@ -232,6 +249,22 @@ function App() {
         if (window.confirm('Reset to a fresh starter sheet? This cannot be undone.')) {
             replaceSheet(createStarterSheet())
             setNotice('Sheet reset.')
+        }
+    }
+
+    const handleExportPng = async () => {
+        const node = captureRef.current
+        if (!node) return
+        try {
+            const { toPng } = await import('html-to-image')
+            const dataUrl = await toPng(node, { backgroundColor: '#0f172a', pixelRatio: 2, cacheBust: true })
+            const link = document.createElement('a')
+            link.download = `${sheet.name || 'character-sheet'}.png`
+            link.href = dataUrl
+            link.click()
+            setNotice('Exported PNG.')
+        } catch {
+            setNotice('PNG export failed.')
         }
     }
 
@@ -415,6 +448,7 @@ function App() {
             onRoll={pushRoll}
             onHeal={healHp}
             onSpend={spendResource}
+            onRestore={restoreResource}
             onTempHp={applyTempHp}
             onUpdateSection={(patch) => updateSection(section.id, patch)}
             onDeleteSection={() => deleteSection(section.id)}
@@ -551,6 +585,16 @@ function App() {
                         >
                             Long rest
                         </button>
+                        {levelField && (
+                            <button
+                                type="button"
+                                onClick={handleLevelUp}
+                                className="rounded-md border border-emerald-700/50 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-900/30"
+                                title="Increase your level by one"
+                            >
+                                Level up
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={() => setShowQuickStart(true)}
@@ -606,6 +650,14 @@ function App() {
                             title="Print or save the sheet as a PDF"
                         >
                             Print
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => void handleExportPng()}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Export the canvas as a PNG image"
+                        >
+                            PNG
                         </button>
                         <button
                             type="button"
@@ -786,7 +838,7 @@ function App() {
                 )}
 
                 {stackView ? (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ zoom: densityZoom }}>
+                    <div ref={captureRef} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ zoom: densityZoom }}>
                         {stackSections.map((section) => (
                             <div key={section.id}>{renderCard(section, true)}</div>
                         ))}
@@ -794,6 +846,7 @@ function App() {
                 ) : (
                     <div className="overflow-auto">
                         <div
+                            ref={captureRef}
                             onPointerDown={(e) => {
                                 if (e.target === e.currentTarget) setSelectedIds(new Set())
                             }}

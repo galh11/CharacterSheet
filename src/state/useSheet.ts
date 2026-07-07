@@ -274,6 +274,33 @@ export const useSheet = () => {
         [commit],
     )
 
+    /** Refill a resource to its max and, optionally, pay a cost by adding 1 to a counter
+     *  (e.g. Dig Deep: restore the feature in exchange for a level of exhaustion). */
+    const restoreResource = useCallback(
+        (refillSlug: string, costSlug?: string) => {
+            commit(
+                (c) => ({
+                    ...c,
+                    sections: c.sections.map((section) => ({
+                        ...section,
+                        fields: section.fields.map((field) => {
+                            const slug = slugify(field.label)
+                            if (slug === refillSlug && field.max != null) {
+                                return { ...field, value: String(field.max) }
+                            }
+                            if (costSlug && slug === costSlug) {
+                                return { ...field, value: String((Number(field.value) || 0) + 1) }
+                            }
+                            return field
+                        }),
+                    })),
+                }),
+                'Restore',
+            )
+        },
+        [commit],
+    )
+
     /** Apply temporary HP. Temp HP does not stack, so keep whichever is larger. */
     const applyTempHp = useCallback(
         (amount: number) => {
@@ -391,6 +418,7 @@ export const useSheet = () => {
         rest,
         healHp,
         spendResource,
+        restoreResource,
         applyTempHp,
         setFieldValueSilent,
         addField,

@@ -24,6 +24,7 @@ interface SectionCardProps {
     onRoll?: (entry: Omit<RollLogEntry, 'id'>) => void
     onHeal?: (amount: number) => void
     onSpend?: (slug: string, amount: number) => void
+    onRestore?: (refillSlug: string, costSlug?: string) => void
     onTempHp?: (amount: number) => void
     collapsed?: boolean
     onToggleCollapse?: () => void
@@ -82,6 +83,7 @@ export function SectionCard({
     onRoll,
     onHeal,
     onSpend,
+    onRestore,
     onTempHp,
     collapsed,
     onToggleCollapse,
@@ -219,6 +221,7 @@ export function SectionCard({
                             onRoll={onRoll}
                             onHeal={onHeal}
                             onSpend={onSpend}
+                            onRestore={onRestore}
                             onTempHp={onTempHp}
                             onAddField={onAddField}
                         />
@@ -410,7 +413,7 @@ export function SectionCard({
 
                                                 {section.kind === 'actions' && (
                                                     <div className="mt-2 grid grid-cols-3 gap-1">
-                                                        {(['hit', 'damage', 'type', 'extra', 'extraType', 'range', 'extraWhen', 'temp', 'cost', 'costField', 'costLabel'] as const).map((k) => (
+                                                        {(['hit', 'damage', 'type', 'extra', 'extraType', 'range', 'extraWhen', 'temp', 'cost', 'costField', 'costLabel', 'refill', 'refillCost'] as const).map((k) => (
                                                             <input
                                                                 key={k}
                                                                 value={field.meta?.[k] ?? ''}

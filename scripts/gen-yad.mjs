@@ -56,6 +56,18 @@ const S = (title, kind, fields, accent = '#8b5cf6', meta) => {
     })
 }
 
+// 0. Character identity + proficiencies.
+S('Character', 'default', [
+    F('Race', 'text', 'Goliath (Hill Giant)'),
+    F('Size', 'text', 'Medium (Large in Large Form)'),
+    F('Class', 'text', 'Pugilist 8'),
+    F('Subclass', 'text', 'Squared Circle'),
+    F('Background', 'text', 'Wayfarer'),
+    F('Armor', 'text', 'Light'),
+    F('Weapons', 'text', 'Simple, Improvised, Pugilist (Brass Knuckles, Hand Claws, Punch Knife), Darts'),
+    F('Tools', 'text', 'Thieves’ Tools, Gaming Set'),
+], '#8b5cf6')
+
 // 1. Ability scores (final values from the DDB import).
 S('Ability Scores', 'abilities', [
     F('STR', 'number', 20),
@@ -83,8 +95,17 @@ S('Combat', 'default', [
     F('Initiative', 'computed', 'dex_mod'),
     F('Speed', 'number', 35, { description: 'Climb 35 ft (Athlete). +10 ft while in Large Form.' }),
     F('Passive Perception', 'computed', '10 + wis_mod'),
+    F('Grapple / Shove DC', 'computed', '8 + str_mod + proficiency', { description: 'Targets make a STR or DEX save vs this DC. Inescapable (1 Moxie) imposes Disadvantage.' }),
     F('Proficiency Bonus', 'computed', 'proficiency'),
 ], '#ef4444')
+
+// 3b. Movement & physique (all derived from Strength / Athlete / Powerful Build).
+S('Movement & Physique', 'default', [
+    F('Climb Speed', 'computed', 'speed', { description: 'Athlete: equal to your Speed.' }),
+    F('Long Jump', 'computed', 'str', { description: 'Feet, with only a 5 ft run-up (Athlete).' }),
+    F('High Jump', 'computed', '3 + str_mod', { description: 'Feet, with only a 5 ft run-up (Athlete).' }),
+    F('Carrying Capacity', 'computed', 'str * 15 * 2', { description: 'lb — Powerful Build counts you as one size larger.' }),
+], '#10b981')
 
 // 4. Hit points + the flat damage reduction from the reinforced armor.
 S('Hit Points', 'hp', [
@@ -144,7 +165,7 @@ S('Attacks', 'actions', [
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
     }),
     F('Flame Tongue Handaxe', 'text', '', {
-        description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action (toggle “Flame Tongue” in Conditions) to add 2d6 fire.',
+        description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action (toggle “Flame Tongue” in Conditions) to add 2d6 fire. Vex mastery: on a hit, Advantage on your next attack against that target.',
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', range: '20/60' },
     }),
     F('Javelin', 'text', '', {

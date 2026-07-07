@@ -43,8 +43,8 @@ export function RollLog({ entries, rollMode, onRollModeChange, onClear }: RollLo
                                     ? m.value === 'advantage'
                                         ? 'bg-emerald-600 text-white'
                                         : m.value === 'disadvantage'
-                                          ? 'bg-rose-600 text-white'
-                                          : 'bg-slate-600 text-white'
+                                            ? 'bg-rose-600 text-white'
+                                            : 'bg-slate-600 text-white'
                                     : 'text-slate-400 hover:bg-slate-800',
                             )}
                             title={`Roll with ${m.value}`}

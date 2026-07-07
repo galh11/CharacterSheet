@@ -1,70 +1,54 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { clsx } from 'clsx'
 import type { CharacterSheet } from '../model/characterSheet'
-import { parseCharacterText, type ParseResult } from '../import/parseCharacter'
-import { parseCharacterJson, looksLikeDdbCharacter } from '../import/parseCharacterJson'
-import { recognizeImage } from '../import/ocr'
+import { characterSheetSchema } from '../model/characterSheet'
+import { parseCharacterJson, looksLikeDdbCharacter, type ParseResult } from '../import/parseCharacterJson'
 
 interface QuickStartModalProps {
     onClose: () => void
     onConfirm: (sheet: CharacterSheet) => void
 }
 
-const PLACEHOLDER = `Paste text copied from your D&D Beyond character sheet — or paste the character JSON for an exact import.\n\nJSON (most accurate): open https://character-service.dndbeyond.com/character/v5/character/<id> for a public character, copy all, and paste here.\n\nText/screenshots also work (Actions, Features, and the top stat block parse best).`
+const PLACEHOLDER = `Paste your D&D Beyond character JSON here for an exact import.
+
+How to get it: open
+https://character-service.dndbeyond.com/character/v5/character/<your-character-id>
+in your browser (the character must be public), select all, copy, and paste here.
+
+You can also paste a sheet previously exported from this app.`
 
 export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
     const [text, setText] = useState('')
     const [result, setResult] = useState<ParseResult | null>(null)
-    const [ocrStatus, setOcrStatus] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
-    const fileRef = useRef<HTMLInputElement>(null)
 
     const handleParse = () => {
         const trimmed = text.trim()
         if (!trimmed) {
-            setError('Add some text, paste JSON, or upload a screenshot first.')
+            setError('Paste your character JSON first.')
             return
         }
         setError(null)
-        // Exact path: a pasted D&D Beyond character JSON.
-        if (trimmed.startsWith('{')) {
-            try {
-                const json: unknown = JSON.parse(trimmed)
-                if (looksLikeDdbCharacter(json)) {
-                    setResult(parseCharacterJson(json))
-                    return
-                }
-            } catch {
-                // Not valid JSON — fall back to the tolerant text parser.
-            }
-        }
-        setResult(parseCharacterText(text))
-    }
-
-    const handleFiles = async (files: FileList | null) => {
-        if (!files || files.length === 0) return
-        setError(null)
         setResult(null)
+        let json: unknown
         try {
-            let collected = text ? `${text}\n` : ''
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i]
-                setOcrStatus(`Reading ${file.name} (${i + 1}/${files.length})…`)
-                const recognized = await recognizeImage(file, (status, progress) => {
-                    setOcrStatus(`${file.name}: ${status} ${Math.round(progress * 100)}%`)
-                })
-                collected += `${recognized}\n`
-            }
-            setText(collected)
-            setOcrStatus('Done. Review the text and parse.')
-        } catch (err) {
-            setOcrStatus(null)
-            setError(
-                err instanceof Error
-                    ? `${err.message}. You can paste the text manually instead.`
-                    : 'OCR failed. Paste the text manually instead.',
-            )
+            json = JSON.parse(trimmed)
+        } catch {
+            setError('That is not valid JSON. Copy the full character JSON and try again.')
+            return
         }
+        // A sheet exported from this app imports directly.
+        const own = characterSheetSchema.safeParse(json)
+        if (own.success) {
+            setResult({ sheet: own.data, detected: ['This app’s own exported sheet'] })
+            return
+        }
+        // A D&D Beyond character-service payload.
+        if (looksLikeDdbCharacter(json)) {
+            setResult(parseCharacterJson(json))
+            return
+        }
+        setError('This JSON is not a D&D Beyond character or an exported sheet.')
     }
 
     return (
@@ -89,36 +73,16 @@ export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
 
                 <div className="flex-1 overflow-auto p-5">
                     <p className="mt-0 text-sm text-slate-300">
-                        Paste your character <strong>JSON</strong> for an exact import, or paste text /
-                        upload screenshots to extract it automatically. Then review what we detected
-                        before replacing your sheet.
+                        Paste your character <strong>JSON</strong> for an exact import, then review what we
+                        detected before replacing your sheet.
                     </p>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                        <button
-                            type="button"
-                            onClick={() => fileRef.current?.click()}
-                            className="rounded-md border border-slate-600 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
-                        >
-                            Upload screenshot(s)
-                        </button>
-                        <input
-                            ref={fileRef}
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="hidden"
-                            onChange={(event) => void handleFiles(event.target.files)}
-                        />
-                        {ocrStatus && <span className="self-center text-xs text-cyan-300">{ocrStatus}</span>}
-                    </div>
 
                     <textarea
                         value={text}
                         onChange={(event) => setText(event.target.value)}
                         placeholder={PLACEHOLDER}
-                        className="mt-3 h-48 w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-slate-100"
-                        aria-label="Character text"
+                        className="mt-3 h-56 w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100"
+                        aria-label="Character JSON"
                     />
 
                     {error && <p className="mt-2 text-sm text-rose-300">{error}</p>}

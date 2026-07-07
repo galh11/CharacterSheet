@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
 import { slugify, type CharacterField, type CharacterSection } from '../model/characterSheet'
+import { interpolate } from '../model/compute'
 import {
     rollD20,
     rollExpr,
@@ -371,9 +372,11 @@ function SkillRows({ section, scope, rollMode, onRoll }: SectionBodyProps) {
     )
 }
 
-function ActionCards({ section, rollMode, onRoll }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
+    /** Resolve `{...}` formula placeholders in a meta value against the scope. */
+    const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     const rollAttack = (field: CharacterField) => {
-        const mod = parseModifier(field.meta?.hit)
+        const mod = parseModifier(val(field.meta?.hit))
         const r = rollD20(mod, rollMode ?? 'normal')
         onRoll?.({
             title: `${field.label} — attack`,
@@ -385,7 +388,7 @@ function ActionCards({ section, rollMode, onRoll }: SectionBodyProps) {
     }
     const rollFieldDamage = (field: CharacterField, crit: boolean) => {
         const m = field.meta ?? {}
-        const mk = (e?: string) => (crit ? doubleDice(e ?? '') : e ?? '')
+        const mk = (e?: string) => (crit ? doubleDice(val(e)) : val(e))
         const dmg = rollDamage([
             { expr: mk(m.damage), type: m.type },
             { expr: mk(m.extra), type: m.extraType },
@@ -403,16 +406,19 @@ function ActionCards({ section, rollMode, onRoll }: SectionBodyProps) {
         <div className="flex flex-col gap-2">
             {section.fields.map((field) => {
                 const m = field.meta ?? {}
-                const hasMeta = m.hit || m.damage || m.type || m.extra || m.range
+                const hit = val(m.hit)
+                const damage = val(m.damage)
+                const extra = val(m.extra)
+                const hasMeta = hit || damage || m.type || extra || m.range
                 const canAttack = Boolean(m.hit)
                 const canDamage = Boolean(m.damage || m.extra)
                 return (
                     <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="font-medium text-slate-100">{field.label}</span>
-                            {m.hit && <span className="rounded-md bg-slate-700/70 px-1.5 py-0.5 font-mono text-xs text-slate-100 ring-1 ring-slate-600">{m.hit}</span>}
-                            {m.damage && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.type))}>{m.damage}{m.type ? ` ${m.type}` : ''}</span>}
-                            {m.extra && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.extraType))}>{m.extra}{m.extraType ? ` ${m.extraType}` : ''}</span>}
+                            {hit && <span className="rounded-md bg-slate-700/70 px-1.5 py-0.5 font-mono text-xs text-slate-100 ring-1 ring-slate-600">{hit}</span>}
+                            {damage && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.type))}>{damage}{m.type ? ` ${m.type}` : ''}</span>}
+                            {extra && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.extraType))}>{extra}{m.extraType ? ` ${m.extraType}` : ''}</span>}
                             {m.range && <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">{m.range}</span>}
                             {!hasMeta && field.value && <span className="font-mono text-xs text-slate-300">{field.value}</span>}
                         </div>

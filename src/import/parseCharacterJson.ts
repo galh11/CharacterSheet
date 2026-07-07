@@ -3,8 +3,13 @@ import {
     createSection,
     type CharacterField,
     type CharacterSection,
+    type CharacterSheet,
 } from '../model/characterSheet'
-import type { ParseResult } from './parseCharacter'
+
+export interface ParseResult {
+    sheet: CharacterSheet
+    detected: string[]
+}
 
 /**
  * Structured importer for a D&D Beyond character JSON blob (from the character

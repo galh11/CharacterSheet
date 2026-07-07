@@ -3,6 +3,24 @@ import { slugify } from './characterSheet'
 import { evaluateFormula, type FormulaResult } from './formula'
 
 /**
+ * Replace `{expression}` placeholders in a string with their computed value,
+ * evaluated against the numeric scope. Used so action to-hit and damage can be
+ * derived from ability modifiers and proficiency instead of being hand-typed,
+ * e.g. "+{str_mod + proficiency}" or "1d10+{str_mod}". Unresolvable expressions
+ * are left untouched so the mistake is visible.
+ */
+export const interpolate = (input: string, scope: Record<string, number>): string => {
+    if (!input || !input.includes('{')) return input
+    return input
+        .replace(/\{([^}]*)\}/g, (match, expr: string) => {
+            const r = evaluateFormula(expr, scope)
+            return r.ok && r.value !== null ? String(Math.round(r.value)) : match
+        })
+        .replace(/\+-/g, '-')
+        .replace(/-\+/g, '-')
+}
+
+/**
  * Build a numeric scope from all non-computed fields, keyed by slug.
  * number fields contribute their numeric value; boolean -> 1/0.
  */

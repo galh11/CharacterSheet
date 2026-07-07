@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeSheet } from './compute'
+import { computeSheet, interpolate } from './compute'
 import { createField, createSection, type CharacterSheet } from './characterSheet'
 
 // Builds a minimal sheet: one number field and one computed field that
@@ -28,3 +28,23 @@ describe('computeSheet', () => {
         expect(mod?.value).toBe(3)
     })
 })
+
+describe('interpolate', () => {
+    const scope = { str_mod: 5, proficiency: 3, dex_mod: -1 }
+
+    it('replaces {expr} with the computed value', () => {
+        expect(interpolate('+{str_mod + proficiency}', scope)).toBe('+8')
+        expect(interpolate('1d10+{str_mod}', scope)).toBe('1d10+5')
+    })
+
+    it('collapses sign artifacts from negative results', () => {
+        expect(interpolate('1d6+{dex_mod}', scope)).toBe('1d6-1')
+        expect(interpolate('+{dex_mod}', scope)).toBe('-1')
+    })
+
+    it('leaves plain strings and unresolved expressions untouched', () => {
+        expect(interpolate('1d8+3', scope)).toBe('1d8+3')
+        expect(interpolate('{nope + }', scope)).toBe('{nope + }')
+    })
+})
+

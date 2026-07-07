@@ -22,6 +22,7 @@ import { QuickStartModal } from './components/QuickStartModal'
 import { RollLog } from './components/RollLog'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { loadPresets, savePresets, type Presets } from './state/presets'
+import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
 import { useSheet } from './state/useSheet'
 import type { D20Mode, RollLogEntry } from './model/dice'
 
@@ -83,6 +84,16 @@ function App() {
         if (window.confirm('Reset to a fresh starter sheet? This cannot be undone.')) {
             replaceSheet(createStarterSheet())
             setNotice('Sheet reset.')
+        }
+    }
+
+    const handleShare = async () => {
+        const url = buildShareUrl(sheet)
+        try {
+            await navigator.clipboard.writeText(url)
+            setNotice('Share link copied to clipboard.')
+        } catch {
+            window.prompt('Copy this share link:', url)
         }
     }
 
@@ -163,6 +174,20 @@ function App() {
         }
         setNotice(`Layout "${name}" applied.`)
     }
+
+    useEffect(() => {
+        const shared = readSharedSheet()
+        if (!shared) return
+        // Defer past the effect's synchronous phase before prompting/committing.
+        queueMicrotask(() => {
+            if (window.confirm(`Load shared character “${shared.name}”? This replaces your current sheet.`)) {
+                replaceSheet(shared)
+                setNotice('Shared character loaded.')
+            }
+            clearShareHash()
+        })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
@@ -274,6 +299,14 @@ function App() {
                                 event.target.value = ''
                             }}
                         />
+                        <button
+                            type="button"
+                            onClick={() => void handleShare()}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Copy a shareable link that contains this whole sheet"
+                        >
+                            Share
+                        </button>
                         <button
                             type="button"
                             onClick={() => window.print()}

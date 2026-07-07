@@ -11,14 +11,14 @@ test('loads the starter sheet', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Ability Scores' })).toBeVisible()
 })
 
-test('entering edit mode reveals the drag handles', async ({ page }) => {
-    // Not editing yet: no drag handles on the canvas.
-    await expect(page.getByTitle('Drag to move').first()).toBeHidden()
+test('drag handles are available in play mode and edit mode', async ({ page }) => {
+    // Cards can be moved/resized without entering edit mode.
+    await expect(page.getByTitle(/Drag to move/).first()).toBeVisible()
 
     await page.getByRole('button', { name: 'Edit' }).click()
 
     await expect(page.getByRole('button', { name: 'Done editing' })).toBeVisible()
-    await expect(page.getByTitle('Drag to move').first()).toBeVisible()
+    await expect(page.getByTitle(/Drag to move/).first()).toBeVisible()
 })
 
 test('adding a section increases the section count', async ({ page }) => {

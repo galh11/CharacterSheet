@@ -21,8 +21,6 @@ interface CanvasItemProps {
     scale?: number
     /** Environment zoom applied to the canvas (density); used to correct drag deltas. */
     zoom?: number
-    /** When false (play mode), hide the drag/resize handles and disable moving. */
-    editable?: boolean
     selected?: boolean
     onLayoutCommit: (layout: SectionLayout) => void
     onScaleChange?: (scale: number) => void
@@ -41,7 +39,7 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, editable = true, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, handleRef, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
     const moved = useRef(false)
@@ -157,37 +155,33 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, editable = t
             ref={rootRef}
             className={clsx('group absolute rounded-lg', live && 'z-20 select-none', selected && 'z-10 ring-2 ring-cyan-400')}
             style={{ left: current.x, top: current.y, width: current.w, height: current.h }}
-            onPointerMove={editable ? onPointerMove : undefined}
-            onPointerUp={editable ? endDrag : undefined}
-            onPointerCancel={editable ? endDrag : undefined}
+            onPointerMove={onPointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
         >
-            {editable && (
-                <div
-                    onPointerDown={(e) => beginDrag('move', e)}
-                    tabIndex={0}
-                    onKeyDown={nudge}
-                    className="flex h-5 cursor-move items-center gap-1 rounded-t-lg bg-slate-800/70 px-2 text-[10px] tracking-widest text-slate-500 opacity-40 transition-opacity focus:opacity-100 focus:outline focus:outline-1 focus:outline-cyan-500 group-hover:opacity-100"
-                    title="Drag to move — arrow keys nudge (Shift = grid)"
-                >
-                    <span>⠿</span>
-                    <div className="ml-auto flex items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()}>
-                        <button type="button" onClick={() => onScaleChange?.(Math.max(0.6, Math.round((scale - 0.1) * 10) / 10))} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Smaller text">A−</button>
-                        <button type="button" onClick={() => onScaleChange?.(Math.min(1.8, Math.round((scale + 0.1) * 10) / 10))} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Larger text">A+</button>
-                        <button type="button" onClick={fitHeight} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit height to content">↕</button>
-                        <button type="button" onClick={fitWidth} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit width to content">↔</button>
-                    </div>
+            <div
+                onPointerDown={(e) => beginDrag('move', e)}
+                tabIndex={0}
+                onKeyDown={nudge}
+                className="flex h-5 cursor-move items-center gap-1 rounded-t-lg bg-slate-800/70 px-2 text-[10px] tracking-widest text-slate-500 opacity-40 transition-opacity focus:opacity-100 focus:outline focus:outline-1 focus:outline-cyan-500 group-hover:opacity-100"
+                title="Drag to move — arrow keys nudge (Shift = grid)"
+            >
+                <span>⠿</span>
+                <div className="ml-auto flex items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()}>
+                    <button type="button" onClick={() => onScaleChange?.(Math.max(0.6, Math.round((scale - 0.1) * 10) / 10))} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Smaller text">A−</button>
+                    <button type="button" onClick={() => onScaleChange?.(Math.min(1.8, Math.round((scale + 0.1) * 10) / 10))} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Larger text">A+</button>
+                    <button type="button" onClick={fitHeight} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit height to content">↕</button>
+                    <button type="button" onClick={fitWidth} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit width to content">↔</button>
                 </div>
-            )}
-            <div ref={contentRef} className={clsx('overflow-auto rounded-b-lg', editable ? 'h-[calc(100%-1.25rem)]' : 'h-full rounded-t-lg')}>
+            </div>
+            <div ref={contentRef} className="h-[calc(100%-1.25rem)] overflow-auto rounded-b-lg">
                 {children}
             </div>
-            {editable && (
-                <div
-                    onPointerDown={(e) => beginDrag('resize', e)}
-                    className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize rounded-tl bg-slate-600/60 opacity-40 transition-opacity group-hover:opacity-100"
-                    title="Drag to resize"
-                />
-            )}
+            <div
+                onPointerDown={(e) => beginDrag('resize', e)}
+                className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize rounded-tl bg-slate-600/60 opacity-40 transition-opacity group-hover:opacity-100"
+                title="Drag to resize"
+            />
         </div>
     )
 }

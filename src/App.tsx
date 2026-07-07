@@ -426,9 +426,9 @@ function App() {
         })
 
     const densityZoom = density === 'compact' ? 0.9 : density === 'comfortable' ? 1.12 : 1
-    // Only zoom the free canvas in play mode; edit mode stays at 1:1 so dragging
-    // (handles are edit-only) never has to correct for a zoom factor.
-    const canvasZoom = isEditMode ? 1 : densityZoom
+    // The free canvas zooms with density in both modes; CanvasItem divides drag
+    // deltas by this factor so moving/resizing still tracks the cursor 1:1.
+    const canvasZoom = densityZoom
     const matchesQuery = (section: (typeof sheet.sections)[number]) => {
         const q = query.trim().toLowerCase()
         if (!q) return true
@@ -833,7 +833,6 @@ function App() {
                                     layout={section.layout}
                                     scale={section.scale}
                                     zoom={canvasZoom}
-                                    editable={isEditMode}
                                     selected={selectedIds.has(section.id)}
                                     siblings={sheet.sections
                                         .filter((s) => s.id !== section.id)

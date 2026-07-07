@@ -47,6 +47,7 @@ const SECTION_KINDS: { value: SectionKind; label: string }[] = [
     { value: 'conditions', label: 'Conditions' },
     { value: 'spellslots', label: 'Spell slots' },
     { value: 'initiative', label: 'Initiative' },
+    { value: 'currency', label: 'Currency' },
 ]
 
 const displayValue = (

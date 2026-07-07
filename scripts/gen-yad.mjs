@@ -113,6 +113,7 @@ S('Hit Points', 'hp', [
     F('Max HP', 'number', 76),
     F('Temp HP', 'number', 0),
     F('Damage Reduction', 'number', 3, { description: 'Reinforced Studded Leather: reduce every hit taken by 3.' }),
+    F('Concentration', 'boolean', 'false', { description: 'Toggle on when concentrating. Taking damage prompts a CON save (DC = half the damage, minimum 10).' }),
 ], '#10b981')
 
 // 5. Hit dice (Pugilist d10 × level 8).
@@ -293,7 +294,17 @@ S('Notable Gear', 'default', [
     F('Ice-Anchor Pitons', 'text', '×10', { description: 'Secure a rope for Advantage on Athletics climbing; anchor holds 2,000 lb.' }),
 ], '#06b6d4')
 
-// 18. Equipment — consumables and mundane gear.
+// 18. Currency (steppers). Bone Marks is a homebrew denomination.
+S('Currency', 'currency', [
+    F('PP', 'number', 108),
+    F('GP', 'number', 0),
+    F('EP', 'number', 0),
+    F('SP', 'number', 0),
+    F('CP', 'number', 0),
+    F('Bone Marks', 'number', 0, { description: 'Homebrew currency.' }),
+], '#f59e0b')
+
+// 19. Equipment — consumables and mundane gear.
 S('Equipment', 'default', [
     F('Potion of Healing (Greater)', 'text', '×5', { description: 'Regain 4d4 + 4 HP.' }),
     F('Potion of Healing (Superior)', 'text', '×3', { description: 'Regain 8d4 + 8 HP.' }),
@@ -304,7 +315,6 @@ S('Equipment', 'default', [
     F('Bullseye Lantern, Tinderbox', 'text', 'carried'),
     F('Rations ×10, Waterskin', 'text', 'carried'),
     F('Climber’s Kit, Crowbar, Pole, Rope', 'text', 'carried'),
-    F('Coins', 'text', '108 pp'),
 ])
 
 const sheet = { id: randomUUID(), name: 'Yad Armhand', sections }

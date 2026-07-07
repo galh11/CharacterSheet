@@ -223,11 +223,13 @@ function StatBlock({ section }: SectionBodyProps) {
 
 function HpWidget({ section, onUpdateField }: SectionBodyProps) {
     const [amount, setAmount] = useState('')
+    const [concSave, setConcSave] = useState<number | null>(null)
     const byLabel = (l: string) => section.fields.find((f) => f.label.toLowerCase() === l)
     const cur = byLabel('current hp')
     const max = byLabel('max hp')
     const temp = byLabel('temp hp')
     const reduction = section.fields.find((f) => f.label.toLowerCase() === 'damage reduction')
+    const conc = byLabel('concentration')
     const curN = cur ? toNum(cur.value) : 0
     const maxN = max ? toNum(max.value) : 0
     const tempN = temp ? toNum(temp.value) : 0
@@ -238,13 +240,15 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
         const amt = Math.abs(toNum(amount))
         if (!amt || !cur) return
         if (sign === -1) {
-            let dmg = Math.max(0, amt - reduceN)
+            const taken = Math.max(0, amt - reduceN)
+            let dmg = taken
             if (temp && tempN > 0) {
                 const absorbed = Math.min(tempN, dmg)
                 onUpdateField(temp.id, { value: String(tempN - absorbed) })
                 dmg -= absorbed
             }
             if (dmg > 0) onUpdateField(cur.id, { value: String(Math.max(0, curN - dmg)) })
+            if (conc && conc.value === 'true' && taken > 0) setConcSave(Math.max(10, Math.floor(taken / 2)))
         } else {
             onUpdateField(cur.id, { value: String(maxN > 0 ? Math.min(maxN, curN + amt) : curN + amt) })
         }
@@ -290,6 +294,34 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
                         −{reduceN} to each hit taken
                     </span>
                 </Tooltip>
+            )}
+            {conc && (
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            onUpdateField(conc.id, { value: conc.value === 'true' ? 'false' : 'true' })
+                            setConcSave(null)
+                        }}
+                        role="switch"
+                        aria-checked={conc.value === 'true'}
+                        aria-label="Concentrating"
+                        className={clsx('flex h-5 w-9 items-center rounded-full px-0.5 transition-colors', conc.value === 'true' ? 'bg-violet-500' : 'bg-slate-700')}
+                    >
+                        <span className={clsx('h-4 w-4 rounded-full bg-white transition-transform', conc.value === 'true' && 'translate-x-4')} />
+                    </button>
+                    <span className="text-xs text-slate-300">Concentrating</span>
+                    {concSave != null && (
+                        <button
+                            type="button"
+                            onClick={() => setConcSave(null)}
+                            className="ml-auto rounded bg-violet-500/25 px-2 py-0.5 text-[11px] font-semibold text-violet-200 ring-1 ring-violet-500/50 hover:bg-violet-500/40"
+                            title="Dismiss"
+                        >
+                            CON save DC {concSave}
+                        </button>
+                    )}
+                </div>
             )}
             <div className="flex items-center gap-1">
                 <input
@@ -705,6 +737,32 @@ function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, 
     )
 }
 
+function CurrencyWidget({ section, onUpdateField }: SectionBodyProps) {
+    if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No currency yet.</p>
+    const step = (field: CharacterField, delta: number) =>
+        onUpdateField(field.id, { value: String(Math.max(0, toNum(field.value) + delta)) })
+    return (
+        <div className="flex flex-col gap-1.5">
+            {section.fields.map((field) => (
+                <div key={field.id} className="flex items-center gap-2 text-sm">
+                    <FieldLabel field={field} />
+                    <div className="ml-auto flex items-center gap-1">
+                        <button type="button" onClick={() => step(field, -1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Decrease ${field.label}`}>−</button>
+                        <input
+                            value={field.value}
+                            onChange={(e) => onUpdateField(field.id, { value: e.target.value.replace(/[^0-9]/g, '') })}
+                            inputMode="numeric"
+                            aria-label={field.label}
+                            className="w-16 rounded bg-slate-900/50 text-center font-mono text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                        />
+                        <button type="button" onClick={() => step(field, 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 export function SectionBody(props: SectionBodyProps) {
     switch (props.section.kind) {
         case 'abilities':
@@ -725,6 +783,8 @@ export function SectionBody(props: SectionBodyProps) {
             return <SpellSlots {...props} />
         case 'initiative':
             return <Initiative {...props} />
+        case 'currency':
+            return <CurrencyWidget {...props} />
         default:
             return <DefaultList {...props} />
     }

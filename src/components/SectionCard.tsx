@@ -27,6 +27,8 @@ interface SectionCardProps {
     onTempHp?: (amount: number) => void
     collapsed?: boolean
     onToggleCollapse?: () => void
+    pinned?: boolean
+    onTogglePin?: () => void
     onUpdateSection: (
         patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'meta'>>,
     ) => void
@@ -82,6 +84,8 @@ export function SectionCard({
     onTempHp,
     collapsed,
     onToggleCollapse,
+    pinned,
+    onTogglePin,
     onUpdateSection,
     onDeleteSection,
     onDuplicateSection,
@@ -108,6 +112,17 @@ export function SectionCard({
                         title={collapsed ? 'Expand' : 'Collapse'}
                     >
                         {collapsed ? '▸' : '▾'}
+                    </button>
+                )}
+                {onTogglePin && (
+                    <button
+                        type="button"
+                        onClick={onTogglePin}
+                        className={clsx('shrink-0 rounded px-1 hover:bg-slate-800', pinned ? 'text-amber-300' : 'text-slate-500')}
+                        aria-label={pinned ? 'Unpin section' : 'Pin section to top'}
+                        title={pinned ? 'Unpin' : 'Pin to top'}
+                    >
+                        ★
                     </button>
                 )}
                 {isEditMode ? (

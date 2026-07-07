@@ -43,6 +43,16 @@ function App() {
     const [repeat, setRepeat] = useState(1)
     const [stackView, setStackView] = useState(false)
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+    const [pinned, setPinned] = useState<Set<string>>(new Set())
+    const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>('normal')
+    const [query, setQuery] = useState('')
+    const [theme, setTheme] = useState<string>(() => {
+        try {
+            return localStorage.getItem(`character-sheet:theme:${getActiveId()}`) || '#8b5cf6'
+        } catch {
+            return '#8b5cf6'
+        }
+    })
     const [rollLog, setRollLog] = useState<RollLogEntry[]>(() => {
         try {
             const raw = localStorage.getItem(`character-sheet:rolllog:${getActiveId()}`)
@@ -127,7 +137,16 @@ function App() {
             next = []
         }
         setRollLog(next)
+        setTheme(localStorage.getItem(`character-sheet:theme:${activeId}`) || '#8b5cf6')
     }, [activeId])
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(`character-sheet:theme:${activeId}`, theme)
+        } catch {
+            /* ignore */
+        }
+    }, [theme, activeId])
 
     // Periodic local version history (throttled internally to ~1/min).
     useEffect(() => {
@@ -333,6 +352,28 @@ function App() {
             return next
         })
 
+    const togglePin = (id: string) =>
+        setPinned((prev) => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
+
+    const densityZoom = density === 'compact' ? 0.9 : density === 'comfortable' ? 1.12 : 1
+    const matchesQuery = (section: (typeof sheet.sections)[number]) => {
+        const q = query.trim().toLowerCase()
+        if (!q) return true
+        if (section.title.toLowerCase().includes(q)) return true
+        return section.fields.some(
+            (f) => f.label.toLowerCase().includes(q) || (f.description ?? '').toLowerCase().includes(q),
+        )
+    }
+    const visibleSections = sheet.sections.filter(matchesQuery)
+    const stackSections = [...visibleSections].sort(
+        (a, b) => (pinned.has(a.id) ? 0 : 1) - (pinned.has(b.id) ? 0 : 1),
+    )
+
     const renderCard = (section: (typeof sheet.sections)[number], collapsible: boolean) => (
         <SectionCard
             section={section}
@@ -357,12 +398,14 @@ function App() {
             onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
             collapsed={collapsible ? collapsed.has(section.id) : undefined}
             onToggleCollapse={collapsible ? () => toggleCollapse(section.id) : undefined}
+            pinned={collapsible ? pinned.has(section.id) : undefined}
+            onTogglePin={collapsible ? () => togglePin(section.id) : undefined}
         />
     )
 
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 p-6 md:p-10">
-            <header className="rounded-xl border border-slate-700 bg-slate-900/75 p-6">
+            <header className="rounded-xl border border-slate-700 bg-slate-900/75 p-6" style={{ borderTopColor: theme, borderTopWidth: 3 }}>
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <p className="text-xs uppercase tracking-[0.2em] text-slate-400">CharacterSheet</p>
@@ -507,6 +550,15 @@ function App() {
                         >
                             Share
                         </button>
+                        <label className="flex items-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
+                            <input
+                                type="color"
+                                value={theme}
+                                onChange={(e) => setTheme(e.target.value)}
+                                aria-label="Theme colour"
+                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                            />
+                        </label>
                         <button
                             type="button"
                             onClick={() => window.print()}
@@ -558,6 +610,24 @@ function App() {
                 <div className="mb-4 flex items-center justify-between gap-4">
                     <h2 className="m-0 text-lg font-semibold text-slate-100">Canvas</h2>
                     <div className="flex flex-wrap items-center gap-2">
+                        <input
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Search sections / fields…"
+                            aria-label="Search"
+                            className="w-44 rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
+                        />
+                        {query && (
+                            <button type="button" onClick={() => setQuery('')} className="rounded-md border border-slate-600 px-2 py-2 text-sm text-slate-400 hover:bg-slate-800" title="Clear search">✕</button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setDensity((d) => (d === 'compact' ? 'normal' : d === 'normal' ? 'comfortable' : 'compact'))}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm capitalize text-slate-200 hover:bg-slate-800"
+                            title="Cycle display density (stack view)"
+                        >
+                            {density}
+                        </button>
                         <button
                             type="button"
                             onClick={() => setStackView((v) => !v)}
@@ -657,8 +727,8 @@ function App() {
                 )}
 
                 {stackView ? (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                        {sheet.sections.map((section) => (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3" style={{ zoom: densityZoom }}>
+                        {stackSections.map((section) => (
                             <div key={section.id}>{renderCard(section, true)}</div>
                         ))}
                     </div>
@@ -674,7 +744,7 @@ function App() {
                             )}
                             style={{ width: canvasSize.width, height: canvasSize.height }}
                         >
-                            {sheet.sections.map((section) => (
+                            {visibleSections.map((section) => (
                                 <CanvasItem
                                     key={section.id}
                                     layout={section.layout}

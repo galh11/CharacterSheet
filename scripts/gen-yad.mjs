@@ -165,11 +165,11 @@ S('Attacks', 'actions', [
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
     }),
     F('Flame Tongue Handaxe', 'text', '', {
-        description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action (toggle “Flame Tongue” in Conditions) to add 2d6 fire. Vex mastery: on a hit, Advantage on your next attack against that target.',
+        description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action (toggle “Flame Tongue” in Conditions) to add 2d6 fire.',
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', range: '20/60' },
     }),
     F('Javelin', 'text', '', {
-        description: 'Thrown. Slow mastery: reduce target Speed by 10 ft.',
+        description: 'Thrown weapon (uses the d10 fisticuffs die).',
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'piercing', range: '30/120' },
     }),
     F('Compression Lock', 'text', '', {
@@ -200,7 +200,7 @@ S('Reactions', 'actions', [
 
 // 12. Features & traits (level 8: core Pugilist + Squared Circle + race + feats).
 S('Features & Traits', 'actions', [
-    F('Fisticuffs', 'text', '', { description: 'Unarmed/Pugilist-weapon damage die is d10; bonus-action Unarmed Strike; improvised weapons gain the Sap mastery.' }),
+    F('Fisticuffs', 'text', '', { description: 'Unarmed/Pugilist-weapon damage die is d10; bonus-action Unarmed Strike. Improved Improvisation: improvised weapons count as having the Sap mastery for you (on a hit, the target has Disadvantage on its next attack before your next turn). You have no other weapon masteries.' }),
     F('Iron Chin', 'text', '', { description: 'Base AC = 12 + CON mod while in Light or no armor and no shield.' }),
     F('Heavy Hitter', 'text', '', { description: 'On an Unarmed Strike hit: deal Damage AND your choice of Grapple or Shove.' }),
     F('Extra Attack', 'text', '', { description: 'Attack twice whenever you take the Attack action.' }),

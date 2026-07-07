@@ -144,8 +144,8 @@ S('Attacks', 'actions', [
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
     }),
     F('Flame Tongue Handaxe', 'text', '', {
-        description: 'Uses the d10 fisticuffs die. +2d6 fire while ablaze (bonus action to ignite).',
-        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'slashing', extra: '2d6', extraType: 'fire', range: '20/60' },
+        description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action (toggle “Flame Tongue” in Conditions) to add 2d6 fire.',
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', range: '20/60' },
     }),
     F('Javelin', 'text', '', {
         description: 'Thrown. Slow mastery: reduce target Speed by 10 ft.',
@@ -210,6 +210,7 @@ S('Resources', 'default', [
 
 // 14. Conditions & states.
 S('Conditions', 'conditions', [
+    F('Flame Tongue', 'boolean', 'false', { description: 'Handaxe ignited (Bonus Action): +2d6 fire on hits; Bright Light 40 ft.' }),
     F('Large Form', 'boolean', 'false', { description: 'Large: advantage on STR checks, +10 ft Speed.' }),
     F('Dig Deep', 'boolean', 'false', { description: 'Resistance to B/P/S; ignore exhaustion < 6.' }),
     F('Grappling', 'boolean', 'false', { description: 'Compression Lock hits grappled foes each turn.' }),

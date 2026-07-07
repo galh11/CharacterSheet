@@ -360,7 +360,7 @@ export function SectionCard({
 
                                         {section.kind === 'actions' && (
                                             <div className="mt-2 grid grid-cols-3 gap-1">
-                                                {(['hit', 'damage', 'type', 'extra', 'extraType', 'range'] as const).map((k) => (
+                                                {(['hit', 'damage', 'type', 'extra', 'extraType', 'range', 'extraWhen'] as const).map((k) => (
                                                     <input
                                                         key={k}
                                                         value={field.meta?.[k] ?? ''}

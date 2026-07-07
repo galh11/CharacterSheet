@@ -375,6 +375,8 @@ function SkillRows({ section, scope, rollMode, onRoll }: SectionBodyProps) {
 function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
+    /** Extra damage is active unless it is gated on a toggle (meta.extraWhen) that is off. */
+    const extraActive = (m: Record<string, string>) => !m.extraWhen || (scope?.[m.extraWhen] ?? 0) > 0
     const rollAttack = (field: CharacterField) => {
         const mod = parseModifier(val(field.meta?.hit))
         const r = rollD20(mod, rollMode ?? 'normal')
@@ -389,10 +391,9 @@ function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
     const rollFieldDamage = (field: CharacterField, crit: boolean) => {
         const m = field.meta ?? {}
         const mk = (e?: string) => (crit ? doubleDice(val(e)) : val(e))
-        const dmg = rollDamage([
-            { expr: mk(m.damage), type: m.type },
-            { expr: mk(m.extra), type: m.extraType },
-        ])
+        const parts = [{ expr: mk(m.damage), type: m.type }]
+        if (extraActive(m)) parts.push({ expr: mk(m.extra), type: m.extraType })
+        const dmg = rollDamage(parts)
         if (dmg.parts.length === 0) return
         const detail = dmg.parts.map((p) => `${p.result.total}${p.type ? ` ${p.type}` : ''}`).join(' + ')
         onRoll?.({
@@ -409,6 +410,7 @@ function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
                 const hit = val(m.hit)
                 const damage = val(m.damage)
                 const extra = val(m.extra)
+                const extraOn = extraActive(m)
                 const hasMeta = hit || damage || m.type || extra || m.range
                 const canAttack = Boolean(m.hit)
                 const canDamage = Boolean(m.damage || m.extra)
@@ -418,7 +420,12 @@ function ActionCards({ section, scope, rollMode, onRoll }: SectionBodyProps) {
                             <span className="font-medium text-slate-100">{field.label}</span>
                             {hit && <span className="rounded-md bg-slate-700/70 px-1.5 py-0.5 font-mono text-xs text-slate-100 ring-1 ring-slate-600">{hit}</span>}
                             {damage && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.type))}>{damage}{m.type ? ` ${m.type}` : ''}</span>}
-                            {extra && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.extraType))}>{extra}{m.extraType ? ` ${m.extraType}` : ''}</span>}
+                            {extra && extraOn && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.extraType))}>{extra}{m.extraType ? ` ${m.extraType}` : ''}</span>}
+                            {extra && !extraOn && m.extraWhen && (
+                                <span className="rounded-md bg-slate-800/60 px-1.5 py-0.5 font-mono text-xs text-slate-500 ring-1 ring-slate-700" title="Inactive — toggle it on to add this damage">
+                                    {extra}{m.extraType ? ` ${m.extraType}` : ''} · off
+                                </span>
+                            )}
                             {m.range && <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">{m.range}</span>}
                             {!hasMeta && field.value && <span className="font-mono text-xs text-slate-300">{field.value}</span>}
                         </div>

@@ -103,6 +103,16 @@ export const createCharacter = (): { id: string; sheet: CharacterSheet } => {
     return { id: sheet.id, sheet }
 }
 
+/** Duplicate the active character into a new roster slot and make it active. */
+export const duplicateActive = (): { id: string; sheet: CharacterSheet } => {
+    const { sheet } = getActiveSheet()
+    const copy: CharacterSheet = { ...JSON.parse(JSON.stringify(sheet)), id: crypto.randomUUID(), name: `${sheet.name} copy` }
+    writeSheet(copy.id, copy)
+    const roster = readRoster()
+    writeRoster({ activeId: copy.id, entries: [...roster.entries, { id: copy.id, name: copy.name }] })
+    return { id: copy.id, sheet: copy }
+}
+
 /** Delete a character; returns the now-active id and its sheet. */
 export const removeCharacter = (id: string): { id: string; sheet: CharacterSheet } => {
     const roster = readRoster()

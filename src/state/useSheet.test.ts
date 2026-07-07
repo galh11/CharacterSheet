@@ -89,6 +89,16 @@ describe('useSheet', () => {
         expect(result.current.characters).toHaveLength(1)
     })
 
+    it('duplicates the active character with a copied name', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.renameSheet('Original'))
+        const firstId = result.current.activeId
+        act(() => result.current.duplicateCharacter())
+        expect(result.current.activeId).not.toBe(firstId)
+        expect(result.current.sheet.name).toBe('Original copy')
+        expect(result.current.characters).toHaveLength(2)
+    })
+
     it('undoes and redoes a change', () => {
         const { result } = renderHook(() => useSheet())
         const original = result.current.sheet.name

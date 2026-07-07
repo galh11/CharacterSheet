@@ -14,14 +14,20 @@ import {
     listCharacters,
     switchCharacter as rosterSwitch,
     createCharacter,
+    duplicateActive,
     removeCharacter,
     type RosterEntry,
 } from './roster'
 
+interface HistoryEntry {
+    sheet: CharacterSheet
+    label: string
+}
+
 interface History {
     sheet: CharacterSheet
-    past: CharacterSheet[]
-    future: CharacterSheet[]
+    past: HistoryEntry[]
+    future: HistoryEntry[]
 }
 
 const LIMIT = 60
@@ -62,12 +68,12 @@ export const useSheet = () => {
         setCharacters(listCharacters())
     }, [])
 
-    /** Apply an update and record the previous state for undo. */
-    const commit = useCallback((updater: (s: CharacterSheet) => CharacterSheet) => {
+    /** Apply an update and record the previous state (with a label) for undo. */
+    const commit = useCallback((updater: (s: CharacterSheet) => CharacterSheet, label = 'Edit') => {
         setHist((h) => {
             const next = updater(h.sheet)
             if (next === h.sheet) return h
-            return { sheet: next, past: [...h.past, h.sheet].slice(-LIMIT), future: [] }
+            return { sheet: next, past: [...h.past, { sheet: h.sheet, label }].slice(-LIMIT), future: [] }
         })
     }, [])
 
@@ -75,7 +81,7 @@ export const useSheet = () => {
         setHist((h) => {
             if (h.past.length === 0) return h
             const prev = h.past[h.past.length - 1]
-            return { sheet: prev, past: h.past.slice(0, -1), future: [h.sheet, ...h.future].slice(0, LIMIT) }
+            return { sheet: prev.sheet, past: h.past.slice(0, -1), future: [{ sheet: h.sheet, label: prev.label }, ...h.future].slice(0, LIMIT) }
         })
     }, [])
 
@@ -83,17 +89,24 @@ export const useSheet = () => {
         setHist((h) => {
             if (h.future.length === 0) return h
             const next = h.future[0]
-            return { sheet: next, past: [...h.past, h.sheet].slice(-LIMIT), future: h.future.slice(1) }
+            return { sheet: next.sheet, past: [...h.past, { sheet: h.sheet, label: next.label }].slice(-LIMIT), future: h.future.slice(1) }
         })
     }, [])
 
-    const replaceSheet = useCallback((next: CharacterSheet) => commit(() => next), [commit])
+    const duplicateCharacter = useCallback(() => {
+        const { id, sheet: copy } = duplicateActive()
+        setHist({ sheet: copy, past: [], future: [] })
+        setActiveId(id)
+        setCharacters(listCharacters())
+    }, [])
 
-    const renameSheet = useCallback((name: string) => commit((c) => ({ ...c, name })), [commit])
+    const replaceSheet = useCallback((next: CharacterSheet) => commit(() => next, 'Replace sheet'), [commit])
+
+    const renameSheet = useCallback((name: string) => commit((c) => ({ ...c, name }), 'Rename'), [commit])
 
     const mapSections = useCallback(
-        (fn: (section: CharacterSection) => CharacterSection) =>
-            commit((c) => ({ ...c, sections: c.sections.map(fn) })),
+        (fn: (section: CharacterSection) => CharacterSection, label = 'Edit') =>
+            commit((c) => ({ ...c, sections: c.sections.map(fn) }), label),
         [commit],
     )
 
@@ -109,18 +122,18 @@ export const useSheet = () => {
 
     const setSectionLayout = useCallback(
         (sectionId: string, layout: SectionLayout) => {
-            mapSections((section) => (section.id === sectionId ? { ...section, layout } : section))
+            mapSections((section) => (section.id === sectionId ? { ...section, layout } : section), 'Move / resize')
         },
         [mapSections],
     )
 
     const addSection = useCallback(() => {
-        commit((c) => ({ ...c, sections: [...c.sections, createSection(c.sections.length)] }))
+        commit((c) => ({ ...c, sections: [...c.sections, createSection(c.sections.length)] }), 'Add section')
     }, [commit])
 
     const deleteSection = useCallback(
         (sectionId: string) => {
-            commit((c) => ({ ...c, sections: c.sections.filter((s) => s.id !== sectionId) }))
+            commit((c) => ({ ...c, sections: c.sections.filter((s) => s.id !== sectionId) }), 'Delete section')
         },
         [commit],
     )
@@ -186,7 +199,7 @@ export const useSheet = () => {
                         }),
                     }
                 }),
-            }))
+            }), kind === 'long' ? 'Long rest' : 'Short rest')
         },
         [commit],
     )
@@ -285,7 +298,7 @@ export const useSheet = () => {
                 section.id === sectionId
                     ? { ...section, fields: [...section.fields, createField(overrides)] }
                     : section,
-            )
+            'Add field')
         },
         [mapSections],
     )
@@ -338,9 +351,12 @@ export const useSheet = () => {
         activeId,
         switchCharacter,
         newCharacter,
+        duplicateCharacter,
         deleteCharacter,
         canUndo: hist.past.length > 0,
         canRedo: hist.future.length > 0,
+        undoLabel: hist.past.length > 0 ? hist.past[hist.past.length - 1].label : null,
+        redoLabel: hist.future.length > 0 ? hist.future[0].label : null,
         undo,
         redo,
         replaceSheet,

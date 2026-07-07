@@ -25,6 +25,7 @@ import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { loadPresets, savePresets, type Presets } from './state/presets'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
 import { getActiveId } from './state/roster'
+import { pushBackup, listBackups, restoreBackup } from './state/backups'
 import { useSheet } from './state/useSheet'
 import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode, RollLogEntry } from './model/dice'
@@ -58,9 +59,12 @@ function App() {
         activeId,
         switchCharacter,
         newCharacter,
+        duplicateCharacter,
         deleteCharacter,
         canUndo,
         canRedo,
+        undoLabel,
+        redoLabel,
         undo,
         redo,
         replaceSheet,
@@ -124,6 +128,11 @@ function App() {
         }
         setRollLog(next)
     }, [activeId])
+
+    // Periodic local version history (throttled internally to ~1/min).
+    useEffect(() => {
+        pushBackup(activeId, sheet)
+    }, [sheet, activeId])
 
     // Auto-set the "Bloodied" toggle when Current HP drops to half of Max HP or below.
     useEffect(() => {
@@ -195,6 +204,14 @@ function App() {
         if (window.confirm(`Delete “${name}”? This cannot be undone.`)) {
             deleteCharacter(activeId)
             setNotice('Character deleted.')
+        }
+    }
+
+    const handleRestore = (ts: number) => {
+        const restored = restoreBackup(activeId, ts)
+        if (restored) {
+            replaceSheet(restored)
+            setNotice('Restored an earlier version.')
         }
     }
 
@@ -387,13 +404,39 @@ function App() {
                         </button>
                         <button
                             type="button"
+                            onClick={duplicateCharacter}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Duplicate the current character"
+                        >
+                            Duplicate
+                        </button>
+                        {listBackups(activeId).length > 0 && (
+                            <select
+                                value=""
+                                onChange={(event) => {
+                                    if (event.target.value) handleRestore(Number(event.target.value))
+                                }}
+                                className="max-w-[9rem] rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
+                                aria-label="Restore a saved version"
+                                title="Restore an earlier auto-saved version"
+                            >
+                                <option value="">History…</option>
+                                {listBackups(activeId).map((b) => (
+                                    <option key={b.ts} value={b.ts}>
+                                        {new Date(b.ts).toLocaleString()}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        <button
+                            type="button"
                             onClick={undo}
                             disabled={!canUndo}
                             className={clsx(
                                 'rounded-md border border-slate-600 px-3 py-2 text-sm',
                                 canUndo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
                             )}
-                            title="Undo (Ctrl+Z)"
+                            title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'}
                         >
                             ↶ Undo
                         </button>
@@ -405,7 +448,7 @@ function App() {
                                 'rounded-md border border-slate-600 px-3 py-2 text-sm',
                                 canRedo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
                             )}
-                            title="Redo (Ctrl+Shift+Z)"
+                            title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)'}
                         >
                             ↷ Redo
                         </button>

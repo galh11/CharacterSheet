@@ -140,7 +140,7 @@ S('Skills', 'skills', [
 // 9. Attacks — to-hit and damage derived from STR mod + proficiency + fisticuffs die.
 S('Attacks', 'actions', [
     F('Unarmed Strike', 'text', '', {
-        description: 'Fisticuffs die d10. Moxie-Fueled Fists: may deal Force instead of Bludgeoning.',
+        description: 'Fisticuffs die d10. Moxie-Fueled Fists: may deal Force instead. Heavy Hitter: also Grapple or Shove on a hit. Hill’s Tumble: knock a Large-or-smaller target Prone (3/Long).',
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
     }),
     F('Flame Tongue Handaxe', 'text', '', {
@@ -177,17 +177,22 @@ S('Reactions', 'actions', [
     F('Meat Shield (1 Moxie)', 'text', '', { description: 'When a creature misses you, force it to reroll against a creature you are Grappling.' }),
 ])
 
-// 12. Features & traits.
+// 12. Features & traits (level 8: core Pugilist + Squared Circle + race + feats).
 S('Features & Traits', 'actions', [
-    F('Extra Attack', 'text', '', { description: 'Attack twice when you take the Attack action.' }),
-    F('Moxie-Fueled Fists', 'text', '', { description: 'Unarmed/improvised damage can be Force instead of its normal type.' }),
+    F('Fisticuffs', 'text', '', { description: 'Unarmed/Pugilist-weapon damage die is d10; bonus-action Unarmed Strike; improvised weapons gain the Sap mastery.' }),
+    F('Iron Chin', 'text', '', { description: 'Base AC = 12 + CON mod while in Light or no armor and no shield.' }),
+    F('Heavy Hitter', 'text', '', { description: 'On an Unarmed Strike hit: deal Damage AND your choice of Grapple or Shove.' }),
+    F('Extra Attack', 'text', '', { description: 'Attack twice whenever you take the Attack action.' }),
+    F('Moxie-Fueled Fists', 'text', '', { description: 'Unarmed/improvised damage may be Force instead of its normal type.' }),
     F('Swagger Streak (1/Short)', 'text', '', { description: 'On a failed STR/DEX/CON/CHA check, spend 1 Moxie and add 1d10; may turn a failure into success.' }),
     F('Down But Not Out (1/Long)', 'text', '', { description: 'With Bloodied But Unbowed while Bloodied: +damage = CON mod + exhaustion levels for 1 min.' }),
-    F('Inescapable (1 Moxie)', 'text', '', { description: 'Impose Disadvantage on a save/check against your grapple or shove.' }),
-    F('Stop and Drop', 'text', '', { description: 'On an Unarmed Strike hit without a mastery: use both Grapple and Shove.' }),
-    F('Powerful Build', 'text', '', { description: 'Count as one size larger for carrying capacity and drag/lift.' }),
-    F("Hill's Tumble", 'text', '', { description: 'On a hit that deals damage to a Large-or-smaller creature: knock it Prone.' }),
-    F('Lucky (feat)', 'text', '', { description: 'Spend a Luck Point for Advantage, or impose Disadvantage on an attack against you.' }),
+    F('Groundwork (Squared Circle)', 'text', '', { description: 'Compression Lock (grappled foes take fisticuffs + STR each turn), Inescapable (1 Moxie: Disadvantage on escapes), Stop and Drop (Unarmed hit without mastery: Grapple AND Shove).' }),
+    F('Muscle Mass (Squared Circle)', 'text', '', { description: 'Expertise in Athletics (already included in the +11).' }),
+    F('Meat Shield (Squared Circle)', 'text', '', { description: 'While grappling: Half Cover vs others. Reaction + 1 Moxie: redirect a creature’s miss onto a creature you are Grappling.' }),
+    F('Giant Ancestry — Hill’s Tumble', 'text', '', { description: 'On a hit that damages a Large-or-smaller creature: knock it Prone. Uses = proficiency (3) per Long Rest.' }),
+    F('Large Form (1/Long)', 'text', '', { description: 'Bonus Action: become Large for 10 min — Advantage on STR checks, +10 ft Speed.' }),
+    F('Powerful Build', 'text', '', { description: 'Advantage on checks to end the Grappled condition; count as one size larger for carrying capacity.' }),
+    F('Lucky (feat)', 'text', '', { description: 'Spend a Luck Point for Advantage, or impose Disadvantage on an attack against you (3/Long).' }),
     F('Athlete (feat)', 'text', '', { description: 'Climb Speed = Speed; stand from Prone with 5 ft; run-up jumps after 5 ft.' }),
 ])
 
@@ -195,6 +200,7 @@ S('Features & Traits', 'actions', [
 S('Resources', 'default', [
     F('Moxie Points', 'resource', 5, { max: 5, meta: { recharge: 'short' } }),
     F('Luck Points', 'resource', 3, { max: 3, meta: { recharge: 'long' } }),
+    F("Hill's Tumble", 'resource', 3, { max: 3, meta: { recharge: 'long' } }),
     F('Large Form', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
     F('Dig Deep', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
     F('Bloodied But Unbowed', 'resource', 1, { max: 1, meta: { recharge: 'short' } }),
@@ -229,15 +235,29 @@ S('Languages', 'default', [
     F('Elvish', 'text', 'fluent'),
 ])
 
-// 17. Equipment.
+// 17. Notable gear — magic items and special equipment that grant effects.
+S('Notable Gear', 'default', [
+    F('Flame Tongue Handaxe', 'text', 'equipped', { description: '+2d6 fire while ablaze (Bonus Action to ignite). Sheds Bright Light 40 ft.' }),
+    F('Reinforced Studded Leather', 'text', 'worn', { description: 'Reduce all damage taken by 3 (applied in the HP tracker).' }),
+    F('Dark Adaptation Helmet', 'text', 'worn', { description: 'Grants Darkvision 15 ft.' }),
+    F('Snow-Shell Boots', 'text', 'worn', { description: 'Snow/ice isn’t difficult terrain; Advantage on checks/saves vs slipping, falling Prone, or forced movement on ice.' }),
+    F('Layered Cold Cloak', 'text', 'worn', { description: 'Advantage on saves vs extreme cold; on gaining cold Exhaustion, roll d6 — on a 6 you don’t gain it.' }),
+    F('Horizon Society Salvage Harness', 'text', 'worn', { description: 'Carrying capacity doubled; 1/Long Rest, negate a level of Exhaustion from travel, marching, climbing, or environment.' }),
+    F('Reinforced Rope Coil', 'text', 'carried', { description: 'Advantage on Athletics (STR) to climb or prevent a fall; immune to cold; 10 HP.' }),
+    F('Ice-Anchor Pitons', 'text', '×10', { description: 'Secure a rope for Advantage on Athletics climbing; anchor holds 2,000 lb.' }),
+], '#06b6d4')
+
+// 18. Equipment — consumables and mundane gear.
 S('Equipment', 'default', [
-    F('Flame Tongue Handaxe', 'text', 'equipped'),
-    F('Javelins', 'text', '×3'),
-    F('Reinforced Studded Leather', 'text', 'equipped'),
     F('Potion of Healing (Greater)', 'text', '×5', { description: 'Regain 4d4 + 4 HP.' }),
     F('Potion of Healing (Superior)', 'text', '×3', { description: 'Regain 8d4 + 8 HP.' }),
-    F('Dark Adaptation Helmet', 'text', 'worn', { description: 'Darkvision 15 ft.' }),
-    F('Snow-Shell Boots', 'text', 'worn'),
+    F('Javelins', 'text', '×3'),
+    F('Thieves’ Tools', 'text', 'carried'),
+    F('Manacles, Chain ×2, Grappling Hook', 'text', 'carried'),
+    F('Caltrops, Oil ×2, Torches ×10', 'text', 'carried'),
+    F('Bullseye Lantern, Tinderbox', 'text', 'carried'),
+    F('Rations ×10, Waterskin', 'text', 'carried'),
+    F('Climber’s Kit, Crowbar, Pole, Rope', 'text', 'carried'),
     F('Coins', 'text', '108 pp'),
 ])
 

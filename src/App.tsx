@@ -134,7 +134,7 @@ function App() {
             return
         }
         spendResource('luck_points', 1)
-        pushRoll({ title: 'Luck Point', detail: `Spent 1 — reroll or gain Advantage (${left - 1} left)`, total: left - 1, kind: 'raw' })
+        pushRoll({ title: 'Luck Point', detail: `Spent 1 — Advantage on a d20 (or Disadvantage on an attack vs you) (${left - 1} left)`, total: left - 1, kind: 'raw' })
     }
 
     const handleImport = async (file: File | undefined) => {
@@ -498,49 +498,49 @@ function App() {
                         </button>
                         {!stackView && (
                             <>
-                        <button
-                            type="button"
-                            onClick={handleTidy}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Auto-arrange sections into tidy rows"
-                        >
-                            Tidy
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleFitAll}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Shrink every section to its content (width + height)"
-                        >
-                            Fit all
-                        </button>
-                        <button
-                            type="button"
-                            onClick={savePreset}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Save the current arrangement as a named layout"
-                        >
-                            Save layout
-                        </button>
-                        {Object.keys(presets).length > 0 && (
-                            <select
-                                value=""
-                                onChange={(event) => {
-                                    if (event.target.value) applyPreset(event.target.value)
-                                }}
-                                className="rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
-                                aria-label="Apply saved layout"
-                            >
-                                <option value="" disabled>
-                                    Apply layout…
-                                </option>
-                                {Object.keys(presets).map((name) => (
-                                    <option key={name} value={name}>
-                                        {name}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
+                                <button
+                                    type="button"
+                                    onClick={handleTidy}
+                                    className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                                    title="Auto-arrange sections into tidy rows"
+                                >
+                                    Tidy
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleFitAll}
+                                    className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                                    title="Shrink every section to its content (width + height)"
+                                >
+                                    Fit all
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={savePreset}
+                                    className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                                    title="Save the current arrangement as a named layout"
+                                >
+                                    Save layout
+                                </button>
+                                {Object.keys(presets).length > 0 && (
+                                    <select
+                                        value=""
+                                        onChange={(event) => {
+                                            if (event.target.value) applyPreset(event.target.value)
+                                        }}
+                                        className="rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
+                                        aria-label="Apply saved layout"
+                                    >
+                                        <option value="" disabled>
+                                            Apply layout…
+                                        </option>
+                                        {Object.keys(presets).map((name) => (
+                                            <option key={name} value={name}>
+                                                {name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </>
                         )}
                         {isEditMode && (
@@ -593,51 +593,51 @@ function App() {
                         ))}
                     </div>
                 ) : (
-                <div className="overflow-auto">
-                    <div
-                        onPointerDown={(e) => {
-                            if (e.target === e.currentTarget) setSelectedIds(new Set())
-                        }}
-                        className={clsx(
-                            'relative rounded-lg',
-                            isEditMode && 'bg-[radial-gradient(circle,_rgba(148,163,184,0.12)_1px,_transparent_1px)] [background-size:16px_16px]',
-                        )}
-                        style={{ width: canvasSize.width, height: canvasSize.height }}
-                    >
-                        {sheet.sections.map((section) => (
-                            <CanvasItem
-                                key={section.id}
-                                layout={section.layout}
-                                scale={section.scale}
-                                selected={selectedIds.has(section.id)}
-                                siblings={sheet.sections
-                                    .filter((s) => s.id !== section.id)
-                                    .map((s) => s.layout)}
-                                onLayoutCommit={(layout) => commitLayout(section.id, layout)}
-                                onScaleChange={(scale) => updateSection(section.id, { scale })}
-                                onGuidesChange={setGuides}
-                                onSelect={(additive) => handleSelect(section.id, additive)}
-                                handleRef={(h) => {
-                                    if (h) fitRefs.current.set(section.id, h)
-                                    else fitRefs.current.delete(section.id)
-                                }}
-                            >
-                                {renderCard(section, false)}
-                            </CanvasItem>
-                        ))}
-                        {guides.map((g, i) => (
-                            <div
-                                key={i}
-                                className="pointer-events-none absolute z-30 bg-cyan-400/70"
-                                style={
-                                    g.axis === 'x'
-                                        ? { left: g.pos, top: 0, width: 1, height: canvasSize.height }
-                                        : { top: g.pos, left: 0, height: 1, width: canvasSize.width }
-                                }
-                            />
-                        ))}
+                    <div className="overflow-auto">
+                        <div
+                            onPointerDown={(e) => {
+                                if (e.target === e.currentTarget) setSelectedIds(new Set())
+                            }}
+                            className={clsx(
+                                'relative rounded-lg',
+                                isEditMode && 'bg-[radial-gradient(circle,_rgba(148,163,184,0.12)_1px,_transparent_1px)] [background-size:16px_16px]',
+                            )}
+                            style={{ width: canvasSize.width, height: canvasSize.height }}
+                        >
+                            {sheet.sections.map((section) => (
+                                <CanvasItem
+                                    key={section.id}
+                                    layout={section.layout}
+                                    scale={section.scale}
+                                    selected={selectedIds.has(section.id)}
+                                    siblings={sheet.sections
+                                        .filter((s) => s.id !== section.id)
+                                        .map((s) => s.layout)}
+                                    onLayoutCommit={(layout) => commitLayout(section.id, layout)}
+                                    onScaleChange={(scale) => updateSection(section.id, { scale })}
+                                    onGuidesChange={setGuides}
+                                    onSelect={(additive) => handleSelect(section.id, additive)}
+                                    handleRef={(h) => {
+                                        if (h) fitRefs.current.set(section.id, h)
+                                        else fitRefs.current.delete(section.id)
+                                    }}
+                                >
+                                    {renderCard(section, false)}
+                                </CanvasItem>
+                            ))}
+                            {guides.map((g, i) => (
+                                <div
+                                    key={i}
+                                    className="pointer-events-none absolute z-30 bg-cyan-400/70"
+                                    style={
+                                        g.axis === 'x'
+                                            ? { left: g.pos, top: 0, width: 1, height: canvasSize.height }
+                                            : { top: g.pos, left: 0, height: 1, width: canvasSize.width }
+                                    }
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
                 )}
             </section>
 

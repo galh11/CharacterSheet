@@ -33,7 +33,7 @@ describe('ActionCards', () => {
             <SectionBody
                 section={section}
                 results={new Map()}
-                onUpdateField={() => {}}
+                onUpdateField={() => { }}
                 scope={{ str_mod: 5, proficiency: 3 }}
                 onRoll={onRoll}
             />,
@@ -52,9 +52,9 @@ describe('ActionCards', () => {
             <SectionBody
                 section={section}
                 results={new Map()}
-                onUpdateField={() => {}}
+                onUpdateField={() => { }}
                 scope={{ moxie_points: 3 }}
-                onRoll={() => {}}
+                onRoll={() => { }}
                 onSpend={onSpend}
             />,
         )
@@ -66,7 +66,7 @@ describe('ActionCards', () => {
         const section = actionsSection([
             field({ id: 'f', label: 'Handaxe', meta: { damage: '1d6', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame' } }),
         ])
-        const props = { section, results: new Map(), onUpdateField: () => {}, onRoll: () => {} }
+        const props = { section, results: new Map(), onUpdateField: () => { }, onRoll: () => { } }
         const { rerender } = render(<SectionBody {...props} scope={{ flame: 0 }} />)
         expect(screen.getByTitle(/Inactive/)).toBeInTheDocument()
         rerender(<SectionBody {...props} scope={{ flame: 1 }} />)

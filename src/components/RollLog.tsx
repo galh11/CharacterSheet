@@ -94,7 +94,7 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                                     'ml-auto rounded px-2 py-0.5 text-[11px] font-medium',
                                     luck > 0 ? 'bg-amber-500/80 text-slate-950 hover:bg-amber-400' : 'cursor-not-allowed bg-slate-800 text-slate-600',
                                 )}
-                                title="Spend a Luck Point (Advantage / reroll)"
+                                title="Spend a Luck Point (Advantage on a d20)"
                             >
                                 🍀 Luck ({luck})
                             </button>

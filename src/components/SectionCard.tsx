@@ -19,6 +19,8 @@ interface SectionCardProps {
     scope?: Record<string, number>
     rollMode?: D20Mode
     bonus?: number
+    bonusDie?: number
+    repeat?: number
     onRoll?: (entry: Omit<RollLogEntry, 'id'>) => void
     onHeal?: (amount: number) => void
     onSpend?: (slug: string, amount: number) => void
@@ -72,6 +74,8 @@ export function SectionCard({
     scope,
     rollMode,
     bonus,
+    bonusDie,
+    repeat,
     onRoll,
     onHeal,
     onSpend,
@@ -194,6 +198,8 @@ export function SectionCard({
                             scope={scope}
                             rollMode={rollMode}
                             bonus={bonus}
+                            bonusDie={bonusDie}
+                            repeat={repeat}
                             onRoll={onRoll}
                             onHeal={onHeal}
                             onSpend={onSpend}

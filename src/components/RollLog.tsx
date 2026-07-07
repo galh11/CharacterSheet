@@ -8,8 +8,13 @@ interface RollLogProps {
     onRollModeChange: (mode: D20Mode) => void
     bonus: number
     onBonusChange: (bonus: number) => void
+    bonusDie: number
+    onBonusDieChange: (sides: number) => void
+    repeat: number
+    onRepeatChange: (n: number) => void
     luck?: number
     onSpendLuck: () => void
+    onRollDice: (expr: string) => void
     onClear: () => void
 }
 
@@ -29,8 +34,9 @@ const kindColor: Record<RollLogEntry['kind'], string> = {
 }
 
 /** Floating panel showing recent dice rolls plus the advantage/disadvantage toggle. */
-export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusChange, luck, onSpendLuck, onClear }: RollLogProps) {
+export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusChange, bonusDie, onBonusDieChange, repeat, onRepeatChange, luck, onSpendLuck, onRollDice, onClear }: RollLogProps) {
     const [open, setOpen] = useState(true)
+    const [dice, setDice] = useState('')
     return (
         <div className="fixed bottom-4 right-4 z-40 w-72 rounded-xl border border-slate-700 bg-slate-950/95 shadow-xl backdrop-blur print:hidden">
             <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-2">
@@ -100,6 +106,46 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                             </button>
                         )}
                     </div>
+                    <div className="flex flex-wrap items-center gap-1 border-b border-slate-800 px-3 py-1.5 text-[11px]">
+                        <button type="button" onClick={() => onBonusChange(bonus - 2)} className="rounded border border-slate-700 px-1.5 py-0.5 text-slate-300 hover:bg-slate-800" title="Half cover">Cover −2</button>
+                        <button type="button" onClick={() => onBonusChange(bonus - 5)} className="rounded border border-slate-700 px-1.5 py-0.5 text-slate-300 hover:bg-slate-800" title="Three-quarters cover">Heavy −5</button>
+                        <button
+                            type="button"
+                            onClick={() => onBonusDieChange(bonusDie === 4 ? 0 : 4)}
+                            className={clsx('rounded px-1.5 py-0.5', bonusDie === 4 ? 'bg-emerald-600 text-white' : 'border border-slate-700 text-slate-300 hover:bg-slate-800')}
+                            title="Add a fresh 1d4 to each d20 (Bless / Guidance)"
+                        >
+                            +1d4
+                        </button>
+                        <label className="ml-auto flex items-center gap-1 text-slate-400" title="Roll each d20 check this many times">
+                            ×
+                            <input
+                                type="number"
+                                min={1}
+                                value={repeat}
+                                onChange={(e) => onRepeatChange(Math.max(1, Number(e.target.value) || 1))}
+                                aria-label="Repeat rolls"
+                                className="w-10 rounded border border-slate-700 bg-slate-900 px-1 py-0.5 text-center font-mono text-slate-100"
+                            />
+                        </label>
+                    </div>
+                    <form
+                        className="flex items-center gap-1 border-b border-slate-800 px-3 py-1.5"
+                        onSubmit={(e) => {
+                            e.preventDefault()
+                            onRollDice(dice)
+                            setDice('')
+                        }}
+                    >
+                        <input
+                            value={dice}
+                            onChange={(e) => setDice(e.target.value)}
+                            placeholder="free dice e.g. 2d6+3"
+                            aria-label="Free dice expression"
+                            className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[11px] text-slate-100"
+                        />
+                        <button type="submit" className="rounded bg-slate-700 px-2 py-0.5 text-[11px] font-medium text-slate-100 hover:bg-slate-600">Roll</button>
+                    </form>
                     <div className="max-h-64 overflow-auto px-3 py-2">
                         {entries.length === 0 ? (
                             <p className="m-0 text-xs italic text-slate-500">Click an attack, skill, save or hit die to roll.</p>

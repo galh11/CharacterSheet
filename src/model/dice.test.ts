@@ -3,6 +3,7 @@ import {
     parseRoll,
     rollExpr,
     rollD20,
+    rollD20Series,
     rollDamage,
     parseModifier,
     formatRoll,
@@ -93,6 +94,24 @@ describe('rollDamage', () => {
     it('skips blank expressions', () => {
         const dmg = rollDamage([{ expr: '', type: 'fire' }, { expr: '1d4' }], max)
         expect(dmg.parts).toHaveLength(1)
+    })
+})
+
+describe('rollD20Series', () => {
+    it('rolls the requested count, adding a fresh bonus die each time', () => {
+        // per iteration: one d20 then one d4
+        const rng = seq([(10 - 1) / 20, (2 - 1) / 4, (15 - 1) / 20, (4 - 1) / 4, (1 - 1) / 20, 0])
+        const s = rollD20Series(2, 'normal', 3, 4, rng)
+        expect(s.results).toHaveLength(3)
+        expect(s.results[0].total).toBe(10 + 2 + 2) // nat 10 + mod 2 + d4(2)
+        expect(s.best).toBe(Math.max(...s.results.map((r) => r.total)))
+    })
+
+    it('defaults to a single roll with no bonus die', () => {
+        const s = rollD20Series(5, 'normal', 1, 0, max)
+        expect(s.results).toHaveLength(1)
+        expect(s.results[0].total).toBe(25)
+        expect(s.results[0].bonusDie).toBe(0)
     })
 })
 

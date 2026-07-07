@@ -113,6 +113,33 @@ export const rollD20 = (modifier: number, mode: D20Mode = 'normal', rng: Rng = d
     return { rolls, natural, modifier, total: natural + modifier, mode, crit }
 }
 
+export interface D20Series {
+    /** One entry per repeat: the natural d20, any bonus-die roll, and the final total. */
+    results: { natural: number; bonusDie: number; total: number; crit: 'hit' | 'miss' | null }[]
+    /** Highest final total across the series. */
+    best: number
+}
+
+/**
+ * Roll a d20 (with adv/dis) `count` times, each optionally adding a fresh
+ * bonus-die roll (e.g. Bless/Guidance 1d4). Used for grouped attack rolls.
+ */
+export const rollD20Series = (
+    modifier: number,
+    mode: D20Mode = 'normal',
+    count = 1,
+    bonusDieSides = 0,
+    rng: Rng = defaultRng,
+): D20Series => {
+    const results = []
+    for (let i = 0; i < Math.max(1, count); i++) {
+        const r = rollD20(modifier, mode, rng)
+        const bonusDie = bonusDieSides > 0 ? rollOne(bonusDieSides, rng) : 0
+        results.push({ natural: r.natural, bonusDie, total: r.total + bonusDie, crit: r.crit })
+    }
+    return { results, best: Math.max(...results.map((r) => r.total)) }
+}
+
 export interface DamagePart {
     type?: string
     result: RollResult

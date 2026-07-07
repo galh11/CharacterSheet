@@ -24,7 +24,9 @@ import { RollLog } from './components/RollLog'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { loadPresets, savePresets, type Presets } from './state/presets'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
+import { getActiveId } from './state/roster'
 import { useSheet } from './state/useSheet'
+import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode, RollLogEntry } from './model/dice'
 
 function App() {
@@ -36,11 +38,13 @@ function App() {
     const [presets, setPresets] = useState<Presets>(() => loadPresets())
     const [rollMode, setRollMode] = useState<D20Mode>('normal')
     const [situational, setSituational] = useState(0)
+    const [bonusDie, setBonusDie] = useState(0)
+    const [repeat, setRepeat] = useState(1)
     const [stackView, setStackView] = useState(false)
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [rollLog, setRollLog] = useState<RollLogEntry[]>(() => {
         try {
-            const raw = localStorage.getItem('character-sheet:rolllog:v1')
+            const raw = localStorage.getItem(`character-sheet:rolllog:${getActiveId()}`)
             return raw ? (JSON.parse(raw) as RollLogEntry[]) : []
         } catch {
             return []
@@ -98,14 +102,28 @@ function App() {
     const pushRoll = (entry: Omit<RollLogEntry, 'id'>) =>
         setRollLog((log) => [{ ...entry, id: crypto.randomUUID() }, ...log].slice(0, 40))
 
-    // Persist the roll log across reloads.
+    // Persist the roll log per character, and reload it when switching characters.
+    const prevActiveRef = useRef(activeId)
     useEffect(() => {
         try {
-            localStorage.setItem('character-sheet:rolllog:v1', JSON.stringify(rollLog))
+            localStorage.setItem(`character-sheet:rolllog:${activeId}`, JSON.stringify(rollLog))
         } catch {
             /* ignore quota errors */
         }
-    }, [rollLog])
+    }, [rollLog, activeId])
+
+    useEffect(() => {
+        if (prevActiveRef.current === activeId) return
+        prevActiveRef.current = activeId
+        let next: RollLogEntry[]
+        try {
+            const raw = localStorage.getItem(`character-sheet:rolllog:${activeId}`)
+            next = raw ? (JSON.parse(raw) as RollLogEntry[]) : []
+        } catch {
+            next = []
+        }
+        setRollLog(next)
+    }, [activeId])
 
     // Auto-set the "Bloodied" toggle when Current HP drops to half of Max HP or below.
     useEffect(() => {
@@ -135,6 +153,13 @@ function App() {
         }
         spendResource('luck_points', 1)
         pushRoll({ title: 'Luck Point', detail: `Spent 1 — Advantage on a d20 (or Disadvantage on an attack vs you) (${left - 1} left)`, total: left - 1, kind: 'raw' })
+    }
+
+    const rollFreeDice = (expr: string) => {
+        const trimmed = expr.trim()
+        if (!trimmed) return
+        const r = rollExpr(trimmed)
+        pushRoll({ title: trimmed, detail: formatRoll(r), total: r.total, kind: 'raw' })
     }
 
     const handleImport = async (file: File | undefined) => {
@@ -300,6 +325,8 @@ function App() {
             scope={scope}
             rollMode={rollMode}
             bonus={situational}
+            bonusDie={bonusDie}
+            repeat={repeat}
             onRoll={pushRoll}
             onHeal={healHp}
             onSpend={spendResource}
@@ -658,8 +685,13 @@ function App() {
                 onRollModeChange={setRollMode}
                 bonus={situational}
                 onBonusChange={setSituational}
+                bonusDie={bonusDie}
+                onBonusDieChange={setBonusDie}
+                repeat={repeat}
+                onRepeatChange={setRepeat}
                 luck={scope['luck_points']}
                 onSpendLuck={spendLuck}
+                onRollDice={rollFreeDice}
                 onClear={() => setRollLog([])}
             />
         </main>

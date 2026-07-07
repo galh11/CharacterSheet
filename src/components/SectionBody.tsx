@@ -5,11 +5,13 @@ import { slugify, type CharacterField, type CharacterSection } from '../model/ch
 import { interpolate } from '../model/compute'
 import {
     rollD20,
+    rollD20Series,
     rollExpr,
     rollDamage,
     parseModifier,
     formatRoll,
     type D20Mode,
+    type D20Series,
     type RollLogEntry,
 } from '../model/dice'
 import { Tooltip } from './Tooltip'
@@ -24,6 +26,10 @@ interface SectionBodyProps {
     rollMode?: D20Mode
     /** Situational bonus added to every d20 roll (attack/skill/save/initiative). */
     bonus?: number
+    /** Fresh bonus die (sides) added to each d20 roll, e.g. 4 for Bless/Guidance. */
+    bonusDie?: number
+    /** How many times to roll each d20 check (grouped attacks). */
+    repeat?: number
     onRoll?: (entry: Omit<RollLogEntry, 'id'>) => void
     onHeal?: (amount: number) => void
     /** Spend `amount` from the resource field with the given slug. */
@@ -41,6 +47,21 @@ const abilityMod = (score: number): number => Math.floor((score - 10) / 2)
 /** Double each NdM dice count in an expression (crit hits), leaving flat bonuses. */
 const doubleDice = (expr: string): string =>
     expr.replace(/(\d*)d(\d+)/gi, (_, count: string, sides: string) => `${(count === '' ? 1 : Number(count)) * 2}d${sides}`)
+
+/** Format a d20 series into a roll-log detail/total/crit (handles grouped rolls + bonus die). */
+const d20Detail = (series: D20Series, mod: number, sit: number, bonusDie: number, mode: D20Mode) => {
+    if (series.results.length > 1) {
+        return { detail: `[${series.results.map((r) => r.total).join(', ')}] best ${series.best}`, total: series.best, crit: null as 'hit' | 'miss' | null }
+    }
+    const r = series.results[0]
+    const modeStr = mode !== 'normal' ? ` (${mode === 'advantage' ? 'adv' : 'dis'})` : ''
+    const bd = bonusDie ? ` +1d${bonusDie}(${r.bonusDie})` : ''
+    return {
+        detail: `d20${modeStr} → ${r.natural} ${signed(mod)}${sit ? ` ${signed(sit)} sit` : ''}${bd} = ${r.total}`,
+        total: r.total,
+        crit: r.crit,
+    }
+}
 
 const displayValue = (field: CharacterField, results: Map<string, FormulaResult>): string => {
     if (field.type === 'computed') {
@@ -355,7 +376,7 @@ const profDot = (state?: string): { cls: string; title: string } => {
     return { cls: 'bg-transparent ring-1 ring-slate-600', title: 'Not proficient' }
 }
 
-function SkillRows({ section, scope, rollMode, bonus, onRoll }: SectionBodyProps) {
+function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }: SectionBodyProps) {
     /** Resolve a skill's modifier: auto from ability + proficiency, or manual value. */
     const skillMod = (field: CharacterField): number => {
         const m = field.meta ?? {}
@@ -372,14 +393,16 @@ function SkillRows({ section, scope, rollMode, bonus, onRoll }: SectionBodyProps
     const roll = (field: CharacterField) => {
         const mod = skillMod(field)
         const sit = bonus ?? 0
+        const mode = rollMode ?? 'normal'
         const isSave = section.title.toLowerCase().includes('sav')
-        const r = rollD20(mod + sit, rollMode ?? 'normal')
+        const series = rollD20Series(mod + sit, mode, repeat ?? 1, bonusDie ?? 0)
+        const d = d20Detail(series, mod, sit, bonusDie ?? 0, mode)
         onRoll?.({
-            title: `${field.label} ${isSave ? 'save' : 'check'}`,
-            detail: `d20${r.mode !== 'normal' ? ` (${r.rolls.join('/')})` : ''} → ${r.natural} ${signed(mod)}${sit ? ` ${signed(sit)} sit` : ''} = ${r.total}`,
-            total: r.total,
+            title: `${field.label} ${isSave ? 'save' : 'check'}${series.results.length > 1 ? ` ×${series.results.length}` : ''}`,
+            detail: d.detail,
+            total: d.total,
             kind: isSave ? 'save' : 'check',
-            crit: r.crit,
+            crit: d.crit,
         })
     }
     return (
@@ -411,21 +434,23 @@ function SkillRows({ section, scope, rollMode, bonus, onRoll }: SectionBodyProps
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, onRoll, onSpend, onTempHp }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onTempHp }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     /** Extra damage is active unless it is gated on a toggle (meta.extraWhen) that is off. */
     const extraActive = (m: Record<string, string>) => !m.extraWhen || (scope?.[m.extraWhen] ?? 0) > 0
     const sit = bonus ?? 0
+    const mode = rollMode ?? 'normal'
     const rollAttack = (field: CharacterField) => {
         const mod = parseModifier(val(field.meta?.hit))
-        const r = rollD20(mod + sit, rollMode ?? 'normal')
+        const series = rollD20Series(mod + sit, mode, repeat ?? 1, bonusDie ?? 0)
+        const d = d20Detail(series, mod, sit, bonusDie ?? 0, mode)
         onRoll?.({
-            title: `${field.label} — attack`,
-            detail: `d20${r.mode !== 'normal' ? ` (${r.rolls.join('/')})` : ''} → ${r.natural} ${signed(mod)}${sit ? ` ${signed(sit)} sit` : ''} = ${r.total}`,
-            total: r.total,
+            title: `${field.label} — attack${series.results.length > 1 ? ` ×${series.results.length}` : ''}`,
+            detail: d.detail,
+            total: d.total,
             kind: 'attack',
-            crit: r.crit,
+            crit: d.crit,
         })
     }
     const rollFieldDamage = (field: CharacterField, crit: boolean) => {
@@ -605,12 +630,36 @@ function PipRow({ label, value, max, color, onSet }: {
     )
 }
 
-function DeathSaves({ section, onUpdateField }: SectionBodyProps) {
+function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
     const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
     const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
     const succN = succ ? toNum(succ.value) : 0
     const failN = fail ? toNum(fail.value) : 0
     const status = succN >= 3 ? 'Stable' : failN >= 3 ? 'Dead' : null
+    const rollSave = () => {
+        const r = rollD20(0, 'normal')
+        let s = succN
+        let f = failN
+        let detail: string
+        if (r.natural === 20) {
+            onHeal?.(1)
+            s = 0
+            f = 0
+            detail = 'Nat 20 — regain 1 HP and wake up!'
+        } else if (r.natural === 1) {
+            f = Math.min(3, failN + 2)
+            detail = 'Nat 1 — two failures'
+        } else if (r.natural >= 10) {
+            s = Math.min(3, succN + 1)
+            detail = `${r.natural} — success`
+        } else {
+            f = Math.min(3, failN + 1)
+            detail = `${r.natural} — failure`
+        }
+        if (succ && s !== succN) onUpdateField(succ.id, { value: String(s) })
+        if (fail && f !== failN) onUpdateField(fail.id, { value: String(f) })
+        onRoll?.({ title: 'Death save', detail, total: r.natural, kind: 'save', crit: r.crit })
+    }
     return (
         <div className="flex flex-col gap-2">
             {succ && <PipRow label="Successes" value={succN} max={3} color="bg-emerald-400 ring-emerald-300" onSet={(v) => onUpdateField(succ.id, { value: String(v) })} />}
@@ -620,6 +669,15 @@ function DeathSaves({ section, onUpdateField }: SectionBodyProps) {
                     <span className={clsx('rounded px-2 py-0.5 text-xs font-semibold', status === 'Stable' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300')}>
                         {status}
                     </span>
+                )}
+                {onRoll && (succ || fail) && (
+                    <button
+                        type="button"
+                        onClick={rollSave}
+                        className="rounded bg-violet-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-violet-500 print:hidden"
+                    >
+                        🎲 Roll save
+                    </button>
                 )}
                 <button
                     type="button"
@@ -684,7 +742,7 @@ function SpellSlots({ section, onUpdateField }: SectionBodyProps) {
     )
 }
 
-function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, onRoll }: SectionBodyProps) {
+function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, bonusDie, onRoll }: SectionBodyProps) {
     const turn = section.meta?.turn
     const sorted = [...section.fields].sort((a, b) => toNum(b.value) - toNum(a.value))
     const setTurn = (id: string | undefined) => onUpdateSection?.({ meta: { ...section.meta, turn: id ?? '' } })
@@ -697,9 +755,11 @@ function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, 
     const rollInit = (field: CharacterField) => {
         const mod = parseModifier(field.meta?.mod)
         const sit = bonus ?? 0
-        const r = rollD20(mod + sit, rollMode ?? 'normal')
-        onUpdateField(field.id, { value: String(r.total) })
-        onRoll?.({ title: `${field.label} — initiative`, detail: `d20 → ${r.natural} ${signed(mod)}${sit ? ` ${signed(sit)} sit` : ''} = ${r.total}`, total: r.total, kind: 'check' })
+        const mode = rollMode ?? 'normal'
+        const series = rollD20Series(mod + sit, mode, 1, bonusDie ?? 0)
+        const d = d20Detail(series, mod, sit, bonusDie ?? 0, mode)
+        onUpdateField(field.id, { value: String(d.total) })
+        onRoll?.({ title: `${field.label} — initiative`, detail: d.detail, total: d.total, kind: 'check' })
     }
     if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No combatants yet.</p>
     return (

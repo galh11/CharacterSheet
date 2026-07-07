@@ -95,26 +95,34 @@ const damageColor = (type?: string): string =>
 
 function Counter({ field, onUpdateField }: { field: CharacterField; onUpdateField: SectionBodyProps['onUpdateField'] }) {
     const n = toNum(field.value)
+    const isExhaustion = field.label.toLowerCase() === 'exhaustion'
     const set = (next: number) => {
         const clamped = Math.max(0, field.max != null ? Math.min(field.max, next) : next)
         onUpdateField(field.id, { value: String(clamped) })
     }
     return (
-        <div className="flex items-center justify-between gap-2">
-            <FieldLabel field={field} />
-            <div className="flex items-center gap-1">
-                <button type="button" onClick={() => set(n - 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Decrease ${field.label}`}>−</button>
-                <input
-                    value={field.value}
-                    onChange={(e) => onUpdateField(field.id, { value: e.target.value.replace(/[^0-9-]/g, '') })}
-                    onBlur={() => set(n)}
-                    inputMode="numeric"
-                    aria-label={field.label}
-                    className="w-9 rounded bg-slate-900/50 text-center font-mono text-sm text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
-                />
-                {field.max != null && <span className="font-mono text-sm text-slate-500">/{field.max}</span>}
-                <button type="button" onClick={() => set(n + 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
+        <div className="flex flex-col gap-0.5">
+            <div className="flex items-center justify-between gap-2">
+                <FieldLabel field={field} />
+                <div className="flex items-center gap-1">
+                    <button type="button" onClick={() => set(n - 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Decrease ${field.label}`}>−</button>
+                    <input
+                        value={field.value}
+                        onChange={(e) => onUpdateField(field.id, { value: e.target.value.replace(/[^0-9-]/g, '') })}
+                        onBlur={() => set(n)}
+                        inputMode="numeric"
+                        aria-label={field.label}
+                        className="w-9 rounded bg-slate-900/50 text-center font-mono text-sm text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                    />
+                    {field.max != null && <span className="font-mono text-sm text-slate-500">/{field.max}</span>}
+                    <button type="button" onClick={() => set(n + 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
+                </div>
             </div>
+            {isExhaustion && n > 0 && (
+                <span className="text-[10px] leading-tight text-amber-300/90">
+                    {n >= 6 ? 'Dead.' : `−${2 * n} to all d20 tests · −${5 * n} ft Speed`}
+                </span>
+            )}
         </div>
     )
 }
@@ -244,6 +252,7 @@ function StatBlock({ section }: SectionBodyProps) {
 
 function HpWidget({ section, onUpdateField }: SectionBodyProps) {
     const [amount, setAmount] = useState('')
+    const [dmgType, setDmgType] = useState('')
     const [concSave, setConcSave] = useState<number | null>(null)
     const byLabel = (l: string) => section.fields.find((f) => f.label.toLowerCase() === l)
     const cur = byLabel('current hp')
@@ -251,6 +260,9 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
     const temp = byLabel('temp hp')
     const reduction = section.fields.find((f) => f.label.toLowerCase() === 'damage reduction')
     const conc = byLabel('concentration')
+    const parseTypes = (v?: string) => new Set((v ?? '').toLowerCase().split(/[,;]/).map((s) => s.trim()).filter(Boolean))
+    const resist = parseTypes(byLabel('resistances')?.value)
+    const vuln = parseTypes(byLabel('vulnerabilities')?.value)
     const curN = cur ? toNum(cur.value) : 0
     const maxN = max ? toNum(max.value) : 0
     const tempN = temp ? toNum(temp.value) : 0
@@ -261,7 +273,10 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
         const amt = Math.abs(toNum(amount))
         if (!amt || !cur) return
         if (sign === -1) {
-            const taken = Math.max(0, amt - reduceN)
+            let taken = Math.max(0, amt - reduceN)
+            const t = dmgType.toLowerCase()
+            if (t && vuln.has(t)) taken = taken * 2
+            if (t && resist.has(t)) taken = Math.floor(taken / 2)
             let dmg = taken
             if (temp && tempN > 0) {
                 const absorbed = Math.min(tempN, dmg)
@@ -353,6 +368,22 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
                     aria-label="HP amount"
                     className="w-20 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
                 />
+                {(resist.size > 0 || vuln.size > 0) && (
+                    <select
+                        value={dmgType}
+                        onChange={(e) => setDmgType(e.target.value)}
+                        aria-label="Damage type"
+                        title="Damage type (applies resistance / vulnerability)"
+                        className="rounded border border-slate-600 bg-slate-900 px-1 py-1 text-xs text-slate-200"
+                    >
+                        <option value="">any</option>
+                        {Object.keys(DAMAGE_COLORS).map((t) => (
+                            <option key={t} value={t}>
+                                {t}
+                            </option>
+                        ))}
+                    </select>
+                )}
                 <button type="button" onClick={() => apply(-1)} className="rounded bg-rose-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-rose-500">Damage</button>
                 <button type="button" onClick={() => apply(1)} className="rounded bg-emerald-600/80 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-500">Heal</button>
                 {temp && (
@@ -366,6 +397,16 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
                     />
                 )}
             </div>
+            {(resist.size > 0 || vuln.size > 0) && (
+                <div className="flex flex-wrap gap-1 text-[10px]">
+                    {[...resist].map((t) => (
+                        <span key={`r-${t}`} className="rounded bg-sky-500/15 px-1 text-sky-300 ring-1 ring-sky-500/30">resist {t}</span>
+                    ))}
+                    {[...vuln].map((t) => (
+                        <span key={`v-${t}`} className="rounded bg-rose-500/15 px-1 text-rose-300 ring-1 ring-rose-500/30">vuln {t}</span>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }

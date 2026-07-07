@@ -105,6 +105,8 @@ S('Movement & Physique', 'default', [
     F('Long Jump', 'computed', 'str', { description: 'Feet, with only a 5 ft run-up (Athlete).' }),
     F('High Jump', 'computed', '3 + str_mod', { description: 'Feet, with only a 5 ft run-up (Athlete).' }),
     F('Carrying Capacity', 'computed', 'str * 15 * 2', { description: 'lb — Powerful Build counts you as one size larger.' }),
+    F('Carried Weight', 'number', 0, { description: 'Total weight you are carrying (lb).' }),
+    F('Load %', 'computed', 'floor(carried_weight / carrying_capacity * 100)', { description: 'Of carrying capacity. You are encumbered past 100%.' }),
 ], '#10b981')
 
 // 4. Hit points + the flat damage reduction from the reinforced armor.
@@ -114,6 +116,8 @@ S('Hit Points', 'hp', [
     F('Temp HP', 'number', 0),
     F('Damage Reduction', 'number', 3, { description: 'Reinforced Studded Leather: reduce every hit taken by 3.' }),
     F('Concentration', 'boolean', 'false', { description: 'Toggle on when concentrating. Taking damage prompts a CON save (DC = half the damage, minimum 10).' }),
+    F('Resistances', 'text', '', { description: 'Comma-separated damage types halved on the Damage button. Add bludgeoning, piercing, slashing while Dig Deep is active.' }),
+    F('Vulnerabilities', 'text', '', { description: 'Comma-separated damage types doubled on the Damage button.' }),
 ], '#10b981')
 
 // 5. Hit dice (Pugilist d10 × level 8).

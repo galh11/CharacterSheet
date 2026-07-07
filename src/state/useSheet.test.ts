@@ -315,6 +315,49 @@ describe('useSheet', () => {
         expect(sections[sections.length - 1].title).toBe('Buff Timers')
     })
 
+    it('toggleField flips the matching boolean flag by slug', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() =>
+            result.current.replaceSheet({
+                id: 's',
+                name: 'T',
+                sections: [
+                    {
+                        id: 'sec',
+                        title: 'Conditions',
+                        description: '',
+                        accent: '#000',
+                        kind: 'conditions' as const,
+                        scale: 1,
+                        layout: { x: 0, y: 0, w: 1, h: 1 },
+                        fields: [{ id: 'ft', label: 'Flame Tongue', type: 'boolean' as const, value: 'false', description: '' }],
+                    },
+                ],
+            }),
+        )
+        act(() => result.current.toggleField('flame_tongue'))
+        expect(result.current.sheet.sections[0].fields[0].value).toBe('true')
+        act(() => result.current.toggleField('flame_tongue'))
+        expect(result.current.sheet.sections[0].fields[0].value).toBe('false')
+    })
+
+    it('setSectionLayouts applies many layouts in one undo step', () => {
+        const { result } = renderHook(() => useSheet())
+        const first = result.current.sheet.sections[0].id
+        const second = result.current.sheet.sections[1].id
+        act(() =>
+            result.current.setSectionLayouts([
+                { id: first, layout: { x: 10, y: 20, w: 200, h: 100 } },
+                { id: second, layout: { x: 220, y: 20, w: 200, h: 100 } },
+            ]),
+        )
+        expect(result.current.sheet.sections[0].layout).toMatchObject({ x: 10, y: 20 })
+        expect(result.current.sheet.sections[1].layout).toMatchObject({ x: 220, y: 20 })
+        // A single undo reverts both moves together.
+        act(() => result.current.undo())
+        expect(result.current.sheet.sections[0].layout.x).not.toBe(10)
+    })
+
     it('setFieldValueSilent updates without adding undo history', () => {
         const { result } = renderHook(() => useSheet())
         act(() => result.current.replaceSheet(restSheet())) // 1 undo step

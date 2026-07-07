@@ -63,6 +63,7 @@ S('Character', 'default', [
     F('Class', 'text', 'Pugilist 8'),
     F('Subclass', 'text', 'Squared Circle'),
     F('Background', 'text', 'Wayfarer'),
+    F('Inspiration', 'boolean', 'false', { description: 'Spend to reroll any d20. Toggle from the star in the toolbar.' }),
     F('Armor', 'text', 'Light'),
     F('Weapons', 'text', 'Simple, Improvised, Pugilist (Brass Knuckles, Hand Claws, Punch Knife), Darts'),
     F('Tools', 'text', 'Thieves’ Tools, Gaming Set'),
@@ -167,19 +168,19 @@ S('Skills', 'skills', [
 S('Attacks', 'actions', [
     F('Unarmed Strike', 'text', '', {
         description: 'Fisticuffs die d10. Moxie-Fueled Fists: may deal Force instead. Heavy Hitter: also Grapple or Shove on a hit. Hill’s Tumble: knock a Large-or-smaller target Prone (3/Long).',
-        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'bludgeoning', range: '5 ft' },
     }),
     F('Flame Tongue Handaxe', 'text', '', {
         description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action (toggle “Flame Tongue” in Conditions) to add 2d6 fire.',
-        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', range: '20/60' },
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', range: '20/60' },
     }),
     F('Javelin', 'text', '', {
         description: 'Thrown weapon (uses the d10 fisticuffs die).',
-        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'piercing', range: '30/120' },
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'piercing', range: '30/120' },
     }),
     F('Compression Lock', 'text', '', {
         description: 'Start of your turn: each creature you have Grappled takes this Bludgeoning damage.',
-        meta: { damage: '1d10+{str_mod}', type: 'bludgeoning' },
+        meta: { damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'bludgeoning' },
     }),
 ], '#f59e0b')
 
@@ -187,7 +188,7 @@ S('Attacks', 'actions', [
 S('Bonus Actions', 'actions', [
     F('Bonus Unarmed Strike', 'text', '', {
         description: 'You can make an Unarmed Strike as a Bonus Action.',
-        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'bludgeoning', range: '5 ft' },
     }),
     F('Haymaker', 'text', '', {
         description: 'On a hit, deal maximum damage and regain the Moxie Point.',
@@ -261,10 +262,11 @@ S('Resources', 'default', [
 // 14. Conditions & states.
 S('Conditions', 'conditions', [
     F('Flame Tongue', 'boolean', 'false', { description: 'Handaxe ignited (Bonus Action): +2d6 fire on hits; Bright Light 40 ft.' }),
+    F('Down But Not Out', 'boolean', 'false', { description: 'While active, your Unarmed/Pugilist-weapon damage gains +CON mod + exhaustion levels (auto-added to attack damage).' }),
     F('Large Form', 'boolean', 'false', { description: 'Large: advantage on STR checks, +10 ft Speed.' }),
-    F('Dig Deep', 'boolean', 'false', { description: 'Resistance to B/P/S; ignore exhaustion < 6.' }),
+    F('Dig Deep', 'boolean', 'false', { description: 'Resistance to B/P/S; ignore exhaustion < 6. Add b/p/s to HP Resistances while active.' }),
     F('Grappling', 'boolean', 'false', { description: 'Compression Lock hits grappled foes each turn.' }),
-    F('Bloodied', 'boolean', 'false', { description: 'At or below half HP (38).' }),
+    F('Bloodied', 'boolean', 'false', { description: 'At or below half HP (38). Auto-set by the HP tracker.' }),
     F('Prone', 'boolean', 'false'),
     F('Grappled', 'boolean', 'false'),
     F('Frightened', 'boolean', 'false'),

@@ -36,6 +36,8 @@ interface SectionBodyProps {
     onSpend?: (slug: string, amount: number) => void
     /** Apply temporary HP (kept if higher). */
     onTempHp?: (amount: number) => void
+    /** Add a field to this section with the given overrides. */
+    onAddField?: (overrides: Partial<CharacterField>) => void
 }
 
 const toNum = (v: string): number => {
@@ -90,6 +92,24 @@ const DAMAGE_COLORS: Record<string, string> = {
 }
 const damageColor = (type?: string): string =>
     (type && DAMAGE_COLORS[type.toLowerCase()]) || 'bg-slate-600/30 text-slate-200 ring-slate-500/40'
+
+/** Common 5e conditions with concise rules text, for the conditions library picker. */
+const CONDITION_LIBRARY: [string, string][] = [
+    ['Blinded', "Can't see; auto-fail sight checks. Attacks against you have Advantage; your attacks have Disadvantage."],
+    ['Charmed', "Can't attack the charmer; they have Advantage on social checks with you."],
+    ['Deafened', "Can't hear; auto-fail hearing checks."],
+    ['Frightened', 'Disadvantage on checks & attacks while the source is in sight; you can’t move closer to it.'],
+    ['Grappled', 'Speed 0; ends if the grappler is Incapacitated or you’re moved away.'],
+    ['Incapacitated', "Can't take actions, bonus actions, or reactions."],
+    ['Invisible', 'Heavily obscured. Attacks against you have Disadvantage; your attacks have Advantage.'],
+    ['Paralyzed', 'Incapacitated, can’t move/speak; auto-fail STR/DEX saves. Attacks have Advantage; hits within 5 ft crit.'],
+    ['Petrified', 'Turned to stone; Incapacitated; resistance to all damage; immune to poison & disease.'],
+    ['Poisoned', 'Disadvantage on attack rolls and ability checks.'],
+    ['Prone', 'Disadvantage on attacks. Melee against you has Advantage, ranged Disadvantage. Half movement to stand.'],
+    ['Restrained', 'Speed 0. Attacks against you have Advantage, yours Disadvantage; Disadvantage on DEX saves.'],
+    ['Stunned', 'Incapacitated; auto-fail STR/DEX saves. Attacks against you have Advantage.'],
+    ['Unconscious', 'Incapacitated & Prone, drop everything; auto-fail STR/DEX saves. Attacks have Advantage; hits within 5 ft crit.'],
+]
 
 /* ── Interactive field widgets ─────────────────────────────────────────── */
 
@@ -736,11 +756,17 @@ function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps
     )
 }
 
-function Conditions({ section, onUpdateField }: SectionBodyProps) {
-    if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No conditions yet.</p>
+function Conditions({ section, onUpdateField, onAddField }: SectionBodyProps) {
     const active = section.fields.filter((f) => f.value === 'true')
+    const have = new Set(section.fields.map((f) => f.label.toLowerCase()))
+    const addFromLibrary = (label: string) => {
+        if (have.has(label.toLowerCase())) return
+        const desc = CONDITION_LIBRARY.find(([l]) => l === label)?.[1] ?? ''
+        onAddField?.({ label, type: 'boolean', value: 'true', description: desc })
+    }
     return (
         <div className="flex flex-col gap-2">
+            {section.fields.length === 0 && <p className="text-xs italic text-slate-500">No conditions yet.</p>}
             <div className="flex flex-wrap gap-1.5">
                 {section.fields.map((field) => {
                     const on = field.value === 'true'
@@ -759,6 +785,23 @@ function Conditions({ section, onUpdateField }: SectionBodyProps) {
                     return <span key={field.id}>{field.description ? <Tooltip content={field.description}>{chip}</Tooltip> : chip}</span>
                 })}
             </div>
+            {onAddField && (
+                <select
+                    value=""
+                    onChange={(e) => {
+                        if (e.target.value) addFromLibrary(e.target.value)
+                    }}
+                    aria-label="Add a condition"
+                    className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300 print:hidden"
+                >
+                    <option value="">+ Add a common condition…</option>
+                    {CONDITION_LIBRARY.map(([label]) => (
+                        <option key={label} value={label} disabled={have.has(label.toLowerCase())}>
+                            {label}
+                        </option>
+                    ))}
+                </select>
+            )}
             {active.some((f) => f.description) && (
                 <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
                     {active.filter((f) => f.description).map((f) => (

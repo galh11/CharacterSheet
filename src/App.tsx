@@ -190,6 +190,31 @@ function App() {
         pushRoll({ title: trimmed, detail: formatRoll(r), total: r.total, kind: 'raw' })
     }
 
+    const doRest = (kind: 'short' | 'long') => {
+        rest(kind)
+        pushRoll({
+            title: kind === 'long' ? 'Long rest' : 'Short rest',
+            detail: kind === 'long' ? 'HP restored, temp cleared, exhaustion −1, resources refilled' : 'Short-rest resources refilled',
+            total: 0,
+            kind: 'raw',
+        })
+    }
+
+    const inspirationField = (() => {
+        for (const s of sheet.sections) {
+            const f = s.fields.find((x) => x.label.toLowerCase() === 'inspiration' && x.type === 'boolean')
+            if (f) return { sectionId: s.id, field: f }
+        }
+        return null
+    })()
+    const toggleInspiration = () => {
+        if (inspirationField) {
+            updateField(inspirationField.sectionId, inspirationField.field.id, {
+                value: inspirationField.field.value === 'true' ? 'false' : 'true',
+            })
+        }
+    }
+
     const handleImport = async (file: File | undefined) => {
         if (!file) return
         const result = await importSheetFromFile(file)
@@ -392,7 +417,7 @@ function App() {
             onUpdateSection={(patch) => updateSection(section.id, patch)}
             onDeleteSection={() => deleteSection(section.id)}
             onDuplicateSection={() => duplicateSection(section.id)}
-            onAddField={() => addField(section.id)}
+            onAddField={(overrides) => addField(section.id, overrides)}
             onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
             onDeleteField={(fieldId) => deleteField(section.id, fieldId)}
             onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
@@ -494,10 +519,23 @@ function App() {
                             title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)'}
                         >
                             ↷ Redo
-                        </button>
-                        <button
+                        </button>                        {inspirationField && (
+                            <button
+                                type="button"
+                                onClick={toggleInspiration}
+                                className={clsx(
+                                    'rounded-md border px-3 py-2 text-sm font-medium',
+                                    inspirationField.field.value === 'true'
+                                        ? 'border-amber-400 bg-amber-400/20 text-amber-200'
+                                        : 'border-slate-600 text-slate-400 hover:bg-slate-800',
+                                )}
+                                title="Inspiration"
+                            >
+                                ★ Inspiration
+                            </button>
+                        )}                        <button
                             type="button"
-                            onClick={() => rest('short')}
+                            onClick={() => doRest('short')}
                             className="rounded-md border border-amber-700/50 px-3 py-2 text-sm text-amber-200 hover:bg-amber-900/30"
                             title="Short rest — refill short-rest resources"
                         >
@@ -505,7 +543,7 @@ function App() {
                         </button>
                         <button
                             type="button"
-                            onClick={() => rest('long')}
+                            onClick={() => doRest('long')}
                             className="rounded-md border border-indigo-700/50 px-3 py-2 text-sm text-indigo-200 hover:bg-indigo-900/30"
                             title="Long rest — restore HP, clear temp HP, reduce exhaustion, refill resources"
                         >

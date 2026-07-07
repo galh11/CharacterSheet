@@ -34,7 +34,7 @@ interface SectionCardProps {
     ) => void
     onDeleteSection: () => void
     onDuplicateSection: () => void
-    onAddField: () => void
+    onAddField: (overrides?: Partial<CharacterField>) => void
     onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
     onDeleteField: (fieldId: string) => void
     onMoveField: (fieldId: string, direction: -1 | 1) => void
@@ -219,6 +219,7 @@ export function SectionCard({
                             onHeal={onHeal}
                             onSpend={onSpend}
                             onTempHp={onTempHp}
+                            onAddField={onAddField}
                         />
                     )}
                     {isEditMode && (
@@ -514,7 +515,7 @@ export function SectionCard({
                     {isEditMode && (
                         <button
                             type="button"
-                            onClick={onAddField}
+                            onClick={() => onAddField()}
                             className="mt-3 rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-200 hover:bg-slate-700"
                         >
                             + Add field

@@ -1,0 +1,1173 @@
+{
+  "id": "435a86b4-7c89-44f4-97ca-effbdfae8bc9",
+  "name": "Yad Armhand",
+  "sections": [
+    {
+      "id": "33f028a3-6e22-4106-8156-5157bb3a3fbe",
+      "title": "Ability Scores",
+      "description": "",
+      "accent": "#f59e0b",
+      "kind": "abilities",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "70b41404-c955-4873-ab6a-a54d483b5d85",
+          "label": "STR",
+          "type": "number",
+          "value": "20",
+          "description": ""
+        },
+        {
+          "id": "c959c476-51b2-4376-a991-0f43a8ea1f68",
+          "label": "DEX",
+          "type": "number",
+          "value": "12",
+          "description": ""
+        },
+        {
+          "id": "b7c5fee7-7663-4360-8041-0873c7fb26d8",
+          "label": "CON",
+          "type": "number",
+          "value": "16",
+          "description": ""
+        },
+        {
+          "id": "fb5a7294-94cc-4155-8c89-8db5c3903454",
+          "label": "INT",
+          "type": "number",
+          "value": "8",
+          "description": ""
+        },
+        {
+          "id": "b8b5249e-6730-4281-81ec-db22436e2149",
+          "label": "WIS",
+          "type": "number",
+          "value": "13",
+          "description": ""
+        },
+        {
+          "id": "3509e6af-6c16-4c58-976c-cb6250bfeead",
+          "label": "CHA",
+          "type": "number",
+          "value": "8",
+          "description": ""
+        }
+      ],
+      "layout": {
+        "x": 24,
+        "y": 24,
+        "w": 300,
+        "h": 228
+      }
+    },
+    {
+      "id": "13dbaa4b-775b-4f44-aa5e-ed946f816db0",
+      "title": "Modifiers",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "default",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "66e8c6cd-d9fa-4f05-bdcf-4aa4e583c82d",
+          "label": "Proficiency",
+          "type": "number",
+          "value": "3",
+          "description": "Proficiency bonus (level 8)."
+        },
+        {
+          "id": "539205bb-c1ba-4c5a-ae47-12764e72a4a5",
+          "label": "STR Mod",
+          "type": "computed",
+          "value": "floor((str - 10) / 2)",
+          "description": ""
+        },
+        {
+          "id": "45b52575-0117-476b-b3c5-b50a42c6804d",
+          "label": "DEX Mod",
+          "type": "computed",
+          "value": "floor((dex - 10) / 2)",
+          "description": ""
+        },
+        {
+          "id": "ed30782f-71c5-4a9b-a9e9-712f07fc44c4",
+          "label": "CON Mod",
+          "type": "computed",
+          "value": "floor((con - 10) / 2)",
+          "description": ""
+        },
+        {
+          "id": "595b7b74-84c7-4958-bb01-280647514031",
+          "label": "INT Mod",
+          "type": "computed",
+          "value": "floor((int - 10) / 2)",
+          "description": ""
+        },
+        {
+          "id": "76385646-7614-4547-8e14-fa239fba98fb",
+          "label": "WIS Mod",
+          "type": "computed",
+          "value": "floor((wis - 10) / 2)",
+          "description": ""
+        },
+        {
+          "id": "0f49fadb-11f7-42e2-b873-218f020364af",
+          "label": "CHA Mod",
+          "type": "computed",
+          "value": "floor((cha - 10) / 2)",
+          "description": ""
+        }
+      ],
+      "layout": {
+        "x": 344,
+        "y": 24,
+        "w": 300,
+        "h": 306
+      }
+    },
+    {
+      "id": "744c640d-5e58-486c-81cd-1ee7ec7db8d1",
+      "title": "Combat",
+      "description": "",
+      "accent": "#ef4444",
+      "kind": "default",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "0d2052aa-badb-48e2-8a56-a92f82031a63",
+          "label": "AC",
+          "type": "computed",
+          "value": "12 + dex_mod + 1",
+          "description": "Reinforced Studded Leather (12 +1) + DEX."
+        },
+        {
+          "id": "bcd2d2bc-dbae-4652-a863-e5a64f7bc094",
+          "label": "Initiative",
+          "type": "computed",
+          "value": "dex_mod",
+          "description": ""
+        },
+        {
+          "id": "422841a9-c061-4e92-9fc2-e4e3b3b5bb6a",
+          "label": "Speed",
+          "type": "number",
+          "value": "35",
+          "description": "Climb 35 ft (Athlete). +10 ft while in Large Form."
+        },
+        {
+          "id": "7c8e3746-2d19-4871-9fa9-f48a2db852e9",
+          "label": "Passive Perception",
+          "type": "computed",
+          "value": "10 + wis_mod",
+          "description": ""
+        },
+        {
+          "id": "5284aaf9-211a-45ee-9fb7-4c9c2917f9ed",
+          "label": "Proficiency Bonus",
+          "type": "computed",
+          "value": "proficiency",
+          "description": ""
+        }
+      ],
+      "layout": {
+        "x": 664,
+        "y": 24,
+        "w": 300,
+        "h": 246
+      }
+    },
+    {
+      "id": "0d562ab9-56bb-4857-9c94-d1b5d4252cb5",
+      "title": "Hit Points",
+      "description": "",
+      "accent": "#10b981",
+      "kind": "hp",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "cda5782d-a6cb-42ca-8cd2-0f1ea8cf4ea8",
+          "label": "Current HP",
+          "type": "number",
+          "value": "76",
+          "description": ""
+        },
+        {
+          "id": "868fbc7a-1d86-4394-8d54-cd8b838e2e54",
+          "label": "Max HP",
+          "type": "number",
+          "value": "76",
+          "description": ""
+        },
+        {
+          "id": "de29b124-d112-4060-8fa7-e29b4c4c014d",
+          "label": "Temp HP",
+          "type": "number",
+          "value": "0",
+          "description": ""
+        },
+        {
+          "id": "2d55590c-2b46-4fe3-ae58-f4cfa00a9595",
+          "label": "Damage Reduction",
+          "type": "number",
+          "value": "3",
+          "description": "Reinforced Studded Leather: reduce every hit taken by 3."
+        }
+      ],
+      "layout": {
+        "x": 984,
+        "y": 24,
+        "w": 300,
+        "h": 230
+      }
+    },
+    {
+      "id": "543af3e3-c5ba-4a91-bd39-f9607eba4f3b",
+      "title": "Hit Dice",
+      "description": "",
+      "accent": "#06b6d4",
+      "kind": "hitdice",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "6bc1b869-d516-4f6a-99cf-df23fc383794",
+          "label": "d10",
+          "type": "resource",
+          "value": "8",
+          "description": "",
+          "max": 8,
+          "meta": {
+            "die": "d10"
+          }
+        }
+      ],
+      "layout": {
+        "x": 24,
+        "y": 272,
+        "w": 300,
+        "h": 150
+      }
+    },
+    {
+      "id": "ce40d76c-bdb0-4ab0-8525-a42d1b46d766",
+      "title": "Death Saves",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "deathsaves",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "3d32e1f9-df0f-4382-9330-c3a9091f0e3e",
+          "label": "Successes",
+          "type": "counter",
+          "value": "0",
+          "description": "",
+          "max": 3
+        },
+        {
+          "id": "6f1a2592-589b-4a60-9e35-7f940a3ef67a",
+          "label": "Failures",
+          "type": "counter",
+          "value": "0",
+          "description": "",
+          "max": 3
+        }
+      ],
+      "layout": {
+        "x": 984,
+        "y": 274,
+        "w": 300,
+        "h": 170
+      }
+    },
+    {
+      "id": "a86e0e1d-b834-4ee9-860b-813be99c0727",
+      "title": "Saving Throws",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "skills",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "d3cb2991-1374-4a69-ae12-ea7ede6d9eb6",
+          "label": "Strength",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "STR",
+            "prof": "proficient",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "67ce41a2-4d29-42a3-a972-a50370af21af",
+          "label": "Dexterity",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "DEX",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "f683505c-9810-4376-9682-47ce4b73cf9e",
+          "label": "Constitution",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "CON",
+            "prof": "proficient",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "9d8de695-7186-40b4-932e-3afe2e94cc3c",
+          "label": "Intelligence",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "INT",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "ae535a07-d731-433b-a1a4-edc736165bf2",
+          "label": "Wisdom",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "WIS",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "a7316b6f-d8eb-471e-9dbe-e28cc06b52e1",
+          "label": "Charisma",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "CHA",
+            "prof": "none",
+            "auto": "true"
+          }
+        }
+      ],
+      "layout": {
+        "x": 664,
+        "y": 290,
+        "w": 300,
+        "h": 276
+      }
+    },
+    {
+      "id": "7edfaa6a-2bf7-4830-a4c1-4fd34a507e0e",
+      "title": "Skills",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "skills",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "b2e800b7-3f44-4a28-9d30-802811965461",
+          "label": "Acrobatics",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "DEX",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "659c3d38-0cf3-4dea-a8fd-3192f85a1bcb",
+          "label": "Animal Handling",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "WIS",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "d405a5d0-1fd8-473d-b1eb-73b311017920",
+          "label": "Arcana",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "INT",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "fee05481-4031-48b2-b375-5e11a97611ae",
+          "label": "Athletics",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "STR",
+            "prof": "expertise",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "3260462a-98f9-428c-89da-04346ec363ca",
+          "label": "Deception",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "CHA",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "3de56bf4-383e-4a43-81f7-277791e53aff",
+          "label": "History",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "INT",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "c6136a95-b0ff-4338-af01-93ad2df9ff0b",
+          "label": "Insight",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "WIS",
+            "prof": "proficient",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "fd4e31d5-47f4-4a77-92e6-f35836865958",
+          "label": "Intimidation",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "CHA",
+            "prof": "proficient",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "36f81480-aecf-44e7-8adc-f3cf7ab3095b",
+          "label": "Investigation",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "INT",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "48418d2d-e986-459f-82e4-4172ae06bfda",
+          "label": "Medicine",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "WIS",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "a5110d12-b32c-4215-86fe-b7eee43a2e52",
+          "label": "Nature",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "INT",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "52618c2f-e027-4be4-b4db-062ea69289ab",
+          "label": "Perception",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "WIS",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "885d19c4-e2b5-4e40-b75e-582fe6dac728",
+          "label": "Performance",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "CHA",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "6f6a6e36-1e33-4cd2-8259-42d45ccda969",
+          "label": "Persuasion",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "CHA",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "c83c7c16-93e5-4b83-96b7-0b2ea1576ba7",
+          "label": "Religion",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "INT",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "37e6db3e-1545-4bd8-8b44-aec58e64e79f",
+          "label": "Sleight of Hand",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "DEX",
+            "prof": "none",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "88c8c09d-0c6e-4ac2-80cd-00a3219049b1",
+          "label": "Stealth",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "DEX",
+            "prof": "proficient",
+            "auto": "true"
+          }
+        },
+        {
+          "id": "b5f77de1-bfe8-4051-a439-cc8570782a1a",
+          "label": "Survival",
+          "type": "number",
+          "value": "",
+          "description": "",
+          "meta": {
+            "ability": "WIS",
+            "prof": "none",
+            "auto": "true"
+          }
+        }
+      ],
+      "layout": {
+        "x": 344,
+        "y": 350,
+        "w": 300,
+        "h": 636
+      }
+    },
+    {
+      "id": "a59f8522-1189-4afd-97c6-7f771b53ba7d",
+      "title": "Attacks",
+      "description": "",
+      "accent": "#f59e0b",
+      "kind": "actions",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "c9ad62a8-fae9-4898-a465-dec3b628fafb",
+          "label": "Unarmed Strike",
+          "type": "text",
+          "value": "",
+          "description": "Fisticuffs die d10. Moxie-Fueled Fists: may deal Force instead of Bludgeoning.",
+          "meta": {
+            "hit": "+{str_mod + proficiency}",
+            "damage": "1d10+{str_mod}",
+            "type": "bludgeoning",
+            "range": "5 ft"
+          }
+        },
+        {
+          "id": "189e76f8-a314-4c9e-a3b5-0114a3461170",
+          "label": "Flame Tongue Handaxe",
+          "type": "text",
+          "value": "",
+          "description": "Uses the d10 fisticuffs die. +2d6 fire while ablaze (bonus action to ignite).",
+          "meta": {
+            "hit": "+{str_mod + proficiency}",
+            "damage": "1d10+{str_mod}",
+            "type": "slashing",
+            "extra": "2d6",
+            "extraType": "fire",
+            "range": "20/60"
+          }
+        },
+        {
+          "id": "3389cd91-f462-47ef-a0ff-d93a5ac98025",
+          "label": "Javelin",
+          "type": "text",
+          "value": "",
+          "description": "Thrown. Slow mastery: reduce target Speed by 10 ft.",
+          "meta": {
+            "hit": "+{str_mod + proficiency}",
+            "damage": "1d10+{str_mod}",
+            "type": "piercing",
+            "range": "30/120"
+          }
+        },
+        {
+          "id": "c1db2d04-484d-4c65-a42b-a0b50b98113e",
+          "label": "Compression Lock",
+          "type": "text",
+          "value": "",
+          "description": "Start of your turn: each creature you have Grappled takes this Bludgeoning damage.",
+          "meta": {
+            "damage": "1d10+{str_mod}",
+            "type": "bludgeoning"
+          }
+        }
+      ],
+      "layout": {
+        "x": 24,
+        "y": 442,
+        "w": 300,
+        "h": 392
+      }
+    },
+    {
+      "id": "9aa9f049-63a8-4db5-918a-b5288f2d54e6",
+      "title": "Bonus Actions",
+      "description": "",
+      "accent": "#06b6d4",
+      "kind": "actions",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "333c2edc-3d1d-4511-a14c-a2c45650b668",
+          "label": "Bonus Unarmed Strike",
+          "type": "text",
+          "value": "",
+          "description": "You can make an Unarmed Strike as a Bonus Action.",
+          "meta": {
+            "hit": "+{str_mod + proficiency}",
+            "damage": "1d10+{str_mod}",
+            "type": "bludgeoning",
+            "range": "5 ft"
+          }
+        },
+        {
+          "id": "78355aec-3d6e-4173-b790-50f2361cba5a",
+          "label": "Haymaker (1 Moxie)",
+          "type": "text",
+          "value": "",
+          "description": "On a hit, deal maximum damage and regain the Moxie Point."
+        },
+        {
+          "id": "980b11e2-4ef0-4c74-94c4-a73931b362da",
+          "label": "One-Two Punch (1 Moxie)",
+          "type": "text",
+          "value": "",
+          "description": "Make two Unarmed Strikes as a Bonus Action."
+        },
+        {
+          "id": "4ba64246-774b-412e-9358-f5e61be79df4",
+          "label": "Stick and Move (1 Moxie)",
+          "type": "text",
+          "value": "",
+          "description": "Make an Unarmed Strike and Dash or Disengage."
+        },
+        {
+          "id": "f97555b4-0899-4a8d-a335-32842cd4bc1b",
+          "label": "Brace Up (1 Moxie)",
+          "type": "text",
+          "value": "",
+          "description": "Temp HP = 1d10 + level(8) + CON mod = 1d10 + {8 + con_mod}."
+        },
+        {
+          "id": "6c7d96c7-8dab-4e5f-a270-9a64aa57b8e1",
+          "label": "Large Form (1/Long)",
+          "type": "text",
+          "value": "",
+          "description": "Become Large 10 min: advantage on STR checks, +10 ft Speed."
+        },
+        {
+          "id": "b373cea3-0ffb-4b95-82d8-23689eb3801e",
+          "label": "Dig Deep (1/Long)",
+          "type": "text",
+          "value": "",
+          "description": "10 min: resistance to Bludgeoning/Piercing/Slashing; ignore exhaustion < 6. Restore by gaining 1 exhaustion."
+        }
+      ],
+      "layout": {
+        "x": 984,
+        "y": 464,
+        "w": 300,
+        "h": 638
+      }
+    },
+    {
+      "id": "58eddeab-e010-432e-9a97-cda901fe82bf",
+      "title": "Reactions",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "actions",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "18c9cb94-bd3a-4114-bd11-42e68abe1deb",
+          "label": "Bloodied But Unbowed (1/Short)",
+          "type": "text",
+          "value": "",
+          "description": "When you take damage: regain all Moxie. If Bloodied, gain Temp HP = 4 × level = {4 * 8}."
+        },
+        {
+          "id": "5c7aba2b-a4d0-4e78-868c-5e5a54f17d07",
+          "label": "Meat Shield (1 Moxie)",
+          "type": "text",
+          "value": "",
+          "description": "When a creature misses you, force it to reroll against a creature you are Grappling."
+        }
+      ],
+      "layout": {
+        "x": 664,
+        "y": 586,
+        "w": 300,
+        "h": 228
+      }
+    },
+    {
+      "id": "5d8e0c93-3914-4bfc-8b4f-ab74644f7319",
+      "title": "Features & Traits",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "actions",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "39994cb2-5d1c-4908-a3ca-992a41e95e1f",
+          "label": "Extra Attack",
+          "type": "text",
+          "value": "",
+          "description": "Attack twice when you take the Attack action."
+        },
+        {
+          "id": "2fda5d9c-df7a-4646-beb2-bc6db80c6d27",
+          "label": "Moxie-Fueled Fists",
+          "type": "text",
+          "value": "",
+          "description": "Unarmed/improvised damage can be Force instead of its normal type."
+        },
+        {
+          "id": "fbb124a8-1e3e-46d7-8437-1e9366c61068",
+          "label": "Swagger Streak (1/Short)",
+          "type": "text",
+          "value": "",
+          "description": "On a failed STR/DEX/CON/CHA check, spend 1 Moxie and add 1d10; may turn a failure into success."
+        },
+        {
+          "id": "5ed7b945-c702-4f2b-83c3-284f8e013480",
+          "label": "Down But Not Out (1/Long)",
+          "type": "text",
+          "value": "",
+          "description": "With Bloodied But Unbowed while Bloodied: +damage = CON mod + exhaustion levels for 1 min."
+        },
+        {
+          "id": "e2cdc961-678d-49ba-a7ea-11c1f807cb09",
+          "label": "Inescapable (1 Moxie)",
+          "type": "text",
+          "value": "",
+          "description": "Impose Disadvantage on a save/check against your grapple or shove."
+        },
+        {
+          "id": "d532c44f-a441-47d8-952f-0dfe3152aadf",
+          "label": "Stop and Drop",
+          "type": "text",
+          "value": "",
+          "description": "On an Unarmed Strike hit without a mastery: use both Grapple and Shove."
+        },
+        {
+          "id": "183a0638-0455-4315-9a8e-af4b87dbf682",
+          "label": "Powerful Build",
+          "type": "text",
+          "value": "",
+          "description": "Count as one size larger for carrying capacity and drag/lift."
+        },
+        {
+          "id": "489f75dd-dce3-44e4-a517-3b79984b6fc0",
+          "label": "Hill's Tumble",
+          "type": "text",
+          "value": "",
+          "description": "On a hit that deals damage to a Large-or-smaller creature: knock it Prone."
+        },
+        {
+          "id": "204faff4-2343-4082-ba8c-db80a60074ea",
+          "label": "Lucky (feat)",
+          "type": "text",
+          "value": "",
+          "description": "Spend a Luck Point for Advantage, or impose Disadvantage on an attack against you."
+        },
+        {
+          "id": "dbfe20e5-63e6-44cc-8ea4-0dd7fe052e18",
+          "label": "Athlete (feat)",
+          "type": "text",
+          "value": "",
+          "description": "Climb Speed = Speed; stand from Prone with 5 ft; run-up jumps after 5 ft."
+        }
+      ],
+      "layout": {
+        "x": 664,
+        "y": 834,
+        "w": 300,
+        "h": 884
+      }
+    },
+    {
+      "id": "55863527-3d78-4465-ac06-8a3dc65068df",
+      "title": "Resources",
+      "description": "",
+      "accent": "#ec4899",
+      "kind": "default",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "f4299021-8d16-4e41-9954-86237cacc6d5",
+          "label": "Moxie Points",
+          "type": "resource",
+          "value": "5",
+          "description": "",
+          "max": 5,
+          "meta": {
+            "recharge": "short"
+          }
+        },
+        {
+          "id": "a6fef495-f508-496a-be41-9dddaa3222cb",
+          "label": "Luck Points",
+          "type": "resource",
+          "value": "3",
+          "description": "",
+          "max": 3,
+          "meta": {
+            "recharge": "long"
+          }
+        },
+        {
+          "id": "9b85d408-f118-44cd-9cb3-30d590820593",
+          "label": "Large Form",
+          "type": "resource",
+          "value": "1",
+          "description": "",
+          "max": 1,
+          "meta": {
+            "recharge": "long"
+          }
+        },
+        {
+          "id": "d7f6fca2-ad97-46fc-933e-f2fe52ab73cc",
+          "label": "Dig Deep",
+          "type": "resource",
+          "value": "1",
+          "description": "",
+          "max": 1,
+          "meta": {
+            "recharge": "long"
+          }
+        },
+        {
+          "id": "e9e30c0a-806a-4792-851b-45a8bd955711",
+          "label": "Bloodied But Unbowed",
+          "type": "resource",
+          "value": "1",
+          "description": "",
+          "max": 1,
+          "meta": {
+            "recharge": "short"
+          }
+        },
+        {
+          "id": "35851228-53a5-429c-9036-b01cf90dbf3f",
+          "label": "Swagger Streak",
+          "type": "resource",
+          "value": "1",
+          "description": "",
+          "max": 1,
+          "meta": {
+            "recharge": "short"
+          }
+        },
+        {
+          "id": "9e4e8798-b744-4188-983d-9c1c28b9830b",
+          "label": "Exhaustion",
+          "type": "counter",
+          "value": "0",
+          "description": "",
+          "max": 6
+        }
+      ],
+      "layout": {
+        "x": 24,
+        "y": 854,
+        "w": 300,
+        "h": 306
+      }
+    },
+    {
+      "id": "b6104c31-ec9b-4e0c-a72d-04b3725e4795",
+      "title": "Conditions",
+      "description": "",
+      "accent": "#ef4444",
+      "kind": "conditions",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "910b831e-38a1-4c21-8add-3928d55f02fd",
+          "label": "Large Form",
+          "type": "boolean",
+          "value": "false",
+          "description": "Large: advantage on STR checks, +10 ft Speed."
+        },
+        {
+          "id": "363a3a48-7f86-4f90-8482-cd1c08ff4a95",
+          "label": "Dig Deep",
+          "type": "boolean",
+          "value": "false",
+          "description": "Resistance to B/P/S; ignore exhaustion < 6."
+        },
+        {
+          "id": "200407d7-fd6b-4dd6-af71-d49f4b0b4174",
+          "label": "Grappling",
+          "type": "boolean",
+          "value": "false",
+          "description": "Compression Lock hits grappled foes each turn."
+        },
+        {
+          "id": "6e8793d2-91a0-48c9-8798-5735948aab75",
+          "label": "Bloodied",
+          "type": "boolean",
+          "value": "false",
+          "description": "At or below half HP (38)."
+        },
+        {
+          "id": "1320a5a2-bbc6-40bd-875d-916da8f464f4",
+          "label": "Prone",
+          "type": "boolean",
+          "value": "false",
+          "description": ""
+        },
+        {
+          "id": "6cb3884e-58f0-4747-9639-b4d421b7cd0c",
+          "label": "Grappled",
+          "type": "boolean",
+          "value": "false",
+          "description": ""
+        },
+        {
+          "id": "0082ca39-7880-4fc8-8799-bcb8963824c3",
+          "label": "Frightened",
+          "type": "boolean",
+          "value": "false",
+          "description": ""
+        },
+        {
+          "id": "ffb5541a-0cf4-4501-b1cb-bf1e3432f96d",
+          "label": "Poisoned",
+          "type": "boolean",
+          "value": "false",
+          "description": ""
+        },
+        {
+          "id": "743a23c8-c50b-49b7-9d01-5cd6dbde529a",
+          "label": "Stunned",
+          "type": "boolean",
+          "value": "false",
+          "description": ""
+        }
+      ],
+      "layout": {
+        "x": 344,
+        "y": 1006,
+        "w": 300,
+        "h": 150
+      }
+    },
+    {
+      "id": "b3cb09ac-e7c8-43db-a8ee-14245a6ef99a",
+      "title": "Senses",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "default",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "fd442ff8-1edc-4e50-a59f-bbbc3efc75f0",
+          "label": "Darkvision",
+          "type": "text",
+          "value": "15 ft",
+          "description": ""
+        },
+        {
+          "id": "5c788536-acda-4aa3-89b1-5ca279b272a6",
+          "label": "Passive Perception",
+          "type": "computed",
+          "value": "10 + wis_mod",
+          "description": ""
+        },
+        {
+          "id": "a3f8475b-d31d-4804-af1f-3eddd880e34a",
+          "label": "Passive Insight",
+          "type": "computed",
+          "value": "10 + wis_mod + proficiency",
+          "description": ""
+        }
+      ],
+      "layout": {
+        "x": 984,
+        "y": 1122,
+        "w": 300,
+        "h": 186
+      }
+    },
+    {
+      "id": "f9919811-01e2-4daa-969f-dd550a9f0c12",
+      "title": "Languages",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "default",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "c645368b-9689-4280-a8cd-08b77ecc65c0",
+          "label": "Common",
+          "type": "text",
+          "value": "fluent",
+          "description": ""
+        },
+        {
+          "id": "66b557f6-e280-45ae-b5d9-dbb114cb413a",
+          "label": "Giant",
+          "type": "text",
+          "value": "fluent",
+          "description": ""
+        },
+        {
+          "id": "d9ee6c35-dd4f-4906-8ff8-74bbcc195399",
+          "label": "Elvish",
+          "type": "text",
+          "value": "fluent",
+          "description": ""
+        }
+      ],
+      "layout": {
+        "x": 344,
+        "y": 1176,
+        "w": 300,
+        "h": 186
+      }
+    },
+    {
+      "id": "60a105ff-e77c-470e-ad19-e63b8d8a2a20",
+      "title": "Equipment",
+      "description": "",
+      "accent": "#8b5cf6",
+      "kind": "default",
+      "scale": 1,
+      "fields": [
+        {
+          "id": "2372348e-33f0-4962-b8b6-f34ad3f070e4",
+          "label": "Flame Tongue Handaxe",
+          "type": "text",
+          "value": "equipped",
+          "description": ""
+        },
+        {
+          "id": "a6add9e1-9687-4a5d-b08e-9986b49bd01f",
+          "label": "Javelins",
+          "type": "text",
+          "value": "×3",
+          "description": ""
+        },
+        {
+          "id": "d79a8c9c-0e84-4b8d-a182-a4a1332b58fd",
+          "label": "Reinforced Studded Leather",
+          "type": "text",
+          "value": "equipped",
+          "description": ""
+        },
+        {
+          "id": "6c51bc07-0260-45ff-8fff-08143a6f8b1b",
+          "label": "Potion of Healing (Greater)",
+          "type": "text",
+          "value": "×5",
+          "description": "Regain 4d4 + 4 HP."
+        },
+        {
+          "id": "98097a3d-747b-4e33-b45a-1f8332fcdd9d",
+          "label": "Potion of Healing (Superior)",
+          "type": "text",
+          "value": "×3",
+          "description": "Regain 8d4 + 8 HP."
+        },
+        {
+          "id": "5e47f0fa-b02f-47fb-b435-3efcac24d026",
+          "label": "Dark Adaptation Helmet",
+          "type": "text",
+          "value": "worn",
+          "description": "Darkvision 15 ft."
+        },
+        {
+          "id": "734c672f-e929-4e92-aa83-fa32008ffcdf",
+          "label": "Snow-Shell Boots",
+          "type": "text",
+          "value": "worn",
+          "description": ""
+        },
+        {
+          "id": "46116236-d1c3-4f1f-a2be-7f593f42cd3a",
+          "label": "Coins",
+          "type": "text",
+          "value": "108 pp",
+          "description": ""
+        }
+      ],
+      "layout": {
+        "x": 24,
+        "y": 1180,
+        "w": 300,
+        "h": 336
+      }
+    }
+  ]
+}

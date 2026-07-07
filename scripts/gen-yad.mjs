@@ -1,0 +1,250 @@
+// One-off generator: builds Yad Armhand's sheet in this app's native format,
+// with every derivable value expressed as a computed field or a {formula}
+// placeholder so nothing that depends on ability mods / proficiency is
+// hand-typed. Run: `node scripts/gen-yad.mjs` -> samples/yad-armhand-sheet.json
+import { writeFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
+
+const F = (label, type, value, extra = {}) => ({
+    id: randomUUID(),
+    label,
+    type,
+    value: String(value),
+    description: '',
+    ...extra,
+})
+const skill = (label, ability, prof) =>
+    F(label, 'number', '', { meta: { ability, prof, auto: 'true' } })
+
+// Column-packing layout: place each section in the currently-shortest column.
+const COLS = 4
+const COL_W = 300
+const GAP = 20
+const X0 = 24
+const Y0 = 24
+const colBottom = Array(COLS).fill(Y0)
+const place = (fields, kind) => {
+    const n = fields.length
+    let h
+    if (kind === 'abilities') h = 96 + Math.ceil(n / 3) * 66
+    else if (kind === 'actions') h = 64 + n * 82
+    else if (kind === 'conditions') h = 120 + Math.ceil(n / 2) * 6
+    else if (kind === 'hp') h = 230
+    else if (kind === 'hitdice') h = 150
+    else if (kind === 'deathsaves') h = 170
+    else h = 96 + n * 30
+    let c = 0
+    for (let i = 1; i < COLS; i++) if (colBottom[i] < colBottom[c]) c = i
+    const x = X0 + c * (COL_W + GAP)
+    const y = colBottom[c]
+    colBottom[c] = y + h + GAP
+    return { x, y, w: COL_W, h }
+}
+
+const sections = []
+const S = (title, kind, fields, accent = '#8b5cf6', meta) => {
+    sections.push({
+        id: randomUUID(),
+        title,
+        description: '',
+        accent,
+        kind,
+        scale: 1,
+        ...(meta ? { meta } : {}),
+        fields,
+        layout: place(fields, kind),
+    })
+}
+
+// 1. Ability scores (final values from the DDB import).
+S('Ability Scores', 'abilities', [
+    F('STR', 'number', 20),
+    F('DEX', 'number', 12),
+    F('CON', 'number', 16),
+    F('INT', 'number', 8),
+    F('WIS', 'number', 13),
+    F('CHA', 'number', 8),
+], '#f59e0b')
+
+// 2. Modifiers + proficiency — provide slugs (str_mod, proficiency, …) for formulas.
+S('Modifiers', 'default', [
+    F('Proficiency', 'number', 3, { description: 'Proficiency bonus (level 8).' }),
+    F('STR Mod', 'computed', 'floor((str - 10) / 2)'),
+    F('DEX Mod', 'computed', 'floor((dex - 10) / 2)'),
+    F('CON Mod', 'computed', 'floor((con - 10) / 2)'),
+    F('INT Mod', 'computed', 'floor((int - 10) / 2)'),
+    F('WIS Mod', 'computed', 'floor((wis - 10) / 2)'),
+    F('CHA Mod', 'computed', 'floor((cha - 10) / 2)'),
+])
+
+// 3. Combat — AC, initiative, speed, passive perception (all computed where possible).
+S('Combat', 'default', [
+    F('AC', 'computed', '12 + dex_mod + 1', { description: 'Reinforced Studded Leather (12 +1) + DEX.' }),
+    F('Initiative', 'computed', 'dex_mod'),
+    F('Speed', 'number', 35, { description: 'Climb 35 ft (Athlete). +10 ft while in Large Form.' }),
+    F('Passive Perception', 'computed', '10 + wis_mod'),
+    F('Proficiency Bonus', 'computed', 'proficiency'),
+], '#ef4444')
+
+// 4. Hit points + the flat damage reduction from the reinforced armor.
+S('Hit Points', 'hp', [
+    F('Current HP', 'number', 76),
+    F('Max HP', 'number', 76),
+    F('Temp HP', 'number', 0),
+    F('Damage Reduction', 'number', 3, { description: 'Reinforced Studded Leather: reduce every hit taken by 3.' }),
+], '#10b981')
+
+// 5. Hit dice (Pugilist d10 × level 8).
+S('Hit Dice', 'hitdice', [
+    F('d10', 'resource', 8, { max: 8, meta: { die: 'd10' } }),
+], '#06b6d4')
+
+// 6. Death saves.
+S('Death Saves', 'deathsaves', [
+    F('Successes', 'counter', 0, { max: 3 }),
+    F('Failures', 'counter', 0, { max: 3 }),
+])
+
+// 7. Saving throws (auto: ability mod + proficiency when proficient).
+S('Saving Throws', 'skills', [
+    skill('Strength', 'STR', 'proficient'),
+    skill('Dexterity', 'DEX', 'none'),
+    skill('Constitution', 'CON', 'proficient'),
+    skill('Intelligence', 'INT', 'none'),
+    skill('Wisdom', 'WIS', 'none'),
+    skill('Charisma', 'CHA', 'none'),
+], '#8b5cf6')
+
+// 8. Skills (auto). Athletics has expertise; four proficiencies.
+S('Skills', 'skills', [
+    skill('Acrobatics', 'DEX', 'none'),
+    skill('Animal Handling', 'WIS', 'none'),
+    skill('Arcana', 'INT', 'none'),
+    skill('Athletics', 'STR', 'expertise'),
+    skill('Deception', 'CHA', 'none'),
+    skill('History', 'INT', 'none'),
+    skill('Insight', 'WIS', 'proficient'),
+    skill('Intimidation', 'CHA', 'proficient'),
+    skill('Investigation', 'INT', 'none'),
+    skill('Medicine', 'WIS', 'none'),
+    skill('Nature', 'INT', 'none'),
+    skill('Perception', 'WIS', 'none'),
+    skill('Performance', 'CHA', 'none'),
+    skill('Persuasion', 'CHA', 'none'),
+    skill('Religion', 'INT', 'none'),
+    skill('Sleight of Hand', 'DEX', 'none'),
+    skill('Stealth', 'DEX', 'proficient'),
+    skill('Survival', 'WIS', 'none'),
+], '#8b5cf6')
+
+// 9. Attacks — to-hit and damage derived from STR mod + proficiency + fisticuffs die.
+S('Attacks', 'actions', [
+    F('Unarmed Strike', 'text', '', {
+        description: 'Fisticuffs die d10. Moxie-Fueled Fists: may deal Force instead of Bludgeoning.',
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
+    }),
+    F('Flame Tongue Handaxe', 'text', '', {
+        description: 'Uses the d10 fisticuffs die. +2d6 fire while ablaze (bonus action to ignite).',
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'slashing', extra: '2d6', extraType: 'fire', range: '20/60' },
+    }),
+    F('Javelin', 'text', '', {
+        description: 'Thrown. Slow mastery: reduce target Speed by 10 ft.',
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'piercing', range: '30/120' },
+    }),
+    F('Compression Lock', 'text', '', {
+        description: 'Start of your turn: each creature you have Grappled takes this Bludgeoning damage.',
+        meta: { damage: '1d10+{str_mod}', type: 'bludgeoning' },
+    }),
+], '#f59e0b')
+
+// 10. Bonus actions.
+S('Bonus Actions', 'actions', [
+    F('Bonus Unarmed Strike', 'text', '', {
+        description: 'You can make an Unarmed Strike as a Bonus Action.',
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod}', type: 'bludgeoning', range: '5 ft' },
+    }),
+    F('Haymaker (1 Moxie)', 'text', '', { description: 'On a hit, deal maximum damage and regain the Moxie Point.' }),
+    F('One-Two Punch (1 Moxie)', 'text', '', { description: 'Make two Unarmed Strikes as a Bonus Action.' }),
+    F('Stick and Move (1 Moxie)', 'text', '', { description: 'Make an Unarmed Strike and Dash or Disengage.' }),
+    F('Brace Up (1 Moxie)', 'text', '', { description: 'Temp HP = 1d10 + level(8) + CON mod = 1d10 + {8 + con_mod}.' }),
+    F('Large Form (1/Long)', 'text', '', { description: 'Become Large 10 min: advantage on STR checks, +10 ft Speed.' }),
+    F('Dig Deep (1/Long)', 'text', '', { description: '10 min: resistance to Bludgeoning/Piercing/Slashing; ignore exhaustion < 6. Restore by gaining 1 exhaustion.' }),
+], '#06b6d4')
+
+// 11. Reactions.
+S('Reactions', 'actions', [
+    F('Bloodied But Unbowed (1/Short)', 'text', '', { description: 'When you take damage: regain all Moxie. If Bloodied, gain Temp HP = 4 × level = {4 * 8}.' }),
+    F('Meat Shield (1 Moxie)', 'text', '', { description: 'When a creature misses you, force it to reroll against a creature you are Grappling.' }),
+])
+
+// 12. Features & traits.
+S('Features & Traits', 'actions', [
+    F('Extra Attack', 'text', '', { description: 'Attack twice when you take the Attack action.' }),
+    F('Moxie-Fueled Fists', 'text', '', { description: 'Unarmed/improvised damage can be Force instead of its normal type.' }),
+    F('Swagger Streak (1/Short)', 'text', '', { description: 'On a failed STR/DEX/CON/CHA check, spend 1 Moxie and add 1d10; may turn a failure into success.' }),
+    F('Down But Not Out (1/Long)', 'text', '', { description: 'With Bloodied But Unbowed while Bloodied: +damage = CON mod + exhaustion levels for 1 min.' }),
+    F('Inescapable (1 Moxie)', 'text', '', { description: 'Impose Disadvantage on a save/check against your grapple or shove.' }),
+    F('Stop and Drop', 'text', '', { description: 'On an Unarmed Strike hit without a mastery: use both Grapple and Shove.' }),
+    F('Powerful Build', 'text', '', { description: 'Count as one size larger for carrying capacity and drag/lift.' }),
+    F("Hill's Tumble", 'text', '', { description: 'On a hit that deals damage to a Large-or-smaller creature: knock it Prone.' }),
+    F('Lucky (feat)', 'text', '', { description: 'Spend a Luck Point for Advantage, or impose Disadvantage on an attack against you.' }),
+    F('Athlete (feat)', 'text', '', { description: 'Climb Speed = Speed; stand from Prone with 5 ft; run-up jumps after 5 ft.' }),
+])
+
+// 13. Resources (rest-aware pips).
+S('Resources', 'default', [
+    F('Moxie Points', 'resource', 5, { max: 5, meta: { recharge: 'short' } }),
+    F('Luck Points', 'resource', 3, { max: 3, meta: { recharge: 'long' } }),
+    F('Large Form', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
+    F('Dig Deep', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
+    F('Bloodied But Unbowed', 'resource', 1, { max: 1, meta: { recharge: 'short' } }),
+    F('Swagger Streak', 'resource', 1, { max: 1, meta: { recharge: 'short' } }),
+    F('Exhaustion', 'counter', 0, { max: 6 }),
+], '#ec4899')
+
+// 14. Conditions & states.
+S('Conditions', 'conditions', [
+    F('Large Form', 'boolean', 'false', { description: 'Large: advantage on STR checks, +10 ft Speed.' }),
+    F('Dig Deep', 'boolean', 'false', { description: 'Resistance to B/P/S; ignore exhaustion < 6.' }),
+    F('Grappling', 'boolean', 'false', { description: 'Compression Lock hits grappled foes each turn.' }),
+    F('Bloodied', 'boolean', 'false', { description: 'At or below half HP (38).' }),
+    F('Prone', 'boolean', 'false'),
+    F('Grappled', 'boolean', 'false'),
+    F('Frightened', 'boolean', 'false'),
+    F('Poisoned', 'boolean', 'false'),
+    F('Stunned', 'boolean', 'false'),
+], '#ef4444')
+
+// 15. Senses.
+S('Senses', 'default', [
+    F('Darkvision', 'text', '15 ft'),
+    F('Passive Perception', 'computed', '10 + wis_mod'),
+    F('Passive Insight', 'computed', '10 + wis_mod + proficiency'),
+])
+
+// 16. Languages.
+S('Languages', 'default', [
+    F('Common', 'text', 'fluent'),
+    F('Giant', 'text', 'fluent'),
+    F('Elvish', 'text', 'fluent'),
+])
+
+// 17. Equipment.
+S('Equipment', 'default', [
+    F('Flame Tongue Handaxe', 'text', 'equipped'),
+    F('Javelins', 'text', '×3'),
+    F('Reinforced Studded Leather', 'text', 'equipped'),
+    F('Potion of Healing (Greater)', 'text', '×5', { description: 'Regain 4d4 + 4 HP.' }),
+    F('Potion of Healing (Superior)', 'text', '×3', { description: 'Regain 8d4 + 8 HP.' }),
+    F('Dark Adaptation Helmet', 'text', 'worn', { description: 'Darkvision 15 ft.' }),
+    F('Snow-Shell Boots', 'text', 'worn'),
+    F('Coins', 'text', '108 pp'),
+])
+
+const sheet = { id: randomUUID(), name: 'Yad Armhand', sections }
+writeFileSync(
+    new URL('../samples/yad-armhand-sheet.json', import.meta.url),
+    JSON.stringify(sheet, null, 2) + '\n',
+)
+console.log(`Wrote ${sections.length} sections.`)
+

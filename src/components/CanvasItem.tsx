@@ -1,6 +1,7 @@
 import { clsx } from 'clsx'
 import { useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import type { SectionLayout } from '../model/characterSheet'
+import { snapMove, snapResize, GRID } from '../model/layout'
 
 export interface SnapGuide {
     axis: 'x' | 'y'
@@ -9,6 +10,7 @@ export interface SnapGuide {
 
 export interface CanvasItemHandle {
     measureHeight: () => number
+    measureWidth: () => number
 }
 
 interface CanvasItemProps {
@@ -30,36 +32,6 @@ interface CanvasItemProps {
 
 const MIN_W = 180
 const MIN_H = 80
-const GRID = 8
-const SNAP = 7
-
-const snapGrid = (v: number) => Math.round(v / GRID) * GRID
-
-/** Snap a moving box's near/center/far edge on one axis to candidate lines. */
-function snapMove(pos: number, size: number, candidates: number[]): { pos: number; guide: number | null } {
-    const anchors = [pos, pos + size / 2, pos + size]
-    let best = { delta: Infinity, guide: null as number | null }
-    for (const anchor of anchors) {
-        for (const c of candidates) {
-            const d = c - anchor
-            if (Math.abs(d) < Math.abs(best.delta)) best = { delta: d, guide: c }
-        }
-    }
-    if (Math.abs(best.delta) <= SNAP) return { pos: pos + best.delta, guide: best.guide }
-    return { pos: snapGrid(pos), guide: null }
-}
-
-/** Snap a resizing box's far edge to candidate lines. */
-function snapResize(pos: number, size: number, candidates: number[]): { size: number; guide: number | null } {
-    const far = pos + size
-    let best = { delta: Infinity, guide: null as number | null }
-    for (const c of candidates) {
-        const d = c - far
-        if (Math.abs(d) < Math.abs(best.delta)) best = { delta: d, guide: c }
-    }
-    if (Math.abs(best.delta) <= SNAP) return { size: size + best.delta, guide: best.guide }
-    return { size: snapGrid(size), guide: null }
-}
 
 type DragState =
     | { mode: 'idle' }
@@ -140,16 +112,11 @@ export function CanvasItem({ layout, siblings, scale = 1, selected, onLayoutComm
         return h
     }
 
-    useImperativeHandle(handleRef, () => ({ measureHeight }))
-
-    /** Shrink-wrap the height to the content's natural height. */
-    const fitHeight = () => onLayoutCommit({ ...layout, h: measureHeight() })
-
-    /** Shrink-wrap the width to the content's natural width (capped). */
-    const fitWidth = () => {
+    /** Measure the content's natural width (without committing, capped). */
+    const measureWidth = (): number => {
         const root = rootRef.current
         const content = contentRef.current
-        if (!root || !content) return
+        if (!root || !content) return layout.w
         const pr = root.style.width
         const pc = content.style.width
         root.style.width = 'max-content'
@@ -157,8 +124,13 @@ export function CanvasItem({ layout, siblings, scale = 1, selected, onLayoutComm
         const w = Math.min(720, Math.max(MIN_W, Math.round(root.offsetWidth)))
         root.style.width = pr
         content.style.width = pc
-        onLayoutCommit({ ...layout, w })
+        return w
     }
+
+    useImperativeHandle(handleRef, () => ({ measureHeight, measureWidth }))
+
+    const fitHeight = () => onLayoutCommit({ ...layout, h: measureHeight() })
+    const fitWidth = () => onLayoutCommit({ ...layout, w: measureWidth() })
 
     /** Arrow-key nudge when the handle is focused (Shift = grid step). */
     const nudge = (event: React.KeyboardEvent) => {

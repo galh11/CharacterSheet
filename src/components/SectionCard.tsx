@@ -19,6 +19,7 @@ interface SectionCardProps {
         patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale'>>,
     ) => void
     onDeleteSection: () => void
+    onDuplicateSection: () => void
     onAddField: () => void
     onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
     onDeleteField: (fieldId: string) => void
@@ -54,6 +55,7 @@ export function SectionCard({
     references,
     onUpdateSection,
     onDeleteSection,
+    onDuplicateSection,
     onAddField,
     onUpdateField,
     onDeleteField,
@@ -79,15 +81,26 @@ export function SectionCard({
                     <h3 className="m-0 text-base font-semibold text-slate-100">{section.title}</h3>
                 )}
                 {isEditMode && (
-                    <button
-                        type="button"
-                        onClick={onDeleteSection}
-                        className="shrink-0 rounded-md border border-rose-700/50 px-2 py-1 text-xs text-rose-300 hover:bg-rose-900/40"
-                        aria-label="Delete section"
-                        title="Delete section"
-                    >
-                        ✕
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={onDuplicateSection}
+                            className="rounded-md border border-slate-600 px-2 py-1 text-xs text-slate-300 hover:bg-slate-700"
+                            aria-label="Duplicate section"
+                            title="Duplicate section"
+                        >
+                            ⧉
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onDeleteSection}
+                            className="rounded-md border border-rose-700/50 px-2 py-1 text-xs text-rose-300 hover:bg-rose-900/40"
+                            aria-label="Delete section"
+                            title="Delete section"
+                        >
+                            ✕
+                        </button>
+                    </div>
                 )}
             </header>
 

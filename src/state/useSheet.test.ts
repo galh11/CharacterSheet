@@ -72,4 +72,46 @@ describe('useSheet', () => {
         expect(raw).not.toBeNull()
         expect(JSON.parse(raw!).sheet.name).toBe('Saved Hero')
     })
+
+    it('undoes and redoes a change', () => {
+        const { result } = renderHook(() => useSheet())
+        const original = result.current.sheet.name
+        expect(result.current.canUndo).toBe(false)
+
+        act(() => result.current.renameSheet('Aragorn'))
+        expect(result.current.sheet.name).toBe('Aragorn')
+        expect(result.current.canUndo).toBe(true)
+
+        act(() => result.current.undo())
+        expect(result.current.sheet.name).toBe(original)
+        expect(result.current.canRedo).toBe(true)
+
+        act(() => result.current.redo())
+        expect(result.current.sheet.name).toBe('Aragorn')
+    })
+
+    it('clears the redo stack after a new change', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.renameSheet('A'))
+        act(() => result.current.undo())
+        expect(result.current.canRedo).toBe(true)
+        act(() => result.current.renameSheet('B'))
+        expect(result.current.canRedo).toBe(false)
+    })
+
+    it('duplicates a section with fresh ids after the original', () => {
+        const { result } = renderHook(() => useSheet())
+        const first = result.current.sheet.sections[0]
+        const count = result.current.sheet.sections.length
+
+        act(() => result.current.duplicateSection(first.id))
+
+        const sections = result.current.sheet.sections
+        expect(sections).toHaveLength(count + 1)
+        const clone = sections[1]
+        expect(clone.title).toBe(`${first.title} copy`)
+        expect(clone.id).not.toBe(first.id)
+        expect(clone.fields[0]?.id).not.toBe(first.fields[0]?.id)
+        expect(clone.layout.x).toBe(first.layout.x + 24)
+    })
 })

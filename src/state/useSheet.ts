@@ -9,28 +9,59 @@ import {
 } from '../model/characterSheet'
 import { loadSheet, saveSheet } from './persistence'
 
+interface History {
+    sheet: CharacterSheet
+    past: CharacterSheet[]
+    future: CharacterSheet[]
+}
+
+const LIMIT = 60
+
 /**
- * Central sheet state plus all mutation operations.
+ * Central sheet state plus all mutation operations, with undo/redo history.
  * Autosaves to localStorage whenever the sheet changes.
  */
 export const useSheet = () => {
-    const [sheet, setSheet] = useState<CharacterSheet>(loadSheet)
+    const [hist, setHist] = useState<History>(() => ({ sheet: loadSheet(), past: [], future: [] }))
+    const sheet = hist.sheet
 
     useEffect(() => {
         saveSheet(sheet)
     }, [sheet])
 
-    const replaceSheet = useCallback((next: CharacterSheet) => setSheet(next), [])
-
-    const renameSheet = useCallback((name: string) => {
-        setSheet((current) => ({ ...current, name }))
+    /** Apply an update and record the previous state for undo. */
+    const commit = useCallback((updater: (s: CharacterSheet) => CharacterSheet) => {
+        setHist((h) => {
+            const next = updater(h.sheet)
+            if (next === h.sheet) return h
+            return { sheet: next, past: [...h.past, h.sheet].slice(-LIMIT), future: [] }
+        })
     }, [])
 
+    const undo = useCallback(() => {
+        setHist((h) => {
+            if (h.past.length === 0) return h
+            const prev = h.past[h.past.length - 1]
+            return { sheet: prev, past: h.past.slice(0, -1), future: [h.sheet, ...h.future].slice(0, LIMIT) }
+        })
+    }, [])
+
+    const redo = useCallback(() => {
+        setHist((h) => {
+            if (h.future.length === 0) return h
+            const next = h.future[0]
+            return { sheet: next, past: [...h.past, h.sheet].slice(-LIMIT), future: h.future.slice(1) }
+        })
+    }, [])
+
+    const replaceSheet = useCallback((next: CharacterSheet) => commit(() => next), [commit])
+
+    const renameSheet = useCallback((name: string) => commit((c) => ({ ...c, name })), [commit])
+
     const mapSections = useCallback(
-        (fn: (section: CharacterSection) => CharacterSection) => {
-            setSheet((current) => ({ ...current, sections: current.sections.map(fn) }))
-        },
-        [],
+        (fn: (section: CharacterSection) => CharacterSection) =>
+            commit((c) => ({ ...c, sections: c.sections.map(fn) })),
+        [commit],
     )
 
     const updateSection = useCallback(
@@ -38,35 +69,49 @@ export const useSheet = () => {
             sectionId: string,
             patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'layout'>>,
         ) => {
-            mapSections((section) =>
-                section.id === sectionId ? { ...section, ...patch } : section,
-            )
+            mapSections((section) => (section.id === sectionId ? { ...section, ...patch } : section))
         },
         [mapSections],
     )
 
     const setSectionLayout = useCallback(
         (sectionId: string, layout: SectionLayout) => {
-            mapSections((section) =>
-                section.id === sectionId ? { ...section, layout } : section,
-            )
+            mapSections((section) => (section.id === sectionId ? { ...section, layout } : section))
         },
         [mapSections],
     )
 
     const addSection = useCallback(() => {
-        setSheet((current) => ({
-            ...current,
-            sections: [...current.sections, createSection(current.sections.length)],
-        }))
-    }, [])
+        commit((c) => ({ ...c, sections: [...c.sections, createSection(c.sections.length)] }))
+    }, [commit])
 
-    const deleteSection = useCallback((sectionId: string) => {
-        setSheet((current) => ({
-            ...current,
-            sections: current.sections.filter((section) => section.id !== sectionId),
-        }))
-    }, [])
+    const deleteSection = useCallback(
+        (sectionId: string) => {
+            commit((c) => ({ ...c, sections: c.sections.filter((s) => s.id !== sectionId) }))
+        },
+        [commit],
+    )
+
+    const duplicateSection = useCallback(
+        (sectionId: string) => {
+            commit((c) => {
+                const idx = c.sections.findIndex((s) => s.id === sectionId)
+                if (idx < 0) return c
+                const orig = c.sections[idx]
+                const clone: CharacterSection = {
+                    ...orig,
+                    id: crypto.randomUUID(),
+                    title: `${orig.title} copy`,
+                    layout: { ...orig.layout, x: orig.layout.x + 24, y: orig.layout.y + 24 },
+                    fields: orig.fields.map((f) => ({ ...f, id: crypto.randomUUID() })),
+                }
+                const sections = [...c.sections]
+                sections.splice(idx + 1, 0, clone)
+                return { ...c, sections }
+            })
+        },
+        [commit],
+    )
 
     const addField = useCallback(
         (sectionId: string, overrides: Partial<CharacterField> = {}) => {
@@ -123,12 +168,17 @@ export const useSheet = () => {
 
     return {
         sheet,
+        canUndo: hist.past.length > 0,
+        canRedo: hist.future.length > 0,
+        undo,
+        redo,
         replaceSheet,
         renameSheet,
         updateSection,
         setSectionLayout,
         addSection,
         deleteSection,
+        duplicateSection,
         addField,
         updateField,
         deleteField,
@@ -137,3 +187,4 @@ export const useSheet = () => {
 }
 
 export type SheetApi = ReturnType<typeof useSheet>
+

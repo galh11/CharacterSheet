@@ -1,53 +1,27 @@
 import { clsx } from 'clsx'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
     characterSheetSchema,
     createStarterSheet,
     type SectionLayout,
 } from './model/characterSheet'
 import { computeSheet, listReferences } from './model/compute'
+import {
+    resolveOverlap,
+    tidyLayouts,
+    alignEdge,
+    matchDimension,
+    distribute as distributeLayout,
+    GAP,
+    type Placed,
+    type AlignEdge,
+} from './model/layout'
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { QuickStartModal } from './components/QuickStartModal'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
+import { loadPresets, savePresets, type Presets } from './state/presets'
 import { useSheet } from './state/useSheet'
-
-const GAP = 16
-
-const overlaps = (a: SectionLayout, b: SectionLayout): boolean =>
-    a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
-
-/** Push a rect straight down until it no longer overlaps any sibling. */
-const resolveOverlap = (rect: SectionLayout, others: SectionLayout[]): SectionLayout => {
-    let r = rect
-    for (let i = 0; i < 40; i++) {
-        const hit = others.find((o) => overlaps(r, o))
-        if (!hit) break
-        r = { ...r, y: hit.y + hit.h + GAP }
-    }
-    return r
-}
-
-/** Shelf-pack sections into rows that fit within maxWidth. */
-const tidyLayouts = (
-    items: { id: string; layout: SectionLayout }[],
-    maxWidth: number,
-): { id: string; layout: SectionLayout }[] => {
-    let x = GAP
-    let y = GAP
-    let rowH = 0
-    return items.map(({ id, layout }) => {
-        if (x > GAP && x + layout.w + GAP > maxWidth) {
-            x = GAP
-            y += rowH + GAP
-            rowH = 0
-        }
-        const next = { id, layout: { ...layout, x, y } }
-        x += layout.w + GAP
-        rowH = Math.max(rowH, layout.h)
-        return next
-    })
-}
 
 function App() {
     const [isEditMode, setIsEditMode] = useState(false)
@@ -55,16 +29,22 @@ function App() {
     const [notice, setNotice] = useState<string | null>(null)
     const [guides, setGuides] = useState<SnapGuide[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const [presets, setPresets] = useState<Presets>(() => loadPresets())
     const importRef = useRef<HTMLInputElement>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
         sheet,
+        canUndo,
+        canRedo,
+        undo,
+        redo,
         replaceSheet,
         renameSheet,
         updateSection,
         setSectionLayout,
         addSection,
         deleteSection,
+        duplicateSection,
         addField,
         updateField,
         deleteField,
@@ -120,8 +100,9 @@ function App() {
 
     const handleFitAll = () => {
         for (const s of sheet.sections) {
-            const h = fitRefs.current.get(s.id)?.measureHeight()
-            if (h != null) setSectionLayout(s.id, { ...s.layout, h })
+            const handle = fitRefs.current.get(s.id)
+            if (!handle) continue
+            setSectionLayout(s.id, { ...s.layout, w: handle.measureWidth(), h: handle.measureHeight() })
         }
     }
 
@@ -134,53 +115,59 @@ function App() {
         })
     }
 
-    const selectedRects = () => sheet.sections.filter((s) => selectedIds.has(s.id))
+    const selectedItems = (): Placed[] =>
+        sheet.sections.filter((s) => selectedIds.has(s.id)).map((s) => ({ id: s.id, layout: s.layout }))
 
-    const align = (edge: 'left' | 'hcenter' | 'right' | 'top' | 'vmiddle' | 'bottom') => {
-        const secs = selectedRects()
-        if (secs.length < 2) return
-        const rects = secs.map((s) => s.layout)
-        const minX = Math.min(...rects.map((r) => r.x))
-        const maxR = Math.max(...rects.map((r) => r.x + r.w))
-        const minY = Math.min(...rects.map((r) => r.y))
-        const maxB = Math.max(...rects.map((r) => r.y + r.h))
-        const cx = (minX + maxR) / 2
-        const cy = (minY + maxB) / 2
-        for (const s of secs) {
-            const l = s.layout
-            const patch =
-                edge === 'left' ? { x: minX }
-                    : edge === 'right' ? { x: maxR - l.w }
-                        : edge === 'hcenter' ? { x: Math.round(cx - l.w / 2) }
-                            : edge === 'top' ? { y: minY }
-                                : edge === 'bottom' ? { y: maxB - l.h }
-                                    : { y: Math.round(cy - l.h / 2) }
-            setSectionLayout(s.id, { ...l, ...patch })
+    const applyPlaced = (items: Placed[]) => {
+        for (const { id, layout } of items) setSectionLayout(id, layout)
+    }
+
+    const align = (edge: AlignEdge) => applyPlaced(alignEdge(selectedItems(), edge))
+    const match = (dim: 'w' | 'h') => applyPlaced(matchDimension(selectedItems(), dim))
+    const distribute = (axis: 'h' | 'v') => applyPlaced(distributeLayout(selectedItems(), axis))
+
+    const savePreset = () => {
+        const name = window.prompt('Save current layout as:')?.trim()
+        if (!name) return
+        const entries = sheet.sections.map((s) => ({ title: s.title, ...s.layout, scale: s.scale }))
+        const next = { ...presets, [name]: entries }
+        setPresets(next)
+        savePresets(next)
+        setNotice(`Layout "${name}" saved.`)
+    }
+
+    const applyPreset = (name: string) => {
+        const preset = presets[name]
+        if (!preset) return
+        for (const s of sheet.sections) {
+            const entry = preset.find((e) => e.title === s.title)
+            if (entry) {
+                updateSection(s.id, {
+                    layout: { x: entry.x, y: entry.y, w: entry.w, h: entry.h },
+                    scale: entry.scale,
+                })
+            }
         }
+        setNotice(`Layout "${name}" applied.`)
     }
 
-    const match = (dim: 'w' | 'h') => {
-        const secs = selectedRects()
-        if (secs.length < 2) return
-        const val = secs[0].layout[dim]
-        for (const s of secs) setSectionLayout(s.id, { ...s.layout, [dim]: val })
-    }
-
-    const distribute = (axis: 'h' | 'v') => {
-        const key = axis === 'h' ? 'x' : 'y'
-        const size = axis === 'h' ? 'w' : 'h'
-        const secs = [...selectedRects()].sort((a, b) => a.layout[key] - b.layout[key])
-        if (secs.length < 3) return
-        const first = secs[0].layout[key]
-        const lastEnd = secs[secs.length - 1].layout[key] + secs[secs.length - 1].layout[size]
-        const totalSize = secs.reduce((n, s) => n + s.layout[size], 0)
-        const gap = (lastEnd - first - totalSize) / (secs.length - 1)
-        let cursor = first
-        for (const s of secs) {
-            setSectionLayout(s.id, { ...s.layout, [key]: Math.round(cursor) })
-            cursor += s.layout[size] + gap
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if (!(event.ctrlKey || event.metaKey)) return
+            const tag = (event.target as HTMLElement | null)?.tagName
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+            const key = event.key.toLowerCase()
+            if (key === 'z' && !event.shiftKey) {
+                event.preventDefault()
+                undo()
+            } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
+                event.preventDefault()
+                redo()
+            }
         }
-    }
+        window.addEventListener('keydown', onKey)
+        return () => window.removeEventListener('keydown', onKey)
+    }, [undo, redo])
 
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 p-6 md:p-10">
@@ -203,6 +190,30 @@ function App() {
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={undo}
+                            disabled={!canUndo}
+                            className={clsx(
+                                'rounded-md border border-slate-600 px-3 py-2 text-sm',
+                                canUndo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
+                            )}
+                            title="Undo (Ctrl+Z)"
+                        >
+                            ↶ Undo
+                        </button>
+                        <button
+                            type="button"
+                            onClick={redo}
+                            disabled={!canRedo}
+                            className={clsx(
+                                'rounded-md border border-slate-600 px-3 py-2 text-sm',
+                                canRedo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
+                            )}
+                            title="Redo (Ctrl+Shift+Z)"
+                        >
+                            ↷ Redo
+                        </button>
                         <button
                             type="button"
                             onClick={() => setShowQuickStart(true)}
@@ -281,10 +292,37 @@ function App() {
                             type="button"
                             onClick={handleFitAll}
                             className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Shrink every section's height to its content"
+                            title="Shrink every section to its content (width + height)"
                         >
                             Fit all
                         </button>
+                        <button
+                            type="button"
+                            onClick={savePreset}
+                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            title="Save the current arrangement as a named layout"
+                        >
+                            Save layout
+                        </button>
+                        {Object.keys(presets).length > 0 && (
+                            <select
+                                value=""
+                                onChange={(event) => {
+                                    if (event.target.value) applyPreset(event.target.value)
+                                }}
+                                className="rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
+                                aria-label="Apply saved layout"
+                            >
+                                <option value="" disabled>
+                                    Apply layout…
+                                </option>
+                                {Object.keys(presets).map((name) => (
+                                    <option key={name} value={name}>
+                                        {name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
                         {isEditMode && (
                             <button
                                 type="button"
@@ -364,6 +402,7 @@ function App() {
                                     references={references}
                                     onUpdateSection={(patch) => updateSection(section.id, patch)}
                                     onDeleteSection={() => deleteSection(section.id)}
+                                    onDuplicateSection={() => duplicateSection(section.id)}
                                     onAddField={() => addField(section.id)}
                                     onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
                                     onDeleteField={(fieldId) => deleteField(section.id, fieldId)}

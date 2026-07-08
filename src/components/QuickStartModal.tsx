@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import type { CharacterSheet } from '../model/characterSheet'
 import { characterSheetSchema } from '../model/characterSheet'
@@ -11,17 +11,20 @@ interface QuickStartModalProps {
 
 const PLACEHOLDER = `Paste your D&D Beyond character JSON here for an exact import.
 
-See the steps above to fetch it, or paste a sheet previously exported from this app.`
+See the steps above to fetch it, choose a .json file, or paste a sheet previously exported from this app.`
 
 export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
-    const [text, setText] = useState('')
+    const textRef = useRef<HTMLTextAreaElement>(null)
+    const fileRef = useRef<HTMLInputElement>(null)
     const [result, setResult] = useState<ParseResult | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const [loadedName, setLoadedName] = useState<string | null>(null)
 
-    const handleParse = () => {
-        const trimmed = text.trim()
+    const parseRaw = (raw: string) => {
+        const trimmed = raw.trim()
         if (!trimmed) {
-            setError('Paste your character JSON first.')
+            setError('Paste your character JSON or choose a .json file first.')
+            setResult(null)
             return
         }
         setError(null)
@@ -30,7 +33,12 @@ export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
         try {
             json = JSON.parse(trimmed)
         } catch {
-            setError('That is not valid JSON. Copy the full character JSON and try again.')
+            setError('That is not valid JSON — copy the entire character JSON (it starts with { and ends with }).')
+            return
+        }
+        // A D&D Beyond character-service payload (checked first — it's the common case).
+        if (looksLikeDdbCharacter(json)) {
+            setResult(parseCharacterJson(json))
             return
         }
         // A sheet exported from this app imports directly.
@@ -39,12 +47,27 @@ export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
             setResult({ sheet: own.data, detected: ['This app’s own exported sheet'] })
             return
         }
-        // A D&D Beyond character-service payload.
-        if (looksLikeDdbCharacter(json)) {
-            setResult(parseCharacterJson(json))
+        // Diagnose the usual failure: a private character returns no data.
+        const obj = json && typeof json === 'object' && !Array.isArray(json) ? (json as Record<string, unknown>) : null
+        if (obj && (obj.success === false || ('success' in obj && obj.data == null))) {
+            setError('D&D Beyond returned no character data. Set the character’s privacy to Public, then reload the JSON URL and copy the whole page.')
             return
         }
-        setError('This JSON is not a D&D Beyond character or an exported sheet.')
+        setError('This doesn’t look like a D&D Beyond character or an exported sheet. Use the character-service JSON URL shown above.')
+    }
+
+    const handleParse = () => parseRaw(textRef.current?.value ?? '')
+
+    const handleFile = async (file: File | undefined) => {
+        if (!file) return
+        try {
+            const raw = await file.text()
+            if (textRef.current) textRef.current.value = raw
+            setLoadedName(file.name)
+            parseRaw(raw)
+        } catch {
+            setError('Could not read that file.')
+        }
     }
 
     return (
@@ -110,12 +133,33 @@ export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
                     </details>
 
                     <textarea
-                        value={text}
-                        onChange={(event) => setText(event.target.value)}
+                        ref={textRef}
+                        defaultValue=""
                         placeholder={PLACEHOLDER}
                         className="mt-3 h-56 w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100"
                         aria-label="Character JSON"
                     />
+
+                    <div className="mt-2 flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => fileRef.current?.click()}
+                            className="rounded-md border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800"
+                        >
+                            Choose a .json file…
+                        </button>
+                        {loadedName && <span className="text-xs text-slate-400">Loaded {loadedName}</span>}
+                        <input
+                            ref={fileRef}
+                            type="file"
+                            accept=".json,application/json"
+                            className="hidden"
+                            onChange={(event) => {
+                                void handleFile(event.target.files?.[0])
+                                event.target.value = ''
+                            }}
+                        />
+                    </div>
 
                     {error && <p className="mt-2 text-sm text-rose-300">{error}</p>}
 

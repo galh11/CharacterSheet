@@ -39,6 +39,37 @@ const ABILITIES = [
     { id: 6, label: 'CHA', full: 'charisma' },
 ]
 
+/** The 18 standard skills with their governing ability, keyed by D&D Beyond's
+ *  proficiency subType slug. */
+const SKILLS: { slug: string; label: string; ability: string }[] = [
+    { slug: 'acrobatics', label: 'Acrobatics', ability: 'DEX' },
+    { slug: 'animal-handling', label: 'Animal Handling', ability: 'WIS' },
+    { slug: 'arcana', label: 'Arcana', ability: 'INT' },
+    { slug: 'athletics', label: 'Athletics', ability: 'STR' },
+    { slug: 'deception', label: 'Deception', ability: 'CHA' },
+    { slug: 'history', label: 'History', ability: 'INT' },
+    { slug: 'insight', label: 'Insight', ability: 'WIS' },
+    { slug: 'intimidation', label: 'Intimidation', ability: 'CHA' },
+    { slug: 'investigation', label: 'Investigation', ability: 'INT' },
+    { slug: 'medicine', label: 'Medicine', ability: 'WIS' },
+    { slug: 'nature', label: 'Nature', ability: 'INT' },
+    { slug: 'perception', label: 'Perception', ability: 'WIS' },
+    { slug: 'performance', label: 'Performance', ability: 'CHA' },
+    { slug: 'persuasion', label: 'Persuasion', ability: 'CHA' },
+    { slug: 'religion', label: 'Religion', ability: 'INT' },
+    { slug: 'sleight-of-hand', label: 'Sleight of Hand', ability: 'DEX' },
+    { slug: 'stealth', label: 'Stealth', ability: 'DEX' },
+    { slug: 'survival', label: 'Survival', ability: 'WIS' },
+]
+
+const CURRENCIES: { key: string; label: string }[] = [
+    { key: 'pp', label: 'PP' },
+    { key: 'gp', label: 'GP' },
+    { key: 'ep', label: 'EP' },
+    { key: 'sp', label: 'SP' },
+    { key: 'cp', label: 'CP' },
+]
+
 /** Cheap shape check so callers can auto-route paste input to text vs JSON. */
 export const looksLikeDdbCharacter = (input: unknown): boolean => {
     const root = asObj(input)
@@ -103,6 +134,45 @@ const walkingSpeed = (data: Json): number | null => {
 
 const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
 
+/** Build a live AC formula from the equipped armour (referencing `dex` so it
+ *  stays correct if DEX changes). Light: +full DEX; medium: +DEX capped at 2;
+ *  heavy: no DEX; shields and flat AC-bonus modifiers are added on. */
+const armorClassFormula = (data: Json, mods: Json[]): string | null => {
+    let body: Json | null = null
+    let bodyAc = 0
+    let bodyType = 0
+    let shield = 0
+    for (const entry of asArr(data.inventory)) {
+        const o = asObj(entry)
+        if (!o || o.equipped !== true) continue
+        const def = asObj(o.definition)
+        const ac = def ? num(def.armorClass) : null
+        if (ac === null) continue
+        const type = num(def!.armorTypeId) ?? 0
+        if (type === 4) {
+            shield += ac
+        } else if (ac > bodyAc) {
+            body = o
+            bodyAc = ac
+            bodyType = type
+        }
+    }
+    let bonus = 0
+    for (const m of mods) {
+        if (str(m.type) === 'bonus' && str(m.subType) === 'armor-class') bonus += num(m.value) ?? 0
+    }
+    let base: number
+    let dexPart: string
+    if (body) {
+        base = bodyAc
+        dexPart = bodyType === 3 ? '' : bodyType === 2 ? ' + min(2, floor((dex - 10) / 2))' : ' + floor((dex - 10) / 2)'
+    } else {
+        base = 10
+        dexPart = ' + floor((dex - 10) / 2)'
+    }
+    return `${base}${dexPart}${shield ? ` + ${shield}` : ''}${bonus ? ` + ${bonus}` : ''}`
+}
+
 export const parseCharacterJson = (input: unknown): ParseResult => {
     const root = asObj(input)
     const data = (root && (asObj(root.data) ?? root)) ?? {}
@@ -117,6 +187,18 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
 
     const mods = flattenModifiers(data)
 
+    // Which skills / saves are proficient or have expertise.
+    const profSet = new Set<string>()
+    const expSet = new Set<string>()
+    for (const mod of mods) {
+        const sub = str(mod.subType)
+        if (!sub) continue
+        if (str(mod.type) === 'proficiency') profSet.add(sub)
+        else if (str(mod.type) === 'expertise') expSet.add(sub)
+    }
+    const skillProf = (slug: string): 'expertise' | 'proficient' | 'none' =>
+        expSet.has(slug) ? 'expertise' : profSet.has(slug) ? 'proficient' : 'none'
+
     // Abilities + computed modifiers.
     const scores = new Map<string, number>()
     const abilityFields: CharacterField[] = []
@@ -128,21 +210,7 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
     }
     if (abilityFields.length > 0) {
         detected.push(`${abilityFields.length} ability scores`)
-        place({ id: crypto.randomUUID(), title: 'Ability Scores', description: 'Imported from D&D Beyond.', accent: '#8b5cf6', fields: abilityFields })
-        place({
-            id: crypto.randomUUID(),
-            title: 'Modifiers',
-            description: 'Derived from ability scores.',
-            accent: '#06b6d4',
-            fields: abilityFields.map((field) =>
-                createField({
-                    label: `${field.label} Mod`,
-                    type: 'computed',
-                    value: `floor((${field.label.toLowerCase()} - 10) / 2)`,
-                    description: `${field.label} modifier.`,
-                }),
-            ),
-        })
+        place({ id: crypto.randomUUID(), title: 'Ability Scores', description: 'Imported from D&D Beyond.', accent: '#8b5cf6', kind: 'abilities', fields: abilityFields })
     }
 
     // Combat: HP, speed, proficiency bonus, initiative.
@@ -164,10 +232,38 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
     const speed = walkingSpeed(data)
     if (speed !== null) combatFields.push(createField({ label: 'Speed', type: 'number', value: String(speed), description: 'Walking speed (ft).' }))
     if (level > 0) combatFields.push(createField({ label: 'Proficiency', type: 'number', value: String(Math.floor((level - 1) / 4) + 2) }))
-    if (scores.has('DEX')) combatFields.push(createField({ label: 'Initiative', type: 'computed', value: 'floor((dex - 10) / 2)' }))
+    if (scores.has('DEX')) {
+        const ac = armorClassFormula(data, mods)
+        if (ac) combatFields.unshift(createField({ label: 'AC', type: 'computed', value: ac, description: 'Derived from equipped armour + DEX. Adjust the formula if you use a different calculation.' }))
+        combatFields.push(createField({ label: 'Initiative', type: 'computed', value: 'floor((dex - 10) / 2)' }))
+    }
+    if (scores.has('WIS')) {
+        const percProf = skillProf('perception')
+        const bonus = percProf === 'expertise' ? ' + proficiency * 2' : percProf === 'proficient' ? ' + proficiency' : ''
+        combatFields.push(createField({ label: 'Passive Perception', type: 'computed', value: `10 + floor((wis - 10) / 2)${bonus}` }))
+    }
     if (combatFields.length > 0) {
         detected.push(`${combatFields.length} combat stats`)
-        place({ id: crypto.randomUUID(), title: 'Combat', description: 'AC and skills are not derived from JSON — add them as needed.', accent: '#ef4444', fields: combatFields })
+        place({ id: crypto.randomUUID(), title: 'Combat', description: 'AC is derived from equipped armour; verify it against D&D Beyond.', accent: '#ef4444', fields: combatFields })
+    }
+
+    // Skills (auto: ability mod + proficiency), with proficiency/expertise dots.
+    if (scores.size > 0) {
+        const skillFields = SKILLS.map((s) =>
+            createField({ label: s.label, type: 'number', value: '', meta: { ability: s.ability, prof: skillProf(s.slug), auto: 'true' } }),
+        )
+        detected.push('18 skills')
+        place({ id: crypto.randomUUID(), title: 'Skills', description: 'Click a skill to roll. Dots mark proficiency / expertise.', accent: '#8b5cf6', kind: 'skills', fields: skillFields })
+
+        const saveFields = ABILITIES.filter((a) => scores.has(a.label)).map((a) =>
+            createField({
+                label: a.label,
+                type: 'number',
+                value: '',
+                meta: { ability: a.label, prof: profSet.has(`${a.full}-saving-throws`) ? 'proficient' : 'none', auto: 'true' },
+            }),
+        )
+        place({ id: crypto.randomUUID(), title: 'Saving Throws', description: 'Click to roll a saving throw.', accent: '#a855f7', kind: 'skills', fields: saveFields })
     }
 
     // Character summary (class, level, race).
@@ -218,6 +314,18 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
             accent: '#f59e0b',
             fields: [createField({ label: 'Languages', type: 'text', value: Array.from(languages).join(', ').slice(0, 120) })],
         })
+    }
+
+    // Currency.
+    const currencies = asObj(data.currencies)
+    if (currencies) {
+        const coinFields = CURRENCIES.filter((c) => (num(currencies[c.key]) ?? 0) > 0).map((c) =>
+            createField({ label: c.label, type: 'number', value: String(num(currencies[c.key]) ?? 0) }),
+        )
+        if (coinFields.length > 0) {
+            detected.push('currency')
+            place({ id: crypto.randomUUID(), title: 'Currency', description: 'Coins carried.', accent: '#f59e0b', kind: 'currency', fields: coinFields })
+        }
     }
 
     const name = str(data.name) ?? 'Imported Character'

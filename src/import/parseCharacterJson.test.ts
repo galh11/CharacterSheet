@@ -71,3 +71,39 @@ describe('parseCharacterJson — Yad Armhand', () => {
         expect(detected.length).toBeGreaterThanOrEqual(4)
     })
 })
+
+describe('parseCharacterJson — real Amarthon export', () => {
+    const amarthon = JSON.parse(
+        readFileSync(join(process.cwd(), 'samples', 'amarthon-ddb.json'), 'utf8'),
+    )
+    it('detects and imports without throwing', () => {
+        expect(looksLikeDdbCharacter(amarthon)).toBe(true)
+        const { sheet, detected } = parseCharacterJson(amarthon)
+        expect(sheet.name).toBe('Amarthon')
+        expect(sheet.sections.length).toBeGreaterThan(0)
+        expect(detected.length).toBeGreaterThan(0)
+    })
+
+    it('derives AC, skills, saves and currency', () => {
+        const { sheet } = parseCharacterJson(amarthon)
+        const section = (title: string) => sheet.sections.find((s) => s.title === title)
+        // Studded Leather (12, light) + Shield (2) + DEX 14 (+2) => 12 + dex + 2.
+        const ac = section('Combat')?.fields.find((f) => f.label === 'AC')
+        expect(ac?.type).toBe('computed')
+        expect(ac?.value).toContain('12')
+        expect(ac?.value).toContain('dex')
+        // 18 skills, with Nature/Perception/Insight/Arcana/History proficient.
+        const skills = section('Skills')
+        expect(skills?.fields).toHaveLength(18)
+        const nature = skills?.fields.find((f) => f.label === 'Nature')
+        expect(nature?.meta?.prof).toBe('proficient')
+        const acro = skills?.fields.find((f) => f.label === 'Acrobatics')
+        expect(acro?.meta?.prof).toBe('none')
+        // Saving throws: INT and WIS proficient for this Druid.
+        const saves = section('Saving Throws')
+        expect(saves?.fields.find((f) => f.label === 'WIS')?.meta?.prof).toBe('proficient')
+        expect(saves?.fields.find((f) => f.label === 'STR')?.meta?.prof).toBe('none')
+        // Currency: 346 gp.
+        expect(section('Currency')?.fields.find((f) => f.label === 'GP')?.value).toBe('346')
+    })
+})

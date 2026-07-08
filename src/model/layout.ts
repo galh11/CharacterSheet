@@ -134,33 +134,40 @@ export const tidyLayouts = (items: Placed[], maxWidth: number, gap = GAP): Place
     })
 }
 
-/** Compact tiles by "gravity" toward the top-left: each tile keeps roughly where
- *  it is but slides up, then left, as far as it can without overlapping tiles that
- *  have already settled. Unlike a fresh pack this respects the current arrangement
- *  (columns/rows you set by dragging) and just squeezes out the empty space. */
+/** Compact tiles into clean columns based on how they're currently arranged.
+ *  Tiles are grouped into columns by their horizontal position, each column is
+ *  packed against the previous one (no empty horizontal gaps), and within a
+ *  column tiles are stacked top-to-bottom (no vertical gaps). This keeps the
+ *  grid you built by dragging while squeezing out the empty space — it does NOT
+ *  reflow tiles across columns like a fresh pack would. */
 export const compactLayouts = (items: Placed[], gap = GAP): Placed[] => {
-    // Settle upper-left tiles first so lower/right ones can rest against them.
-    const order = [...items].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x)
-    const settled: SectionLayout[] = []
-    const out: Placed[] = []
-    for (const { id, layout } of order) {
-        const { w, h } = layout
-        let x = layout.x
-        let y = layout.y
-        // Alternate up/left a few times; each move can unlock more of the other.
-        for (let i = 0; i < 6; i++) {
-            // Slide up: rest on the lowest bottom edge of tiles sharing our columns.
-            let top = gap
-            for (const o of settled) if (x < o.x + o.w && x + w > o.x) top = Math.max(top, o.y + o.h + gap)
-            // Slide left: rest against the rightmost edge of tiles sharing our rows.
-            let leftEdge = gap
-            for (const o of settled) if (top < o.y + o.h && top + h > o.y) leftEdge = Math.max(leftEdge, o.x + o.w + gap)
-            if (top === y && leftEdge === x) break
-            y = top
-            x = leftEdge
+    if (items.length === 0) return items
+    // Group into columns: walking left→right, a tile joins the current column if
+    // its left edge is close to the column's, else it starts a new column.
+    const minW = Math.min(...items.map((i) => i.layout.w))
+    const threshold = Math.max(48, minW * 0.6)
+    const byX = [...items].sort((a, b) => a.layout.x - b.layout.x)
+    const columns: { left: number; width: number; tiles: Placed[] }[] = []
+    for (const item of byX) {
+        const col = columns[columns.length - 1]
+        if (col && item.layout.x - col.left <= threshold) {
+            col.tiles.push(item)
+            col.width = Math.max(col.width, item.layout.w)
+        } else {
+            columns.push({ left: item.layout.x, width: item.layout.w, tiles: [item] })
         }
-        settled.push({ x, y, w, h })
-        out.push({ id, layout: { ...layout, x, y } })
+    }
+    // Lay the columns out left-packed; stack each column's tiles top-down.
+    const out: Placed[] = []
+    let x = gap
+    for (const col of columns) {
+        col.tiles.sort((a, b) => a.layout.y - b.layout.y)
+        let y = gap
+        for (const t of col.tiles) {
+            out.push({ id: t.id, layout: { ...t.layout, x, y } })
+            y += t.layout.h + gap
+        }
+        x += col.width + gap
     }
     return out
 }

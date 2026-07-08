@@ -325,8 +325,8 @@ function App() {
         })
 
     const handleTidy = () => {
-        // Fit each card to its content, then compact toward the top-left so tiles
-        // squeeze up and left into empty space while keeping your arrangement.
+        // Fit each card to its content, then compact into clean columns based on
+        // how you've arranged them (keeps your columns, removes gaps, no scrollbars).
         setSectionLayouts(compactLayouts(fittedItems()))
     }
 
@@ -490,7 +490,7 @@ function App() {
                         <button
                             type="button"
                             onClick={() => setHeaderCollapsed((c) => !c)}
-                            className="rounded px-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                            className="rounded-md border border-slate-600 px-3 py-1.5 text-xl leading-none text-slate-200 hover:bg-slate-800 hover:text-white"
                             aria-label={headerCollapsed ? 'Show toolbar' : 'Hide toolbar'}
                             title={headerCollapsed ? 'Show toolbar' : 'Hide toolbar'}
                         >
@@ -564,109 +564,14 @@ function App() {
                         >
                             ↷
                         </button>
-                        {inspirationField && (
-                            <button
-                                type="button"
-                                onClick={toggleInspiration}
-                                className={clsx(
-                                    'rounded-md border px-3 py-2 text-sm font-medium',
-                                    inspirationField.field.value === 'true'
-                                        ? 'border-amber-400 bg-amber-400/20 text-amber-200'
-                                        : 'border-slate-600 text-slate-400 hover:bg-slate-800',
-                                )}
-                                title="Inspiration"
-                            >
-                                ★ Inspiration
-                            </button>
-                        )}
-                        <Menu label="Rest ▾" title="Take a short or long rest">
-                            {(close) => (
-                                <>
-                                    <MenuItem onClick={() => { doRest('short'); close() }} title="Refill short-rest resources">
-                                        Short rest
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
-                                        Long rest
-                                    </MenuItem>
-                                </>
-                            )}
-                        </Menu>
-                        {levelField && (
-                            <button
-                                type="button"
-                                onClick={handleLevelUp}
-                                className="rounded-md border border-emerald-700/50 px-3 py-2 text-sm text-emerald-200 hover:bg-emerald-900/30"
-                                title="Increase your level by one"
-                            >
-                                Level up
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setShowQuickStart(true)}
-                            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-violet-400"
-                        >
-                            Quick start
-                        </button>
-
                         <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
 
-                        <Menu label="⋯ More" title="Import, export, and share" align="right">
-                            {(close) => (
-                                <>
-                                    <MenuLabel>Data</MenuLabel>
-                                    <MenuItem onClick={() => { exportSheetToFile(sheet); close() }} title="Download this sheet as JSON">
-                                        Export JSON
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { importRef.current?.click(); close() }} title="Load a sheet from a JSON file">
-                                        Import JSON…
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { void handleShare(); close() }} title="Copy a shareable link that contains this whole sheet">
-                                        Copy share link
-                                    </MenuItem>
-                                    <MenuDivider />
-                                    <MenuLabel>Export image</MenuLabel>
-                                    <MenuItem onClick={() => { window.print(); close() }} title="Print or save the sheet as a PDF">
-                                        Print / PDF
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { void handleExportPng(); close() }} title="Export the canvas as a PNG image">
-                                        Export PNG
-                                    </MenuItem>
-                                </>
-                            )}
-                        </Menu>
-                        <input
-                            ref={importRef}
-                            type="file"
-                            accept="application/json"
-                            className="hidden"
-                            onChange={(event) => {
-                                void handleImport(event.target.files?.[0])
-                                event.target.value = ''
-                            }}
-                        />
-                        <label className="flex items-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
-                            <input
-                                type="color"
-                                value={theme}
-                                onChange={(e) => setTheme(e.target.value)}
-                                aria-label="Theme colour"
-                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-                            />
-                        </label>
-                    </div>
-                )}
-            </header>
-
-            <section>
-                <div className="mb-3 flex items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-2">
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder="Search sections / fields…"
                             aria-label="Search"
-                            className="w-44 rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
+                            className="w-40 rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
                         />
                         {query && (
                             <button type="button" onClick={() => setQuery('')} className="rounded-md border border-slate-600 px-2 py-2 text-sm text-slate-400 hover:bg-slate-800" title="Clear search">✕</button>
@@ -693,11 +598,11 @@ function App() {
                                     type="button"
                                     onClick={handleTidy}
                                     className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Fit every card to its content and pack them tightly (best in play mode)"
+                                    title="Fit every card to its content and pack them into tidy columns"
                                 >
                                     Tidy
                                 </button>
-                                <Menu label="Options ▾" title="Layout options" align="right">
+                                <Menu label="Options ▾" title="Layout options" align="left">
                                     {(close) => (
                                         <>
                                             <MenuItem onClick={() => { handleFitAll(); close() }} title="Resize each card to its content, keeping its position">
@@ -746,9 +651,82 @@ function App() {
                                 </option>
                             ))}
                         </select>
-                    </div>
-                </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowQuickStart(true)}
+                            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-violet-400"
+                        >
+                            Quick start
+                        </button>
 
+                        <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+
+                        <Menu label="⋯ More" title="Rest, inspiration, import, export, and share" align="right">
+                            {(close) => (
+                                <>
+                                    <MenuLabel>Play</MenuLabel>
+                                    <MenuItem onClick={() => { doRest('short'); close() }} title="Refill short-rest resources">
+                                        Short rest
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
+                                        Long rest
+                                    </MenuItem>
+                                    {inspirationField && (
+                                        <MenuItem onClick={() => { toggleInspiration(); close() }} title="Toggle Inspiration">
+                                            {inspirationField.field.value === 'true' ? '★ Inspiration: on' : '☆ Inspiration: off'}
+                                        </MenuItem>
+                                    )}
+                                    {levelField && (
+                                        <MenuItem onClick={() => { handleLevelUp(); close() }} title="Increase your level by one">
+                                            Level up
+                                        </MenuItem>
+                                    )}
+                                    <MenuDivider />
+                                    <MenuLabel>Data</MenuLabel>
+                                    <MenuItem onClick={() => { exportSheetToFile(sheet); close() }} title="Download this sheet as JSON">
+                                        Export JSON
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { importRef.current?.click(); close() }} title="Load a sheet from a JSON file">
+                                        Import JSON…
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { void handleShare(); close() }} title="Copy a shareable link that contains this whole sheet">
+                                        Copy share link
+                                    </MenuItem>
+                                    <MenuDivider />
+                                    <MenuLabel>Export image</MenuLabel>
+                                    <MenuItem onClick={() => { window.print(); close() }} title="Print or save the sheet as a PDF">
+                                        Print / PDF
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { void handleExportPng(); close() }} title="Export the canvas as a PNG image">
+                                        Export PNG
+                                    </MenuItem>
+                                </>
+                            )}
+                        </Menu>
+                        <input
+                            ref={importRef}
+                            type="file"
+                            accept="application/json"
+                            className="hidden"
+                            onChange={(event) => {
+                                void handleImport(event.target.files?.[0])
+                                event.target.value = ''
+                            }}
+                        />
+                        <label className="flex items-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
+                            <input
+                                type="color"
+                                value={theme}
+                                onChange={(e) => setTheme(e.target.value)}
+                                aria-label="Theme colour"
+                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                            />
+                        </label>
+                    </div>
+                )}
+            </header>
+
+            <section>
                 {selectedIds.size > 0 && (
                     <div className="mb-3 flex flex-wrap items-center gap-1 rounded-md border border-cyan-800/50 bg-slate-900/60 p-2 text-xs text-slate-300">
                         <span className="mr-1 font-medium text-cyan-300">{selectedIds.size} selected</span>

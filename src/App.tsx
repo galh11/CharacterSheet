@@ -7,8 +7,7 @@ import {
 } from './model/characterSheet'
 import { computeSheet, listReferences } from './model/compute'
 import {
-    resolveOverlap,
-    tidyLayouts,
+    compactLayouts,
     alignEdge,
     matchDimension,
     distribute as distributeLayout,
@@ -33,6 +32,7 @@ import type { D20Mode, RollLogEntry } from './model/dice'
 
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
+    const [headerCollapsed, setHeaderCollapsed] = useState(false)
     const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
     const [guides, setGuides] = useState<SnapGuide[]>([])
@@ -309,8 +309,9 @@ function App() {
     }, [sheet.sections])
 
     const commitLayout = (id: string, layout: SectionLayout) => {
-        const others = sheet.sections.filter((s) => s.id !== id).map((s) => s.layout)
-        setSectionLayout(id, resolveOverlap(layout, others))
+        // Free placement — allow overlap. Dragging a tile onto another no longer
+        // shoves it away to an off-screen spot; Tidy compacts things on demand.
+        setSectionLayout(id, layout)
     }
 
     /** Measure every card's natural content size (width clamped so text cards don't
@@ -324,18 +325,9 @@ function App() {
         })
 
     const handleTidy = () => {
-        // Fit each card to its content, then skyline-pack so tiles sit flush.
-        // Pack in the cards' current reading order (top→bottom, left→right) so
-        // Tidy keeps things roughly where you dragged them instead of resetting
-        // to the original section order.
-        const ROW_TOL = 48
-        const width = canvasScrollRef.current?.clientWidth ?? 1200
-        const items = fittedItems().sort((a, b) => {
-            const dy = a.layout.y - b.layout.y
-            if (Math.abs(dy) > ROW_TOL) return dy
-            return a.layout.x - b.layout.x
-        })
-        setSectionLayouts(tidyLayouts(items, width))
+        // Fit each card to its content, then compact toward the top-left so tiles
+        // squeeze up and left into empty space while keeping your arrangement.
+        setSectionLayouts(compactLayouts(fittedItems()))
     }
 
     const handleFitAll = () => {
@@ -481,23 +473,33 @@ function App() {
     )
 
     return (
-        <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 p-6 md:p-10">
-            <header className="rounded-xl border border-slate-700 bg-slate-900/75 p-6" style={{ borderTopColor: theme, borderTopWidth: 3 }}>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">CharacterSheet</p>
-                        <input
-                            value={sheet.name}
-                            onChange={(event) => renameSheet(event.target.value)}
-                            aria-label="Character name"
-                            title="Click to rename this character"
-                            className="m-0 mt-1 w-full max-w-md rounded-md border border-transparent bg-transparent px-1 text-3xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
-                        />
-                        <p className="mt-2 text-sm text-slate-300">
-                            Interactive D&amp;D cheat sheet — drag, resize, and edit anything.
-                        </p>
+        <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-3 p-4 md:px-8">
+            <header className="sticky top-0 z-40 -mx-4 border-b border-slate-800 bg-slate-950/85 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" style={{ borderTopColor: theme, borderTopWidth: 2 }}>
+                <div className="flex items-center gap-3">
+                    <input
+                        value={sheet.name}
+                        onChange={(event) => renameSheet(event.target.value)}
+                        aria-label="Character name"
+                        title="Click to rename this character"
+                        className="min-w-0 rounded-md border border-transparent bg-transparent px-1 text-2xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none sm:w-72"
+                    />
+                    <div className="ml-auto flex items-center gap-3 text-xs text-slate-500">
+                        <span title="Your sheet is saved automatically in this browser">
+                            ✓ Autosaved{notice ? <span className="text-cyan-300"> · {notice}</span> : null}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setHeaderCollapsed((c) => !c)}
+                            className="rounded px-1 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                            aria-label={headerCollapsed ? 'Show toolbar' : 'Hide toolbar'}
+                            title={headerCollapsed ? 'Show toolbar' : 'Hide toolbar'}
+                        >
+                            {headerCollapsed ? '▸' : '▾'}
+                        </button>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                </div>
+                {!headerCollapsed && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                         <select
                             value={activeId}
                             onChange={(event) => switchCharacter(event.target.value)}
@@ -653,17 +655,11 @@ function App() {
                             />
                         </label>
                     </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                    <span title="Your sheet is saved automatically in this browser">✓ Autosaved locally</span>
-                    {notice && <span className="text-cyan-300">{notice}</span>}
-                </div>
+                )}
             </header>
 
-            <section className="rounded-xl border border-slate-700 bg-slate-900/50 p-4 md:p-6">
-                <div className="mb-4 flex items-center justify-between gap-4">
-                    <h2 className="m-0 text-lg font-semibold text-slate-100">Canvas</h2>
+            <section>
+                <div className="mb-3 flex items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-2">
                         <input
                             value={query}

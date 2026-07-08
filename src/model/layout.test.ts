@@ -5,6 +5,7 @@ import {
     overlaps,
     resolveOverlap,
     tidyLayouts,
+    compactLayouts,
     alignEdge,
     matchDimension,
     distribute,
@@ -88,6 +89,29 @@ describe('tidyLayouts', () => {
         expect(out[0].layout).toMatchObject({ x: 16, y: 16 })
         expect(out[1].layout).toMatchObject({ x: 332, y: 16 })
         expect(out[2].layout).toMatchObject({ x: 16, y: 132 })
+    })
+})
+
+describe('compactLayouts', () => {
+    it('pulls a lower tile up into the gap under the one above it', () => {
+        const items = [placed('a', 16, 16, 100, 100), placed('b', 16, 400, 100, 100)]
+        const out = compactLayouts(items, 16)
+        const byId = Object.fromEntries(out.map((o) => [o.id, o.layout]))
+        expect(byId.a).toMatchObject({ x: 16, y: 16 })
+        expect(byId.b).toMatchObject({ x: 16, y: 132 }) // a bottom (116) + gap (16)
+    })
+
+    it('gravitates a lone far tile to the top-left corner', () => {
+        const out = compactLayouts([placed('a', 500, 500, 100, 100)], 16)
+        expect(out[0].layout).toMatchObject({ x: 16, y: 16 })
+    })
+
+    it('slides a tile left against its row-mate instead of leaving a gap', () => {
+        // a occupies the top-left; b starts far to the right on the same row.
+        const items = [placed('a', 16, 16, 100, 100), placed('b', 400, 16, 100, 100)]
+        const out = compactLayouts(items, 16)
+        const byId = Object.fromEntries(out.map((o) => [o.id, o.layout]))
+        expect(byId.b).toMatchObject({ x: 132, y: 16 }) // a right (116) + gap (16)
     })
 })
 

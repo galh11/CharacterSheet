@@ -134,6 +134,37 @@ export const tidyLayouts = (items: Placed[], maxWidth: number, gap = GAP): Place
     })
 }
 
+/** Compact tiles by "gravity" toward the top-left: each tile keeps roughly where
+ *  it is but slides up, then left, as far as it can without overlapping tiles that
+ *  have already settled. Unlike a fresh pack this respects the current arrangement
+ *  (columns/rows you set by dragging) and just squeezes out the empty space. */
+export const compactLayouts = (items: Placed[], gap = GAP): Placed[] => {
+    // Settle upper-left tiles first so lower/right ones can rest against them.
+    const order = [...items].sort((a, b) => a.layout.y - b.layout.y || a.layout.x - b.layout.x)
+    const settled: SectionLayout[] = []
+    const out: Placed[] = []
+    for (const { id, layout } of order) {
+        const { w, h } = layout
+        let x = layout.x
+        let y = layout.y
+        // Alternate up/left a few times; each move can unlock more of the other.
+        for (let i = 0; i < 6; i++) {
+            // Slide up: rest on the lowest bottom edge of tiles sharing our columns.
+            let top = gap
+            for (const o of settled) if (x < o.x + o.w && x + w > o.x) top = Math.max(top, o.y + o.h + gap)
+            // Slide left: rest against the rightmost edge of tiles sharing our rows.
+            let leftEdge = gap
+            for (const o of settled) if (top < o.y + o.h && top + h > o.y) leftEdge = Math.max(leftEdge, o.x + o.w + gap)
+            if (top === y && leftEdge === x) break
+            y = top
+            x = leftEdge
+        }
+        settled.push({ x, y, w, h })
+        out.push({ id, layout: { ...layout, x, y } })
+    }
+    return out
+}
+
 const boundingBox = (rects: SectionLayout[]) => ({
     minX: Math.min(...rects.map((r) => r.x)),
     minY: Math.min(...rects.map((r) => r.y)),

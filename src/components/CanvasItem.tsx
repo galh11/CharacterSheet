@@ -109,7 +109,9 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         const pc = content.style.height
         root.style.height = 'auto'
         content.style.height = 'auto'
-        const h = Math.max(MIN_H, Math.round(root.offsetHeight))
+        // +2px guards against sub-pixel rounding that would otherwise leave a
+        // hairline scrollbar on the fitted card.
+        const h = Math.max(MIN_H, Math.round(root.offsetHeight) + 2)
         root.style.height = pr
         content.style.height = pc
         return h
@@ -124,7 +126,7 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         const pc = content.style.width
         root.style.width = 'max-content'
         content.style.width = 'max-content'
-        const w = Math.min(380, Math.max(MIN_W, Math.round(root.offsetWidth)))
+        const w = Math.min(380, Math.max(MIN_W, Math.round(root.offsetWidth) + 2))
         root.style.width = pr
         content.style.width = pc
         return w

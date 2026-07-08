@@ -320,6 +320,22 @@ S('Equipment', 'default', [
     F('Climber’s Kit, Crowbar, Pole, Rope', 'text', 'carried'),
 ])
 
+// Reading order: identity → abilities → ability-derived → defence/vitals →
+// offence → resources & states → traits → movement/info/inventory. Tidy and
+// stack view follow this array order, so keep it logical.
+const ORDER = [
+    'Character', 'Ability Scores', 'Modifiers',
+    'Saving Throws', 'Skills', 'Senses',
+    'Combat', 'Hit Points', 'Hit Dice', 'Death Saves',
+    'Attacks', 'Bonus Actions', 'Reactions',
+    'Resources', 'Conditions', 'Features & Traits',
+    'Movement & Physique', 'Languages', 'Notable Gear', 'Equipment', 'Currency',
+]
+sections.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title))
+// Re-pack the default free-canvas layout so it follows the new order too.
+colBottom.fill(Y0)
+for (const s of sections) s.layout = place(s.fields, s.kind)
+
 const sheet = { id: randomUUID(), name: 'Yad Armhand', sections }
 writeFileSync(
     new URL('../samples/yad-armhand-sheet.json', import.meta.url),

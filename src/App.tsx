@@ -312,24 +312,25 @@ function App() {
         setSectionLayout(id, resolveOverlap(layout, others))
     }
 
-    const handleTidy = () => {
-        const width = canvasScrollRef.current?.clientWidth ?? 1200
-        const items = sheet.sections.map((s) => ({ id: s.id, layout: s.layout }))
-        setSectionLayouts(tidyLayouts(items, width))
-    }
-
-    const handleFitAll = () => {
-        // Measure each card's natural content size, then masonry-pack the new
-        // sizes so nothing overlaps and vertical gaps stay small. Widths are
-        // clamped so one text-heavy card can't blow out the column width.
-        const items = sheet.sections.map((s) => {
+    /** Measure every card's natural content size (width clamped so text cards don't
+     *  blow out). Best run in play mode — edit mode renders bulky field editors. */
+    const fittedItems = (): Placed[] =>
+        sheet.sections.map((s) => {
             const handle = fitRefs.current.get(s.id)
-            const w = handle ? Math.min(320, handle.measureWidth()) : s.layout.w
+            const w = handle ? Math.min(340, handle.measureWidth()) : s.layout.w
             const h = handle ? handle.measureHeight() : s.layout.h
             return { id: s.id, layout: { ...s.layout, w, h } }
         })
+
+    const handleTidy = () => {
+        // Fit each card to its content, then skyline-pack so tiles sit flush.
         const width = canvasScrollRef.current?.clientWidth ?? 1200
-        setSectionLayouts(tidyLayouts(items, width))
+        setSectionLayouts(tidyLayouts(fittedItems(), width))
+    }
+
+    const handleFitAll = () => {
+        // Resize each card to its content in place, keeping the current arrangement.
+        setSectionLayouts(fittedItems())
     }
 
     const handleSelect = (id: string, additive: boolean) => {
@@ -705,7 +706,7 @@ function App() {
                                     type="button"
                                     onClick={handleTidy}
                                     className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Auto-arrange sections into compact columns"
+                                    title="Fit every card to its content and pack them tightly (best in play mode)"
                                 >
                                     Tidy
                                 </button>
@@ -713,7 +714,7 @@ function App() {
                                     type="button"
                                     onClick={handleFitAll}
                                     className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Shrink every section to its content, then arrange them compactly"
+                                    title="Resize each card to its content, keeping its position"
                                 >
                                     Fit all
                                 </button>

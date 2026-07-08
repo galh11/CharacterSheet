@@ -1,5 +1,5 @@
 import { clsx } from 'clsx'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormulaResult } from '../model/formula'
 import type { FieldReference } from '../model/compute'
 import {
@@ -41,6 +41,45 @@ const SECTION_KINDS: { value: SectionKind; label: string }[] = [
     { value: 'currency', label: 'Currency' },
     { value: 'timers', label: 'Buff timers' },
 ]
+
+/** A compact "type to search" inserter for field references, so a formula editor
+ *  isn't buried under a wall of every slug on the sheet. */
+function ReferenceInserter({ references, onInsert }: { references: FieldReference[]; onInsert: (slug: string) => void }) {
+    const [query, setQuery] = useState('')
+    const q = query.trim().toLowerCase()
+    const matches = q
+        ? references.filter((r) => r.slug.includes(q) || r.label.toLowerCase().includes(q)).slice(0, 10)
+        : []
+    return (
+        <div className="mt-2">
+            <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="+ insert a field… (type to search)"
+                aria-label="Insert field reference"
+                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+            />
+            {matches.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                    {matches.map((ref) => (
+                        <button
+                            key={ref.slug}
+                            type="button"
+                            onClick={() => {
+                                onInsert(ref.slug)
+                                setQuery('')
+                            }}
+                            className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300 hover:bg-slate-700"
+                            title={`${ref.label} = ${ref.value}`}
+                        >
+                            {ref.slug}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
 
 /** A focused, roomy editor for a single section: its settings plus a full field
  *  editor with a live result preview for computed fields. Replaces the old
@@ -385,19 +424,10 @@ export function SectionEditorModal({
                                                 )}
                                             </div>
                                             {references.length > 0 && (
-                                                <div className="mt-1 flex flex-wrap gap-1">
-                                                    {references.map((ref) => (
-                                                        <button
-                                                            key={ref.slug}
-                                                            type="button"
-                                                            onClick={() => onUpdateField(field.id, { value: `${field.value}${ref.slug}` })}
-                                                            className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300 hover:bg-slate-700"
-                                                            title={`${ref.label} = ${ref.value}`}
-                                                        >
-                                                            {ref.slug}
-                                                        </button>
-                                                    ))}
-                                                </div>
+                                                <ReferenceInserter
+                                                    references={references}
+                                                    onInsert={(slug) => onUpdateField(field.id, { value: `${field.value}${slug}` })}
+                                                />
                                             )}
                                         </div>
                                     )}

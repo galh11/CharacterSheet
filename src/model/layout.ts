@@ -135,34 +135,44 @@ export const tidyLayouts = (items: Placed[], maxWidth: number, gap = GAP): Place
 }
 
 /** Compact tiles toward the top-left corner. Tiles are processed in order of
- *  their distance (L2 norm) to the top-left corner — closest first — and each is
- *  pushed as far up, then left, as it can go without overlapping tiles already
- *  settled. This squeezes out empty space while keeping the tile nearest the
+ *  their distance (L2 norm) to the corner — closest first — and each is dropped
+ *  into the empty spot NEAREST the corner where it fits without overlapping the
+ *  tiles already placed. This squeezes gaps out (a small tile will slot into a
+ *  hole up-left rather than getting stranded) while keeping the tile nearest the
  *  corner nearest the corner. Sizes are untouched (fit them first if you want). */
 export const compactLayouts = (items: Placed[], gap = GAP): Placed[] => {
     if (items.length === 0) return items
-    const order = [...items].sort(
-        (a, b) => a.layout.x ** 2 + a.layout.y ** 2 - (b.layout.x ** 2 + b.layout.y ** 2),
-    )
-    const settled: SectionLayout[] = []
+    const dist = (l: SectionLayout) => l.x * l.x + l.y * l.y
+    const order = [...items].sort((a, b) => dist(a.layout) - dist(b.layout))
+    const placed: SectionLayout[] = []
     const out: Placed[] = []
     for (const { id, layout } of order) {
         const { w, h } = layout
-        let x = layout.x
-        let y = layout.y
-        // Alternate "slide up" and "slide left" until neither moves — this lets a
-        // tile that unblocked by moving left then rise further, and vice versa.
-        for (let i = 0; i < 8; i++) {
-            let top = gap
-            for (const o of settled) if (x < o.x + o.w && x + w > o.x) top = Math.max(top, o.y + o.h + gap)
-            let left = gap
-            for (const o of settled) if (top < o.y + o.h && top + h > o.y) left = Math.max(left, o.x + o.w + gap)
-            if (top === y && left === x) break
-            y = top
-            x = left
+        // Candidate corners: top-left, plus each placed tile's right and bottom
+        // edges (and its own x/y so tiles can line up under/beside each other).
+        const xs = new Set<number>([gap])
+        const ys = new Set<number>([gap])
+        for (const p of placed) {
+            xs.add(p.x + p.w + gap)
+            xs.add(p.x)
+            ys.add(p.y + p.h + gap)
+            ys.add(p.y)
         }
-        settled.push({ x, y, w, h })
-        out.push({ id, layout: { ...layout, x, y } })
+        const xsSorted = [...xs].sort((a, b) => a - b)
+        const ysSorted = [...ys].sort((a, b) => a - b)
+        let best: { x: number; y: number; d: number } | null = null
+        // Iterate x-major then y so ties (equal distance) prefer the leftmost spot.
+        for (const x of xsSorted) {
+            for (const y of ysSorted) {
+                const overlaps = placed.some((p) => x < p.x + p.w && x + w > p.x && y < p.y + p.h && y + h > p.y)
+                if (overlaps) continue
+                const d = x * x + y * y
+                if (!best || d < best.d) best = { x, y, d }
+            }
+        }
+        const pos = best ?? { x: gap, y: gap }
+        placed.push({ x: pos.x, y: pos.y, w, h })
+        out.push({ id, layout: { ...layout, x: pos.x, y: pos.y } })
     }
     return out
 }

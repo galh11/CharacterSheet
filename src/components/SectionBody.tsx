@@ -290,7 +290,7 @@ function StatBlock({ section, results }: SectionBodyProps) {
     )
 }
 
-function HpWidget({ section, onUpdateField }: SectionBodyProps) {
+function HpWidget({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
     const [amount, setAmount] = useState('')
     const [dmgType, setDmgType] = useState('')
     const [concSave, setConcSave] = useState<number | null>(null)
@@ -298,6 +298,8 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
     const cur = byLabel('current hp')
     const max = byLabel('max hp')
     const temp = byLabel('temp hp')
+    const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
+    const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
     const reduction = section.fields.find((f) => f.label.toLowerCase() === 'damage reduction')
     const conc = byLabel('concentration')
     const parseTypes = (v?: string) => new Set((v ?? '').toLowerCase().split(/[,;]/).map((s) => s.trim()).filter(Boolean))
@@ -366,6 +368,12 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div className={clsx('h-full rounded-full transition-all', pct > 50 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-rose-500')} style={{ width: `${pct}%` }} />
             </div>
+            {curN === 0 && (succ || fail) && (
+                <div className="rounded-lg border border-rose-700/50 bg-rose-950/30 p-2">
+                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-300">Death Saves</div>
+                    <DeathSaveTracker succ={succ} fail={fail} onUpdateField={onUpdateField} onRoll={onRoll} onHeal={onHeal} />
+                </div>
+            )}
             {reduction && (
                 <Tooltip content={reduction.description || `Each hit you take is reduced by ${reduceN} before temp HP.`}>
                     <span className="w-fit cursor-help rounded bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-300 ring-1 ring-amber-500/40">
@@ -750,9 +758,21 @@ function PipRow({ label, value, max, color, onSet }: {
     )
 }
 
-function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
-    const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
-    const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
+/** The death-save pip tracker + roll/reset — shared by the deathsaves section
+ *  and the HP widget (which shows it when Current HP hits 0). */
+function DeathSaveTracker({
+    succ,
+    fail,
+    onUpdateField,
+    onRoll,
+    onHeal,
+}: {
+    succ?: CharacterField
+    fail?: CharacterField
+    onUpdateField: SectionBodyProps['onUpdateField']
+    onRoll?: SectionBodyProps['onRoll']
+    onHeal?: SectionBodyProps['onHeal']
+}) {
     const succN = succ ? toNum(succ.value) : 0
     const failN = fail ? toNum(fail.value) : 0
     const status = succN >= 3 ? 'Stable' : failN >= 3 ? 'Dead' : null
@@ -813,6 +833,12 @@ function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps
             {!succ && !fail && <p className="text-xs italic text-slate-500">Add "Successes" and "Failures" fields.</p>}
         </div>
     )
+}
+
+function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
+    const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
+    const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
+    return <DeathSaveTracker succ={succ} fail={fail} onUpdateField={onUpdateField} onRoll={onRoll} onHeal={onHeal} />
 }
 
 function Conditions({ section, onUpdateField, onAddField }: SectionBodyProps) {

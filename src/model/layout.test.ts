@@ -106,12 +106,15 @@ describe('compactLayouts', () => {
         expect(out[0].layout).toMatchObject({ x: 16, y: 16 })
     })
 
-    it('slides a tile left against its row-mate instead of leaving a gap', () => {
-        // a occupies the top-left; b starts far to the right on the same row.
+    it('drops a tile into the nearest-to-corner gap (leftmost on ties)', () => {
+        // a occupies the top-left; b starts far to the right on the same row. The
+        // spot below a and the spot beside a are equidistant from the corner, so
+        // the leftmost (below a) wins.
         const items = [placed('a', 16, 16, 100, 100), placed('b', 400, 16, 100, 100)]
         const out = compactLayouts(items, 16)
         const byId = Object.fromEntries(out.map((o) => [o.id, o.layout]))
-        expect(byId.b).toMatchObject({ x: 132, y: 16 }) // a right (116) + gap (16)
+        expect(byId.a).toMatchObject({ x: 16, y: 16 })
+        expect(byId.b).toMatchObject({ x: 16, y: 132 })
     })
 })
 

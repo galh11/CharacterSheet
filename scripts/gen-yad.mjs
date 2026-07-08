@@ -122,13 +122,9 @@ S('Hit Points', 'hp', [
     F('Resistances', 'text', '', { description: 'Comma-separated damage types halved on the Damage button. Add bludgeoning, piercing, slashing while Dig Deep is active.' }),
     F('Vulnerabilities', 'text', '', { description: 'Comma-separated damage types doubled on the Damage button.' }),
     F('Hit Dice (d10)', 'resource', 8, { max: 8, meta: { die: 'd10', recharge: 'long' } }),
+    F('Successes', 'counter', 0, { max: 3, description: 'Death-save successes (shown when Current HP is 0).' }),
+    F('Failures', 'counter', 0, { max: 3, description: 'Death-save failures (shown when Current HP is 0).' }),
 ], '#10b981')
-
-// 5. Death saves.
-S('Death Saves', 'deathsaves', [
-    F('Successes', 'counter', 0, { max: 3 }),
-    F('Failures', 'counter', 0, { max: 3 }),
-])
 
 // 7. Saving throws (auto: ability mod + proficiency when proficient).
 S('Saving Throws', 'skills', [
@@ -323,7 +319,7 @@ S('Equipment', 'default', [
 const ORDER = [
     'Character', 'Ability Scores',
     'Saving Throws', 'Skills', 'Senses',
-    'Combat', 'Hit Points', 'Death Saves',
+    'Combat', 'Hit Points',
     'Attacks', 'Bonus Actions', 'Reactions',
     'Resources', 'Conditions', 'Features & Traits',
     'Movement & Physique', 'Languages', 'Notable Gear', 'Equipment', 'Currency',

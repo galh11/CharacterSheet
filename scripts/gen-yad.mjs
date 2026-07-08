@@ -102,7 +102,9 @@ S('Movement & Physique', 'default', [
     F('Load %', 'computed', 'floor(carried_weight / carrying_capacity * 100)', { description: 'Of carrying capacity. You are encumbered past 100%.' }),
 ], '#10b981')
 
-// 4. Hit points + the flat damage reduction from the reinforced armor.
+// 4. Hit points + the flat damage reduction from the reinforced armor. The
+// hit-dice pool lives here (tagged meta.die) and is spent via the Hit Dice
+// popup rather than a section of its own; the HP widget doesn't render it.
 S('Hit Points', 'hp', [
     F('Current HP', 'number', 76),
     F('Max HP', 'number', 76),
@@ -111,14 +113,10 @@ S('Hit Points', 'hp', [
     F('Concentration', 'boolean', 'false', { description: 'Toggle on when concentrating. Taking damage prompts a CON save (DC = half the damage, minimum 10).' }),
     F('Resistances', 'text', '', { description: 'Comma-separated damage types halved on the Damage button. Add bludgeoning, piercing, slashing while Dig Deep is active.' }),
     F('Vulnerabilities', 'text', '', { description: 'Comma-separated damage types doubled on the Damage button.' }),
+    F('Hit Dice (d10)', 'resource', 8, { max: 8, meta: { die: 'd10', recharge: 'long' } }),
 ], '#10b981')
 
-// 5. Hit dice (Pugilist d10 × level 8).
-S('Hit Dice', 'hitdice', [
-    F('d10', 'resource', 8, { max: 8, meta: { die: 'd10' } }),
-], '#06b6d4')
-
-// 6. Death saves.
+// 5. Death saves.
 S('Death Saves', 'deathsaves', [
     F('Successes', 'counter', 0, { max: 3 }),
     F('Failures', 'counter', 0, { max: 3 }),
@@ -317,7 +315,7 @@ S('Equipment', 'default', [
 const ORDER = [
     'Character', 'Ability Scores',
     'Saving Throws', 'Skills', 'Senses',
-    'Combat', 'Hit Points', 'Hit Dice', 'Death Saves',
+    'Combat', 'Hit Points', 'Death Saves',
     'Attacks', 'Bonus Actions', 'Reactions',
     'Resources', 'Conditions', 'Features & Traits',
     'Movement & Physique', 'Languages', 'Notable Gear', 'Equipment', 'Currency',

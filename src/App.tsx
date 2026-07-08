@@ -18,6 +18,7 @@ import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/
 import { SectionCard } from './components/SectionCard'
 import { SectionEditorModal } from './components/SectionEditorModal'
 import { QuickStartModal } from './components/QuickStartModal'
+import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { RollLog } from './components/RollLog'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
@@ -33,6 +34,7 @@ import type { D20Mode, RollLogEntry } from './model/dice'
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
     const [headerCollapsed, setHeaderCollapsed] = useState(false)
+    const [showHitDice, setShowHitDice] = useState(false)
     const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
     const [guides, setGuides] = useState<SnapGuide[]>([])
@@ -204,7 +206,6 @@ function App() {
             total: 0,
             kind: 'raw',
         })
-        if (kind === 'short') setNotice('Short rest taken — spend Hit Dice on the Hit Dice card to heal.')
     }
 
     const levelField = (() => {
@@ -219,6 +220,33 @@ function App() {
         const next = (Number(levelField.field.value) || 0) + 1
         updateField(levelField.sectionId, levelField.field.id, { value: String(next) })
         setNotice(`Leveled up to ${next}. Update HP max, hit dice, and features as needed.`)
+    }
+
+    // Hit-dice pools live as resource/counter fields tagged with `meta.die`
+    // (anywhere on the sheet) and are spent through the Hit Dice popup.
+    const hitDiceEntries: HitDieEntry[] = sheet.sections.flatMap((s) =>
+        s.fields
+            .filter((f) => f.meta?.die && (f.type === 'resource' || f.type === 'counter'))
+            .map((f) => ({
+                sectionId: s.id,
+                fieldId: f.id,
+                die: f.meta!.die!,
+                available: Number(f.value) || 0,
+                max: f.max ?? (Number(f.value) || 0),
+            })),
+    )
+    const spendHitDice = (
+        spends: { sectionId: string; fieldId: string; count: number }[],
+        heal: number,
+        detail: string,
+    ) => {
+        for (const s of spends) {
+            const field = sheet.sections.find((x) => x.id === s.sectionId)?.fields.find((f) => f.id === s.fieldId)
+            if (field) updateField(s.sectionId, s.fieldId, { value: String(Math.max(0, (Number(field.value) || 0) - s.count)) })
+        }
+        if (heal > 0) healHp(heal)
+        pushRoll({ title: 'Hit Dice', detail, total: heal, kind: 'heal' })
+        setShowHitDice(false)
     }
 
     const inspirationField = (() => {
@@ -671,6 +699,11 @@ function App() {
                                     <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
                                         Long rest
                                     </MenuItem>
+                                    {hitDiceEntries.length > 0 && (
+                                        <MenuItem onClick={() => { setShowHitDice(true); close() }} title="Spend hit dice to heal">
+                                            🎲 Spend hit dice…
+                                        </MenuItem>
+                                    )}
                                     {inspirationField && (
                                         <MenuItem onClick={() => { toggleInspiration(); close() }} title="Toggle Inspiration">
                                             {inspirationField.field.value === 'true' ? '★ Inspiration: on' : '☆ Inspiration: off'}
@@ -823,6 +856,15 @@ function App() {
                         replaceSheet(imported)
                         setShowQuickStart(false)
                     }}
+                />
+            )}
+
+            {showHitDice && (
+                <HitDiceModal
+                    entries={hitDiceEntries}
+                    conMod={scope['con_mod'] ?? 0}
+                    onClose={() => setShowHitDice(false)}
+                    onApply={spendHitDice}
                 />
             )}
 

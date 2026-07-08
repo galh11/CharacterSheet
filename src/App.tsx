@@ -208,6 +208,12 @@ function App() {
         })
     }
 
+    // A short rest refills short-rest resources, then prompts to spend hit dice.
+    const startShortRest = () => {
+        doRest('short')
+        if (hitDiceEntries.length > 0) setShowHitDice(true)
+    }
+
     const levelField = (() => {
         for (const s of sheet.sections) {
             const f = s.fields.find((x) => x.label.toLowerCase() === 'level')
@@ -503,14 +509,41 @@ function App() {
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-3 p-4 md:px-8">
             <header className="sticky top-0 z-40 -mx-4 border-b border-slate-800 bg-slate-950/85 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" style={{ borderTopColor: theme, borderTopWidth: 2 }}>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2">
                     <input
                         value={sheet.name}
                         onChange={(event) => renameSheet(event.target.value)}
                         aria-label="Character name"
                         title="Click to rename this character"
-                        className="min-w-0 rounded-md border border-transparent bg-transparent px-1 text-2xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none sm:w-72"
+                        className="min-w-0 rounded-md border border-transparent bg-transparent px-1 text-2xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none sm:w-64"
                     />
+                    {inspirationField && (
+                        <button
+                            type="button"
+                            onClick={toggleInspiration}
+                            className={clsx(
+                                'rounded-md border px-2.5 py-1.5 text-sm font-medium',
+                                inspirationField.field.value === 'true'
+                                    ? 'border-amber-400 bg-amber-400/20 text-amber-200'
+                                    : 'border-slate-600 text-slate-400 hover:bg-slate-800',
+                            )}
+                            title="Toggle Inspiration"
+                        >
+                            ★ Insp.
+                        </button>
+                    )}
+                    <Menu label="Rest ▾" title="Take a short or long rest" align="left">
+                        {(close) => (
+                            <>
+                                <MenuItem onClick={() => { startShortRest(); close() }} title="Refill short-rest resources and spend hit dice">
+                                    Short rest…
+                                </MenuItem>
+                                <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
+                                    Long rest
+                                </MenuItem>
+                            </>
+                        )}
+                    </Menu>
                     <div className="ml-auto flex items-center gap-3 text-xs text-slate-500">
                         <span title="Your sheet is saved automatically in this browser">
                             ✓ Autosaved{notice ? <span className="text-cyan-300"> · {notice}</span> : null}
@@ -689,32 +722,18 @@ function App() {
 
                         <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
 
-                        <Menu label="⋯ More" title="Rest, inspiration, import, export, and share" align="right">
+                        <Menu label="⋯ More" title="Import, export, and share" align="right">
                             {(close) => (
                                 <>
-                                    <MenuLabel>Play</MenuLabel>
-                                    <MenuItem onClick={() => { doRest('short'); close() }} title="Refill short-rest resources">
-                                        Short rest
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
-                                        Long rest
-                                    </MenuItem>
-                                    {hitDiceEntries.length > 0 && (
-                                        <MenuItem onClick={() => { setShowHitDice(true); close() }} title="Spend hit dice to heal">
-                                            🎲 Spend hit dice…
-                                        </MenuItem>
-                                    )}
-                                    {inspirationField && (
-                                        <MenuItem onClick={() => { toggleInspiration(); close() }} title="Toggle Inspiration">
-                                            {inspirationField.field.value === 'true' ? '★ Inspiration: on' : '☆ Inspiration: off'}
-                                        </MenuItem>
-                                    )}
                                     {levelField && (
-                                        <MenuItem onClick={() => { handleLevelUp(); close() }} title="Increase your level by one">
-                                            Level up
-                                        </MenuItem>
+                                        <>
+                                            <MenuLabel>Play</MenuLabel>
+                                            <MenuItem onClick={() => { handleLevelUp(); close() }} title="Increase your level by one">
+                                                Level up
+                                            </MenuItem>
+                                            <MenuDivider />
+                                        </>
                                     )}
-                                    <MenuDivider />
                                     <MenuLabel>Data</MenuLabel>
                                     <MenuItem onClick={() => { exportSheetToFile(sheet); close() }} title="Download this sheet as JSON">
                                         Export JSON

@@ -26,7 +26,7 @@ const colBottom = Array(COLS).fill(Y0)
 const place = (fields, kind) => {
     const n = fields.length
     let h
-    if (kind === 'abilities') h = 96 + Math.ceil(n / 3) * 66
+    if (kind === 'abilities') h = 96 + Math.ceil(fields.filter((f) => f.type !== 'computed').length / 3) * 66
     else if (kind === 'actions') h = 64 + n * 82
     else if (kind === 'conditions') h = 120 + Math.ceil(n / 2) * 6
     else if (kind === 'hp') h = 230
@@ -70,7 +70,9 @@ S('Character', 'default', [
     F('Tools', 'text', 'Thieves’ Tools, Gaming Set'),
 ], '#8b5cf6')
 
-// 1. Ability scores (final values from the DDB import).
+// 1. Ability scores. Each score has an editable computed modifier field
+// (str_mod = floor((str-10)/2)); the ability cards display that value, and other
+// formulas (AC, attacks, saves) reference the *_mod slugs.
 S('Ability Scores', 'abilities', [
     F('STR', 'number', 20),
     F('DEX', 'number', 12),
@@ -78,6 +80,12 @@ S('Ability Scores', 'abilities', [
     F('INT', 'number', 8),
     F('WIS', 'number', 13),
     F('CHA', 'number', 8),
+    F('STR Mod', 'computed', 'floor((str - 10) / 2)'),
+    F('DEX Mod', 'computed', 'floor((dex - 10) / 2)'),
+    F('CON Mod', 'computed', 'floor((con - 10) / 2)'),
+    F('INT Mod', 'computed', 'floor((int - 10) / 2)'),
+    F('WIS Mod', 'computed', 'floor((wis - 10) / 2)'),
+    F('CHA Mod', 'computed', 'floor((cha - 10) / 2)'),
 ], '#f59e0b')
 
 // 2. Combat — AC, initiative, speed, passive perception. Ability modifiers

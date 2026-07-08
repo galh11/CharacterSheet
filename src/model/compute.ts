@@ -32,12 +32,7 @@ const baseScope = (sheet: CharacterSheet): Record<string, number> => {
             if (!slug) continue
             if (field.type === 'number') {
                 const n = Number(field.value)
-                if (!Number.isNaN(n)) {
-                    scope[slug] = n
-                    // Ability-score sections also expose the derived modifier
-                    // (e.g. STR -> str_mod) so there's no separate Modifiers section.
-                    if (section.kind === 'abilities') scope[`${slug}_mod`] = Math.floor((n - 10) / 2)
-                }
+                if (!Number.isNaN(n)) scope[slug] = n
             } else if (field.type === 'boolean') {
                 scope[slug] = field.value === 'true' ? 1 : 0
             }
@@ -119,14 +114,6 @@ export const listReferences = (
             if (value === null) continue
             seen.add(slug)
             refs.push({ slug, label: field.label, value })
-            // Surface the derived ability modifier (str_mod, con_mod, …) too.
-            if (section.kind === 'abilities' && field.type === 'number') {
-                const modSlug = `${slug}_mod`
-                if (!seen.has(modSlug)) {
-                    seen.add(modSlug)
-                    refs.push({ slug: modSlug, label: `${field.label} mod`, value: Math.floor((value - 10) / 2) })
-                }
-            }
         }
     }
     return refs.sort((a, b) => a.slug.localeCompare(b.slug))

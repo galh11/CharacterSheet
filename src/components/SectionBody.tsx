@@ -256,18 +256,29 @@ function DefaultList({ section, results, onUpdateField }: SectionBodyProps) {
     )
 }
 
-function StatBlock({ section }: SectionBodyProps) {
+function StatBlock({ section, results }: SectionBodyProps) {
     const cols = Math.min(6, Math.max(1, Math.round(toNum(section.meta?.cols ?? '')) || 3))
+    // Editable modifiers: if the section has a computed `<ability>_mod` field, show
+    // its value on the card (so you can change the formula); otherwise derive it.
+    const modBySlug = new Map<string, number | null>()
+    for (const f of section.fields) {
+        if (f.type === 'computed') {
+            const r = results.get(f.id)
+            modBySlug.set(slugify(f.label), r?.ok ? r.value : null)
+        }
+    }
+    const scoreFields = section.fields.filter((f) => f.type !== 'computed')
     return (
         <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-            {section.fields.map((field) => {
+            {scoreFields.map((field) => {
                 const score = toNum(field.value)
-                const mod = abilityMod(score)
+                const custom = modBySlug.get(`${slugify(field.label)}_mod`)
+                const mod = custom != null ? custom : abilityMod(score)
                 return (
                     <div
                         key={field.id}
                         className="flex flex-col items-center rounded-lg border border-slate-700 bg-slate-900/70 py-2"
-                        title={`${field.label} ${score} → modifier ${signed(mod)}  ·  floor((${score} − 10) / 2)`}
+                        title={`${field.label} ${score} → modifier ${signed(mod)}${custom != null ? '' : `  ·  floor((${score} − 10) / 2)`}`}
                     >
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{field.label}</span>
                         <span className="font-mono text-2xl font-bold leading-tight text-slate-100">{signed(mod)}</span>
@@ -302,7 +313,9 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
         const amt = Math.abs(toNum(amount))
         if (!amt || !cur) return
         if (sign === -1) {
-            let taken = Math.max(0, amt - reduceN)
+            // The "damage reduction" note is informational only — apply exactly
+            // the number you type (resistances/vulnerabilities still adjust it).
+            let taken = amt
             const t = dmgType.toLowerCase()
             if (t && vuln.has(t)) taken = taken * 2
             if (t && resist.has(t)) taken = Math.floor(taken / 2)

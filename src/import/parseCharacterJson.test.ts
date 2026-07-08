@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseCharacterJson, looksLikeDdbCharacter } from './parseCharacterJson'
+import { computeSheet } from '../model/compute'
 
 const ddb = JSON.parse(
     readFileSync(join(process.cwd(), 'samples', 'yad-armhand-ddb.json'), 'utf8'),
@@ -101,9 +102,17 @@ describe('parseCharacterJson — real Amarthon export', () => {
         expect(acro?.meta?.prof).toBe('none')
         // Saving throws: INT and WIS proficient for this Druid.
         const saves = section('Saving Throws')
-        expect(saves?.fields.find((f) => f.label === 'WIS')?.meta?.prof).toBe('proficient')
-        expect(saves?.fields.find((f) => f.label === 'STR')?.meta?.prof).toBe('none')
+        expect(saves?.fields.find((f) => f.label === 'Wisdom')?.meta?.prof).toBe('proficient')
+        expect(saves?.fields.find((f) => f.label === 'Strength')?.meta?.prof).toBe('none')
         // Currency: 346 gp.
         expect(section('Currency')?.fields.find((f) => f.label === 'GP')?.value).toBe('346')
+    })
+
+    it('computes AC to 16 (save-field labels do not clobber ability slugs)', () => {
+        const { sheet } = parseCharacterJson(amarthon)
+        const results = computeSheet(sheet)
+        const ac = sheet.sections.find((s) => s.title === 'Combat')?.fields.find((f) => f.label === 'AC')
+        // Studded Leather 12 + DEX mod (+2) + shield 2 = 16.
+        expect(results.get(ac!.id)?.value).toBe(16)
     })
 })

@@ -257,7 +257,7 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
 
         const saveFields = ABILITIES.filter((a) => scores.has(a.label)).map((a) =>
             createField({
-                label: a.label,
+                label: capitalize(a.full),
                 type: 'number',
                 value: '',
                 meta: { ability: a.label, prof: profSet.has(`${a.full}-saving-throws`) ? 'proficient' : 'none', auto: 'true' },

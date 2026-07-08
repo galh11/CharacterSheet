@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
-import { slugify, type CharacterField, type CharacterSection } from '../model/characterSheet'
-import { interpolate } from '../model/compute'
+import { slugify, type CharacterField, type CharacterSection, type EffectOp } from '../model/characterSheet'
+import { interpolate, type Contribution, type EffectTag } from '../model/compute'
 import {
     rollD20,
     rollD20Series,
@@ -42,6 +42,10 @@ interface SectionBodyProps {
     onTempHp?: (amount: number) => void
     /** Add a field to this section with the given overrides. */
     onAddField?: (overrides: Partial<CharacterField>) => void
+    /** Target slug -> numeric contributions from relational effects. */
+    contributions?: Map<string, Contribution[]>
+    /** Target slug -> annotation tags from relational effects. */
+    effectTags?: Map<string, EffectTag[]>
 }
 
 const toNum = (v: string): number => {
@@ -228,9 +232,93 @@ function FieldLabel({ field }: { field: CharacterField }) {
     )
 }
 
+/* ── Relational effect badges ──────────────────────────────────────────── */
+
+const TAG_META: Record<string, { abbr: string; cls: string; title: string }> = {
+    advantage: { abbr: 'ADV', cls: 'bg-emerald-500/20 text-emerald-300 ring-emerald-500/40', title: 'Advantage' },
+    disadvantage: { abbr: 'DIS', cls: 'bg-rose-500/20 text-rose-300 ring-rose-500/40', title: 'Disadvantage' },
+    resist: { abbr: 'RES', cls: 'bg-sky-500/20 text-sky-300 ring-sky-500/40', title: 'Resistance' },
+    immune: { abbr: 'IMM', cls: 'bg-violet-500/20 text-violet-300 ring-violet-500/40', title: 'Immunity' },
+    vulnerable: { abbr: 'VUL', cls: 'bg-orange-500/20 text-orange-300 ring-orange-500/40', title: 'Vulnerable' },
+    note: { abbr: 'NOTE', cls: 'bg-slate-600/30 text-slate-200 ring-slate-500/40', title: 'Note' },
+}
+
+const OP_LABEL: Record<EffectOp, string> = {
+    add: '+', sub: '−', set: '=',
+    advantage: 'advantage', disadvantage: 'disadvantage', resist: 'resist',
+    immune: 'immune to', vulnerable: 'vulnerable to', note: 'note',
+}
+
+/** Small badges shown next to a target field: the net numeric bonus (with each
+ *  contributing source in the tooltip) plus any advantage/resistance tags. */
+function EffectTargetBadges({ slug, contributions, tags }: {
+    slug: string
+    contributions?: Map<string, Contribution[]>
+    tags?: Map<string, EffectTag[]>
+}) {
+    const contribs = contributions?.get(slug) ?? []
+    const tagList = tags?.get(slug) ?? []
+    if (contribs.length === 0 && tagList.length === 0) return null
+    const net = contribs.filter((c) => c.op !== 'set').reduce((sum, c) => sum + c.amount, 0)
+    const hasSet = contribs.some((c) => c.op === 'set')
+    const numTitle = contribs
+        .map((c) => `${c.op === 'set' ? '=' : signed(c.amount)} from ${c.sourceLabel}`)
+        .join('\n')
+    return (
+        <span className="ml-1 inline-flex flex-wrap items-center gap-1 align-middle">
+            {(net !== 0 || hasSet) && (
+                <span
+                    className="rounded bg-amber-500/20 px-1 text-[10px] font-semibold text-amber-200 ring-1 ring-amber-500/40"
+                    title={numTitle}
+                >
+                    {hasSet ? '±' : signed(net)}
+                </span>
+            )}
+            {tagList.map((t, i) => {
+                const meta = TAG_META[t.op] ?? TAG_META.note
+                return (
+                    <span
+                        key={`${t.sourceId}-${i}`}
+                        className={clsx('rounded px-1 text-[10px] font-semibold uppercase ring-1', meta.cls)}
+                        title={`${meta.title}${t.value ? ` (${t.value})` : ''} — from ${t.sourceLabel}`}
+                    >
+                        {meta.abbr}
+                    </span>
+                )
+            })}
+        </span>
+    )
+}
+
+/** Chips summarizing the effects a source field grants, e.g. "→ +1 ac". */
+function FieldGrantChips({ field }: { field: CharacterField }) {
+    const effects = (field.effects ?? []).filter((e) => e.target)
+    if (effects.length === 0) return null
+    const active = field.type === 'boolean' ? field.value === 'true' : field.effectsActive !== false
+    return (
+        <div className={clsx('mt-0.5 flex flex-wrap gap-1', !active && 'opacity-40')}>
+            {effects.map((e, i) => {
+                const numeric = e.op === 'add' || e.op === 'sub' || e.op === 'set'
+                const label = numeric
+                    ? `${OP_LABEL[e.op]}${e.value || '0'} ${e.target}`
+                    : `${OP_LABEL[e.op]} ${e.value || e.target}`.trim()
+                return (
+                    <span
+                        key={i}
+                        className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300 ring-1 ring-slate-700"
+                        title={active ? 'Active effect' : 'Inactive — toggle on to apply'}
+                    >
+                        → {label}
+                    </span>
+                )
+            })}
+        </div>
+    )
+}
+
 /* ── Section kinds ─────────────────────────────────────────────────────── */
 
-function DefaultList({ section, results, onUpdateField }: SectionBodyProps) {
+function DefaultList({ section, results, onUpdateField, contributions, effectTags }: SectionBodyProps) {
     if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No fields yet.</p>
     return (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -244,19 +332,23 @@ function DefaultList({ section, results, onUpdateField }: SectionBodyProps) {
                         <BoolToggle field={field} onUpdateField={onUpdateField} />
                     ) : (
                         <div className="flex items-center justify-between gap-3 text-sm">
-                            <FieldLabel field={field} />
+                            <span className="flex items-center">
+                                <FieldLabel field={field} />
+                                <EffectTargetBadges slug={slugify(field.label)} contributions={contributions} tags={effectTags} />
+                            </span>
                             <span className={clsx('font-mono', field.type === 'computed' ? (results.get(field.id)?.ok ? 'text-emerald-300' : 'text-rose-300') : 'text-slate-100')}>
                                 {displayValue(field, results)}
                             </span>
                         </div>
                     )}
+                    <FieldGrantChips field={field} />
                 </li>
             ))}
         </ul>
     )
 }
 
-function StatBlock({ section, results }: SectionBodyProps) {
+function StatBlock({ section, results, contributions, effectTags }: SectionBodyProps) {
     const cols = Math.min(6, Math.max(1, Math.round(toNum(section.meta?.cols ?? '')) || 3))
     // Editable modifiers: if the section has a computed `<ability>_mod` field, show
     // its value on the card (so you can change the formula); otherwise derive it.
@@ -283,6 +375,7 @@ function StatBlock({ section, results }: SectionBodyProps) {
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{field.label}</span>
                         <span className="font-mono text-2xl font-bold leading-tight text-slate-100">{signed(mod)}</span>
                         <span className="mt-0.5 rounded-full bg-slate-800 px-2 text-[11px] font-mono text-slate-300">{score}</span>
+                        <EffectTargetBadges slug={`${slugify(field.label)}_mod`} contributions={contributions} tags={effectTags} />
                     </div>
                 )
             })}
@@ -290,7 +383,7 @@ function StatBlock({ section, results }: SectionBodyProps) {
     )
 }
 
-function HpWidget({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
+function HpWidget({ section, onUpdateField }: SectionBodyProps) {
     const [amount, setAmount] = useState('')
     const [dmgType, setDmgType] = useState('')
     const [concSave, setConcSave] = useState<number | null>(null)
@@ -298,8 +391,6 @@ function HpWidget({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) 
     const cur = byLabel('current hp')
     const max = byLabel('max hp')
     const temp = byLabel('temp hp')
-    const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
-    const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
     const reduction = section.fields.find((f) => f.label.toLowerCase() === 'damage reduction')
     const conc = byLabel('concentration')
     const parseTypes = (v?: string) => new Set((v ?? '').toLowerCase().split(/[,;]/).map((s) => s.trim()).filter(Boolean))
@@ -368,12 +459,6 @@ function HpWidget({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) 
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div className={clsx('h-full rounded-full transition-all', pct > 50 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-rose-500')} style={{ width: `${pct}%` }} />
             </div>
-            {curN === 0 && (succ || fail) && (
-                <div className="rounded-lg border border-rose-700/50 bg-rose-950/30 p-2">
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-300">Death Saves</div>
-                    <DeathSaveTracker succ={succ} fail={fail} onUpdateField={onUpdateField} onRoll={onRoll} onHeal={onHeal} />
-                </div>
-            )}
             {reduction && (
                 <Tooltip content={reduction.description || `Each hit you take is reduced by ${reduceN} before temp HP.`}>
                     <span className="w-fit cursor-help rounded bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-300 ring-1 ring-amber-500/40">
@@ -758,21 +843,9 @@ function PipRow({ label, value, max, color, onSet }: {
     )
 }
 
-/** The death-save pip tracker + roll/reset — shared by the deathsaves section
- *  and the HP widget (which shows it when Current HP hits 0). */
-function DeathSaveTracker({
-    succ,
-    fail,
-    onUpdateField,
-    onRoll,
-    onHeal,
-}: {
-    succ?: CharacterField
-    fail?: CharacterField
-    onUpdateField: SectionBodyProps['onUpdateField']
-    onRoll?: SectionBodyProps['onRoll']
-    onHeal?: SectionBodyProps['onHeal']
-}) {
+function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
+    const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
+    const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
     const succN = succ ? toNum(succ.value) : 0
     const failN = fail ? toNum(fail.value) : 0
     const status = succN >= 3 ? 'Stable' : failN >= 3 ? 'Dead' : null
@@ -833,12 +906,6 @@ function DeathSaveTracker({
             {!succ && !fail && <p className="text-xs italic text-slate-500">Add "Successes" and "Failures" fields.</p>}
         </div>
     )
-}
-
-function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
-    const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
-    const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
-    return <DeathSaveTracker succ={succ} fail={fail} onUpdateField={onUpdateField} onRoll={onRoll} onHeal={onHeal} />
 }
 
 function Conditions({ section, onUpdateField, onAddField }: SectionBodyProps) {

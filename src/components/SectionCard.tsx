@@ -1,5 +1,6 @@
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
+import type { Contribution, EffectTag } from '../model/compute'
 import type { D20Mode, RollLogEntry } from '../model/dice'
 import { SectionBody } from './SectionBody'
 import { type CharacterField, type CharacterSection } from '../model/characterSheet'
@@ -7,6 +8,8 @@ import { type CharacterField, type CharacterSection } from '../model/characterSh
 interface SectionCardProps {
     section: CharacterSection
     results: Map<string, FormulaResult>
+    contributions?: Map<string, Contribution[]>
+    effectTags?: Map<string, EffectTag[]>
     scope?: Record<string, number>
     rollMode?: D20Mode
     bonus?: number
@@ -34,6 +37,8 @@ interface SectionCardProps {
 export function SectionCard({
     section,
     results,
+    contributions,
+    effectTags,
     scope,
     rollMode,
     bonus,
@@ -103,6 +108,8 @@ export function SectionCard({
                     <SectionBody
                         section={section}
                         results={results}
+                        contributions={contributions}
+                        effectTags={effectTags}
                         onUpdateField={onUpdateField}
                         onUpdateSection={onUpdateSection}
                         scope={scope}

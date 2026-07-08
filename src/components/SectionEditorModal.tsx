@@ -1,18 +1,22 @@
 import { clsx } from 'clsx'
 import { useEffect, useState } from 'react'
 import type { FormulaResult } from '../model/formula'
-import type { FieldReference } from '../model/compute'
+import type { FieldReference, Contribution, EffectTag } from '../model/compute'
 import {
     type CharacterField,
     type CharacterSection,
     type FieldType,
     type SectionKind,
+    type FieldEffect,
+    type EffectOp,
 } from '../model/characterSheet'
 
 interface SectionEditorModalProps {
     section: CharacterSection
     results: Map<string, FormulaResult>
     references: FieldReference[]
+    contributions?: Map<string, Contribution[]>
+    effectTags?: Map<string, EffectTag[]>
     onClose: () => void
     onUpdateSection: (
         patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'meta'>>,
@@ -84,6 +88,121 @@ function ReferenceInserter({ references, onInsert }: { references: FieldReferenc
 /** A focused, roomy editor for a single section: its settings plus a full field
  *  editor with a live result preview for computed fields. Replaces the old
  *  global edit mode — opened per card from the pencil button. */
+const EFFECT_OPS: { value: EffectOp; label: string }[] = [
+    { value: 'add', label: '+ add' },
+    { value: 'sub', label: '− subtract' },
+    { value: 'set', label: '= set to' },
+    { value: 'advantage', label: 'advantage' },
+    { value: 'disadvantage', label: 'disadvantage' },
+    { value: 'resist', label: 'resistance' },
+    { value: 'immune', label: 'immunity' },
+    { value: 'vulnerable', label: 'vulnerable' },
+    { value: 'note', label: 'note' },
+]
+
+const isNumericOp = (op: EffectOp): boolean => op === 'add' || op === 'sub' || op === 'set'
+
+/** Editor for the modifiers a field grants to other fields. Numeric effects fold
+ *  into the target's value; the rest are annotation tags shown by the target. */
+function EffectsEditor({
+    field,
+    references,
+    onUpdateField,
+}: {
+    field: CharacterField
+    references: FieldReference[]
+    onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
+}) {
+    const effects = field.effects ?? []
+    const setEffects = (next: FieldEffect[]) => onUpdateField(field.id, { effects: next })
+    const update = (index: number, patch: Partial<FieldEffect>) =>
+        setEffects(effects.map((e, i) => (i === index ? { ...e, ...patch } : e)))
+    const remove = (index: number) => setEffects(effects.filter((_, i) => i !== index))
+    const add = () => setEffects([...effects, { target: '', op: 'add', value: '' }])
+
+    return (
+        <div className="mt-2 rounded border border-slate-800 bg-slate-950/60 p-2">
+            <datalist id={`slugs-${field.id}`}>
+                {references.map((r) => (
+                    <option key={r.slug} value={r.slug}>
+                        {r.label}
+                    </option>
+                ))}
+            </datalist>
+            <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold text-slate-300">Grants effects</span>
+                {field.type !== 'boolean' ? (
+                    <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Turn off to unequip / suspend these effects">
+                        <input
+                            type="checkbox"
+                            checked={field.effectsActive !== false}
+                            onChange={(event) => onUpdateField(field.id, { effectsActive: event.target.checked })}
+                        />
+                        active
+                    </label>
+                ) : (
+                    <span className="text-[10px] text-slate-500">active while toggled on</span>
+                )}
+            </div>
+            {effects.length === 0 && (
+                <p className="my-1 text-[10px] text-slate-500">
+                    e.g. a Ring of Protection that grants <span className="font-mono">+1</span> to{' '}
+                    <span className="font-mono">ac</span>.
+                </p>
+            )}
+            <div className="mt-1 flex flex-col gap-1">
+                {effects.map((effect, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                        <select
+                            value={effect.op}
+                            onChange={(event) => update(i, { op: event.target.value as EffectOp })}
+                            className="rounded border border-slate-700 bg-slate-900 px-1 py-1 text-[11px] text-slate-200"
+                            aria-label="Effect kind"
+                        >
+                            {EFFECT_OPS.map((o) => (
+                                <option key={o.value} value={o.value}>
+                                    {o.label}
+                                </option>
+                            ))}
+                        </select>
+                        <input
+                            value={effect.value}
+                            onChange={(event) => update(i, { value: event.target.value })}
+                            placeholder={isNumericOp(effect.op) ? 'amount' : 'e.g. fire'}
+                            className="w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
+                            aria-label="Effect amount"
+                        />
+                        <span className="text-[10px] text-slate-500">→</span>
+                        <input
+                            list={`slugs-${field.id}`}
+                            value={effect.target}
+                            onChange={(event) => update(i, { target: event.target.value })}
+                            placeholder="target field slug"
+                            className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
+                            aria-label="Effect target"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => remove(i)}
+                            className="rounded px-1 text-slate-500 hover:bg-slate-800 hover:text-rose-300"
+                            aria-label="Remove effect"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                ))}
+            </div>
+            <button
+                type="button"
+                onClick={add}
+                className="mt-1 rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800"
+            >
+                + effect
+            </button>
+        </div>
+    )
+}
+
 export function SectionEditorModal({
     section,
     results,
@@ -445,6 +564,8 @@ export function SectionEditorModal({
                                             </button>
                                         )}
                                     </label>
+
+                                    <EffectsEditor field={field} references={references} onUpdateField={onUpdateField} />
 
                                     {field.type === 'computed' && (
                                         <div className="mt-2 rounded border border-slate-800 bg-slate-950/60 p-2">

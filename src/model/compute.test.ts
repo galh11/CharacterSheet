@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeSheet, interpolate } from './compute'
+import { computeSheet, resolveSheet, interpolate } from './compute'
 import { createField, createSection, type CharacterSheet } from './characterSheet'
 
 // Builds a minimal sheet: one number field and one computed field that
@@ -44,6 +44,82 @@ describe('computeSheet', () => {
         // str_mod = floor((20-10)/2) = 5, so AC = 17.
         expect(results.get(strMod.id)?.value).toBe(5)
         expect(results.get(ac.id)?.value).toBe(17)
+    })
+})
+
+describe('resolveSheet effects', () => {
+    it('folds an active numeric effect into a computed target and attributes it', () => {
+        const ac = createField({ label: 'AC', type: 'computed', value: '12' })
+        const ring = createField({
+            label: 'Ring of Protection',
+            type: 'text',
+            value: 'worn',
+            effects: [{ target: 'ac', op: 'add', value: '1' }],
+        })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [createSection(0, { fields: [ac, ring] })],
+        }
+        const { results, contributions } = resolveSheet(sheet)
+        expect(results.get(ac.id)?.value).toBe(13)
+        const acContribs = contributions.get('ac')
+        expect(acContribs).toHaveLength(1)
+        expect(acContribs?.[0]).toMatchObject({ amount: 1, sourceLabel: 'Ring of Protection' })
+    })
+
+    it('ignores an effect whose source is turned off', () => {
+        const ac = createField({ label: 'AC', type: 'computed', value: '12' })
+        const ring = createField({
+            label: 'Ring of Protection',
+            type: 'text',
+            value: 'worn',
+            effectsActive: false,
+            effects: [{ target: 'ac', op: 'add', value: '1' }],
+        })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [createSection(0, { fields: [ac, ring] })],
+        }
+        const { results, contributions } = resolveSheet(sheet)
+        expect(results.get(ac.id)?.value).toBe(12)
+        expect(contributions.get('ac')).toBeUndefined()
+    })
+
+    it('applies a boolean-gated effect only while the flag is on', () => {
+        const save = createField({ label: 'WIS Save', type: 'computed', value: '2' })
+        const bless = createField({
+            label: 'Bless',
+            type: 'boolean',
+            value: 'false',
+            effects: [{ target: 'wis_save', op: 'add', value: '2' }],
+        })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [createSection(0, { fields: [save, bless] })],
+        }
+        expect(resolveSheet(sheet).results.get(save.id)?.value).toBe(2)
+        bless.value = 'true'
+        expect(resolveSheet(sheet).results.get(save.id)?.value).toBe(4)
+    })
+
+    it('collects non-numeric effects as tags', () => {
+        const save = createField({ label: 'DEX Save', type: 'computed', value: '1' })
+        const spell = createField({
+            label: 'Shield of Faith',
+            type: 'boolean',
+            value: 'true',
+            effects: [{ target: 'dex_save', op: 'advantage', value: 'vs traps' }],
+        })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [createSection(0, { fields: [save, spell] })],
+        }
+        const { tags } = resolveSheet(sheet)
+        expect(tags.get('dex_save')?.[0]).toMatchObject({ op: 'advantage', sourceLabel: 'Shield of Faith' })
     })
 })
 

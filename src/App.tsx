@@ -5,7 +5,7 @@ import {
     slugify,
     type SectionLayout,
 } from './model/characterSheet'
-import { computeSheet, listReferences } from './model/compute'
+import { resolveSheet, listReferences } from './model/compute'
 import {
     compactLayouts,
     alignEdge,
@@ -104,7 +104,10 @@ function App() {
         moveField,
     } = useSheet()
 
-    const computed = useMemo(() => computeSheet(sheet), [sheet])
+    const resolved = useMemo(() => resolveSheet(sheet), [sheet])
+    const computed = resolved.results
+    const contributions = resolved.contributions
+    const effectTags = resolved.tags
     const references = useMemo(() => listReferences(sheet, computed), [sheet, computed])
     const scope = useMemo(() => {
         const s = Object.fromEntries(references.map((r) => [r.slug, r.value]))
@@ -484,6 +487,8 @@ function App() {
         <SectionCard
             section={section}
             results={computed}
+            contributions={contributions}
+            effectTags={effectTags}
             scope={scope}
             rollMode={rollMode}
             bonus={situational}
@@ -892,6 +897,8 @@ function App() {
                     section={editingSection}
                     results={computed}
                     references={references}
+                    contributions={contributions}
+                    effectTags={effectTags}
                     onClose={() => setEditingSectionId(null)}
                     onUpdateSection={(patch) => updateSection(editingSection.id, patch)}
                     onDeleteSection={() => deleteSection(editingSection.id)}

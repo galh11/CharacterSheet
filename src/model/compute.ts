@@ -1,5 +1,5 @@
-import type { CharacterSheet, CharacterField } from './characterSheet'
-import { slugify } from './characterSheet'
+import type { CharacterSheet, CharacterField, EffectOp } from './characterSheet'
+import { slugify, NUMERIC_EFFECT_OPS } from './characterSheet'
 import { evaluateFormula, type FormulaResult } from './formula'
 
 /**
@@ -20,66 +20,161 @@ export const interpolate = (input: string, scope: Record<string, number>): strin
         .replace(/-\+/g, '-')
 }
 
+/** A single numeric modifier one field grants to a target slug. */
+export interface Contribution {
+    sourceId: string
+    sourceLabel: string
+    op: EffectOp
+    /** Signed amount for add/sub; the raw value for set. */
+    amount: number
+    /** Original formula/text, for display. */
+    value: string
+}
+
+/** A non-numeric annotation (advantage, resistance, note…) on a target slug. */
+export interface EffectTag {
+    sourceId: string
+    sourceLabel: string
+    op: EffectOp
+    value: string
+}
+
+export interface ResolvedSheet {
+    results: Map<string, FormulaResult>
+    scope: Record<string, number>
+    /** Target slug -> numeric contributions folded into that slug's value. */
+    contributions: Map<string, Contribution[]>
+    /** Target slug -> annotation tags shown beside that field. */
+    tags: Map<string, EffectTag[]>
+}
+
+/** A field's effects apply when it's active: boolean fields follow their own
+ *  on/off value; everything else is active unless explicitly turned off. */
+const effectsAreActive = (field: CharacterField): boolean =>
+    field.type === 'boolean' ? field.value === 'true' : field.effectsActive !== false
+
+const pushMap = <T>(map: Map<string, T[]>, key: string, value: T): void => {
+    const list = map.get(key)
+    if (list) list.push(value)
+    else map.set(key, [value])
+}
+
 /**
- * Build a numeric scope from all non-computed fields, keyed by slug.
- * number fields contribute their numeric value; boolean -> 1/0.
+ * Resolve computed fields and relational effects together. Numeric effects
+ * (add/sub/set) fold into the target slug's value so computed results and the
+ * scope reflect every active buff; non-numeric effects are collected as tags for
+ * display. Iterates until values stabilize so effects-on-computed converge.
  */
-const baseScope = (sheet: CharacterSheet): Record<string, number> => {
-    const scope: Record<string, number> = {}
+export const resolveSheet = (sheet: CharacterSheet): ResolvedSheet => {
+    const results = new Map<string, FormulaResult>()
+    const raw: Record<string, number> = {}
+    const computedFields: CharacterField[] = []
+    const computedSlugs = new Set<string>()
+    const sources: CharacterField[] = []
+
     for (const section of sheet.sections) {
         for (const field of section.fields) {
             const slug = slugify(field.label)
-            if (!slug) continue
-            if (field.type === 'number') {
-                const n = Number(field.value)
-                if (!Number.isNaN(n)) scope[slug] = n
-            } else if (field.type === 'boolean') {
-                scope[slug] = field.value === 'true' ? 1 : 0
-            }
-        }
-    }
-    return scope
-}
-
-/**
- * Resolve every computed field by iterating until values stabilize.
- * Supports computed fields that reference other computed fields (a few passes).
- * Returns a map of field id -> result.
- */
-export const computeSheet = (sheet: CharacterSheet): Map<string, FormulaResult> => {    const results = new Map<string, FormulaResult>()
-    const scope = baseScope(sheet)
-
-    const computedFields: CharacterField[] = []
-    for (const section of sheet.sections) {
-        for (const field of section.fields) {
-            if (field.type === 'computed') computedFields.push(field)
-        }
-    }
-
-    // Iterate a bounded number of passes so computed-on-computed resolves.
-    const maxPasses = Math.min(computedFields.length + 1, 25)
-    for (let pass = 0; pass < maxPasses; pass++) {
-        let changed = false
-        for (const field of computedFields) {
-            const result = evaluateFormula(field.value, scope)
-            const previous = results.get(field.id)
-            results.set(field.id, result)
-            if (result.ok && result.value !== null) {
-                const slug = slugify(field.label)
-                if (slug && scope[slug] !== result.value) {
-                    scope[slug] = result.value
-                    changed = true
+            if (slug) {
+                if (field.type === 'number') {
+                    const n = Number(field.value)
+                    if (!Number.isNaN(n)) raw[slug] = n
+                } else if (field.type === 'boolean') {
+                    raw[slug] = field.value === 'true' ? 1 : 0
                 }
             }
-            if (!previous || previous.value !== result.value || previous.ok !== result.ok) {
+            if (field.type === 'computed') {
+                computedFields.push(field)
+                if (slug) computedSlugs.add(slug)
+            }
+            if (field.effects && field.effects.length > 0 && effectsAreActive(field)) {
+                sources.push(field)
+            }
+        }
+    }
+
+    // Non-numeric tags are static (they don't depend on the numeric scope).
+    const tags = new Map<string, EffectTag[]>()
+    for (const source of sources) {
+        for (const effect of source.effects ?? []) {
+            if (NUMERIC_EFFECT_OPS.includes(effect.op) || !effect.target) continue
+            pushMap(tags, effect.target, {
+                sourceId: source.id,
+                sourceLabel: source.label,
+                op: effect.op,
+                value: effect.value,
+            })
+        }
+    }
+
+    const scope: Record<string, number> = { ...raw }
+    let contributions = new Map<string, Contribution[]>()
+
+    const maxPasses = Math.min(computedFields.length + sources.length + 2, 40)
+    for (let pass = 0; pass < maxPasses; pass++) {
+        let changed = false
+        const contrib = new Map<string, Contribution[]>()
+        const adds: Record<string, number> = {}
+        const setVal: Record<string, number> = {}
+
+        for (const source of sources) {
+            for (const effect of source.effects ?? []) {
+                if (!NUMERIC_EFFECT_OPS.includes(effect.op) || !effect.target) continue
+                const r = evaluateFormula(effect.value || '0', scope)
+                const amt = r.ok && r.value !== null ? r.value : 0
+                const signedAmt = effect.op === 'sub' ? -amt : amt
+                if (effect.op === 'set') setVal[effect.target] = amt
+                else adds[effect.target] = (adds[effect.target] ?? 0) + signedAmt
+                pushMap(contrib, effect.target, {
+                    sourceId: source.id,
+                    sourceLabel: source.label,
+                    op: effect.op,
+                    amount: effect.op === 'set' ? amt : signedAmt,
+                    value: effect.value,
+                })
+            }
+        }
+
+        // Computed fields: evaluate the formula, then fold in contributions.
+        for (const field of computedFields) {
+            const base = evaluateFormula(field.value, scope)
+            const slug = slugify(field.label)
+            if (base.ok && base.value !== null) {
+                const effective = (slug in setVal ? setVal[slug] : base.value) + (slug in adds ? adds[slug] : 0)
+                results.set(field.id, { ...base, value: effective })
+                if (slug && scope[slug] !== effective) {
+                    scope[slug] = effective
+                    changed = true
+                }
+            } else {
+                results.set(field.id, base)
+            }
+        }
+
+        // Number/boolean and virtual (field-less) targets.
+        for (const target of new Set([...Object.keys(adds), ...Object.keys(setVal)])) {
+            if (computedSlugs.has(target)) continue
+            const base = target in setVal ? setVal[target] : (raw[target] ?? 0)
+            const effective = base + (target in adds ? adds[target] : 0)
+            if (scope[target] !== effective) {
+                scope[target] = effective
                 changed = true
             }
         }
-        if (!changed) break
+
+        contributions = contrib
+        if (!changed && pass > 0) break
     }
 
-    return results
+    return { results, scope, contributions, tags }
 }
+
+/**
+ * Resolve every computed field to a result map. Thin wrapper over resolveSheet
+ * for callers that only need the per-field results (and back-compat with tests).
+ */
+export const computeSheet = (sheet: CharacterSheet): Map<string, FormulaResult> =>
+    resolveSheet(sheet).results
 
 export interface FieldReference {
     slug: string

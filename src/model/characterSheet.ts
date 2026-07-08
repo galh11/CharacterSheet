@@ -21,6 +21,34 @@ export const fieldTypeSchema = z.enum([
 ])
 export type FieldType = z.infer<typeof fieldTypeSchema>
 
+/** How an effect changes its target. `add`/`sub`/`set` are numeric and fold into
+ *  the compute scope; the rest are annotation-only tags (advantage, resistances,
+ *  or a freeform note) surfaced next to the target without touching arithmetic. */
+export const effectOpSchema = z.enum([
+    'add',
+    'sub',
+    'set',
+    'advantage',
+    'disadvantage',
+    'resist',
+    'immune',
+    'vulnerable',
+    'note',
+])
+export type EffectOp = z.infer<typeof effectOpSchema>
+
+export const NUMERIC_EFFECT_OPS: readonly EffectOp[] = ['add', 'sub', 'set']
+
+/** A modifier one field grants to another, addressed by the target's slug. */
+export const effectSchema = z.object({
+    /** Slug of the field this effect modifies (e.g. `ac`, `str_mod`). */
+    target: z.string().default(''),
+    op: effectOpSchema.default('add'),
+    /** Numeric formula for add/sub/set; freeform label/reason for tag ops. */
+    value: z.string().default(''),
+})
+export type FieldEffect = z.infer<typeof effectSchema>
+
 export const fieldSchema = z.object({
     id: z.string().min(1),
     label: z.string(),
@@ -33,6 +61,11 @@ export const fieldSchema = z.object({
     max: z.number().optional(),
     /** Free-form structured extras used by specialized section renderers. */
     meta: z.record(z.string(), z.string()).optional(),
+    /** Modifiers this field grants to other fields (relational effects). */
+    effects: z.array(effectSchema).optional(),
+    /** Whether this field's effects are currently applied. Boolean fields follow
+     *  their own on/off value instead; for all others this toggles equip/active. */
+    effectsActive: z.boolean().optional(),
 })
 
 export const layoutSchema = z.object({

@@ -13,7 +13,9 @@ interface MenuProps {
 /** A lightweight dropdown menu that closes on outside click or Escape. */
 export function Menu({ label, title, align = 'left', className, children }: MenuProps) {
     const [open, setOpen] = useState(false)
+    const [shift, setShift] = useState(0)
     const ref = useRef<HTMLDivElement>(null)
+    const menuRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         if (!open) return
@@ -29,6 +31,21 @@ export function Menu({ label, title, align = 'left', className, children }: Menu
             document.removeEventListener('pointerdown', onDown)
             document.removeEventListener('keydown', onKey)
         }
+    }, [open])
+
+    // Nudge the panel back on-screen if it would spill past either edge (the
+    // toolbar wraps, so a button can end up anywhere across the width).
+    useEffect(() => {
+        if (!open) {
+            setShift(0)
+            return
+        }
+        const el = menuRef.current
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        const margin = 8
+        if (rect.right > window.innerWidth - margin) setShift(window.innerWidth - margin - rect.right)
+        else if (rect.left < margin) setShift(margin - rect.left)
     }, [open])
 
     return (
@@ -48,7 +65,9 @@ export function Menu({ label, title, align = 'left', className, children }: Menu
             </button>
             {open && (
                 <div
+                    ref={menuRef}
                     role="menu"
+                    style={shift ? { transform: `translateX(${shift}px)` } : undefined}
                     className={clsx(
                         'absolute z-30 mt-1 max-h-[70vh] min-w-[11rem] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md border border-slate-700 bg-slate-900 p-1 shadow-xl',
                         align === 'right' ? 'right-0' : 'left-0',

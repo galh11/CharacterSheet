@@ -257,13 +257,18 @@ function DefaultList({ section, results, onUpdateField }: SectionBodyProps) {
 }
 
 function StatBlock({ section }: SectionBodyProps) {
+    const cols = Math.min(6, Math.max(1, Math.round(toNum(section.meta?.cols ?? '')) || 3))
     return (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
             {section.fields.map((field) => {
                 const score = toNum(field.value)
                 const mod = abilityMod(score)
                 return (
-                    <div key={field.id} className="flex flex-col items-center rounded-lg border border-slate-700 bg-slate-900/70 py-2">
+                    <div
+                        key={field.id}
+                        className="flex flex-col items-center rounded-lg border border-slate-700 bg-slate-900/70 py-2"
+                        title={`${field.label} ${score} → modifier ${signed(mod)}  ·  floor((${score} − 10) / 2)`}
+                    >
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{field.label}</span>
                         <span className="font-mono text-2xl font-bold leading-tight text-slate-100">{signed(mod)}</span>
                         <span className="mt-0.5 rounded-full bg-slate-800 px-2 text-[11px] font-mono text-slate-300">{score}</span>

@@ -27,6 +27,22 @@ describe('computeSheet', () => {
         expect(mod?.ok).toBe(true)
         expect(mod?.value).toBe(3)
     })
+
+    it('auto-exposes ability modifiers (str_mod) from an abilities section', () => {
+        const str = createField({ label: 'STR', type: 'number', value: '20' })
+        const ac = createField({ label: 'AC', type: 'computed', value: '12 + str_mod' })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [
+                createSection(0, { kind: 'abilities', fields: [str] }),
+                createSection(1, { fields: [ac] }),
+            ],
+        }
+        const results = computeSheet(sheet)
+        // str_mod = floor((20-10)/2) = 5, so AC = 17 even without a Modifiers section.
+        expect(results.get(ac.id)?.value).toBe(17)
+    })
 })
 
 describe('interpolate', () => {

@@ -80,25 +80,16 @@ S('Ability Scores', 'abilities', [
     F('CHA', 'number', 8),
 ], '#f59e0b')
 
-// 2. Modifiers + proficiency — provide slugs (str_mod, proficiency, …) for formulas.
-S('Modifiers', 'default', [
-    F('Proficiency', 'number', 3, { description: 'Proficiency bonus (level 8).' }),
-    F('STR Mod', 'computed', 'floor((str - 10) / 2)'),
-    F('DEX Mod', 'computed', 'floor((dex - 10) / 2)'),
-    F('CON Mod', 'computed', 'floor((con - 10) / 2)'),
-    F('INT Mod', 'computed', 'floor((int - 10) / 2)'),
-    F('WIS Mod', 'computed', 'floor((wis - 10) / 2)'),
-    F('CHA Mod', 'computed', 'floor((cha - 10) / 2)'),
-])
-
-// 3. Combat — AC, initiative, speed, passive perception (all computed where possible).
+// 2. Combat — AC, initiative, speed, passive perception. Ability modifiers
+// (str_mod, con_mod, …) come straight from the Ability Scores section now, so
+// there is no separate Modifiers section.
 S('Combat', 'default', [
     F('AC', 'computed', '12 + con_mod', { description: 'Iron Chin: base AC = 12 + CON mod while in Light or no armor and no shield. DEX does not apply.' }),
     F('Initiative', 'computed', 'dex_mod'),
     F('Speed', 'number', 35, { description: 'Climb 35 ft (Athlete). +10 ft while in Large Form.' }),
     F('Passive Perception', 'computed', '10 + wis_mod'),
     F('Grapple / Shove DC', 'computed', '8 + str_mod + proficiency', { description: 'Targets make a STR or DEX save vs this DC. Inescapable (1 Moxie) imposes Disadvantage.' }),
-    F('Proficiency Bonus', 'computed', 'proficiency'),
+    F('Proficiency', 'number', 3, { description: 'Proficiency bonus (level 8). Used by attacks, saves and skills.' }),
 ], '#ef4444')
 
 // 3b. Movement & physique (all derived from Strength / Athlete / Powerful Build).
@@ -324,7 +315,7 @@ S('Equipment', 'default', [
 // offence → resources & states → traits → movement/info/inventory. Tidy and
 // stack view follow this array order, so keep it logical.
 const ORDER = [
-    'Character', 'Ability Scores', 'Modifiers',
+    'Character', 'Ability Scores',
     'Saving Throws', 'Skills', 'Senses',
     'Combat', 'Hit Points', 'Hit Dice', 'Death Saves',
     'Attacks', 'Bonus Actions', 'Reactions',

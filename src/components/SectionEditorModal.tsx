@@ -202,6 +202,20 @@ export function SectionEditorModal({
                                     aria-label="Section color"
                                 />
                             </label>
+                            {section.kind === 'abilities' && (
+                                <label className="flex items-center gap-2 text-xs text-slate-400" title="How many ability cards per row">
+                                    Columns
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={6}
+                                        value={section.meta?.cols ?? '3'}
+                                        onChange={(event) => onUpdateSection({ meta: { ...section.meta, cols: event.target.value } })}
+                                        className="w-14 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-xs text-slate-200"
+                                        aria-label="Ability columns"
+                                    />
+                                </label>
+                            )}
                         </div>
                     </div>
 

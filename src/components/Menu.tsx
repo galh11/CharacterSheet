@@ -50,7 +50,7 @@ export function Menu({ label, title, align = 'left', className, children }: Menu
                 <div
                     role="menu"
                     className={clsx(
-                        'absolute z-30 mt-1 min-w-[11rem] rounded-md border border-slate-700 bg-slate-900 p-1 shadow-xl',
+                        'absolute z-30 mt-1 max-h-[70vh] min-w-[11rem] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md border border-slate-700 bg-slate-900 p-1 shadow-xl',
                         align === 'right' ? 'right-0' : 'left-0',
                     )}
                 >

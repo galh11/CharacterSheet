@@ -17,6 +17,7 @@ import {
 } from './model/layout'
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
+import { SectionEditorModal } from './components/SectionEditorModal'
 import { QuickStartModal } from './components/QuickStartModal'
 import { RollLog } from './components/RollLog'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
@@ -31,7 +32,7 @@ import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode, RollLogEntry } from './model/dice'
 
 function App() {
-    const [isEditMode, setIsEditMode] = useState(false)
+    const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
     const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
     const [guides, setGuides] = useState<SnapGuide[]>([])
@@ -451,13 +452,12 @@ function App() {
     const stackSections = [...visibleSections].sort(
         (a, b) => (pinned.has(a.id) ? 0 : 1) - (pinned.has(b.id) ? 0 : 1),
     )
+    const editingSection = editingSectionId ? sheet.sections.find((s) => s.id === editingSectionId) ?? null : null
 
     const renderCard = (section: (typeof sheet.sections)[number], collapsible: boolean) => (
         <SectionCard
             section={section}
-            isEditMode={isEditMode}
             results={computed}
-            references={references}
             scope={scope}
             rollMode={rollMode}
             bonus={situational}
@@ -469,13 +469,10 @@ function App() {
             onRestore={restoreResource}
             onToggleFlag={toggleField}
             onTempHp={applyTempHp}
+            onEdit={collapsible ? () => setEditingSectionId(section.id) : undefined}
             onUpdateSection={(patch) => updateSection(section.id, patch)}
-            onDeleteSection={() => deleteSection(section.id)}
-            onDuplicateSection={() => duplicateSection(section.id)}
             onAddField={(overrides) => addField(section.id, overrides)}
             onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
-            onDeleteField={(fieldId) => deleteField(section.id, fieldId)}
-            onMoveField={(fieldId, direction) => moveField(section.id, fieldId, direction)}
             collapsed={collapsible ? collapsed.has(section.id) : undefined}
             onToggleCollapse={collapsible ? () => toggleCollapse(section.id) : undefined}
             pinned={collapsible ? pinned.has(section.id) : undefined}
@@ -489,16 +486,13 @@ function App() {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <p className="text-xs uppercase tracking-[0.2em] text-slate-400">CharacterSheet</p>
-                        {isEditMode ? (
-                            <input
-                                value={sheet.name}
-                                onChange={(event) => renameSheet(event.target.value)}
-                                className="m-0 mt-1 w-full max-w-md rounded-md border border-slate-600 bg-slate-900 px-3 py-1 text-2xl font-semibold text-slate-100"
-                                aria-label="Character name"
-                            />
-                        ) : (
-                            <h1 className="m-0 text-3xl font-semibold text-slate-100">{sheet.name}</h1>
-                        )}
+                        <input
+                            value={sheet.name}
+                            onChange={(event) => renameSheet(event.target.value)}
+                            aria-label="Character name"
+                            title="Click to rename this character"
+                            className="m-0 mt-1 w-full max-w-md rounded-md border border-transparent bg-transparent px-1 text-3xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
+                        />
                         <p className="mt-2 text-sm text-slate-300">
                             Interactive D&amp;D cheat sheet — drag, resize, and edit anything.
                         </p>
@@ -658,18 +652,6 @@ function App() {
                                 className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
                             />
                         </label>
-                        <button
-                            type="button"
-                            onClick={() => setIsEditMode((current) => !current)}
-                            className={clsx(
-                                'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-                                isEditMode
-                                    ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
-                                    : 'bg-slate-700 text-slate-200 hover:bg-slate-600',
-                            )}
-                        >
-                            {isEditMode ? 'Done editing' : 'Edit'}
-                        </button>
                     </div>
                 </div>
 
@@ -719,71 +701,55 @@ function App() {
                                 >
                                     Tidy
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={handleFitAll}
-                                    className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Resize each card to its content, keeping its position"
-                                >
-                                    Fit all
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={savePreset}
-                                    className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Save the current arrangement as a named layout"
-                                >
-                                    Save layout
-                                </button>
-                                {Object.keys(presets).length > 0 && (
-                                    <select
-                                        value=""
-                                        onChange={(event) => {
-                                            if (event.target.value) applyPreset(event.target.value)
-                                        }}
-                                        className="rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
-                                        aria-label="Apply saved layout"
-                                    >
-                                        <option value="" disabled>
-                                            Apply layout…
-                                        </option>
-                                        {Object.keys(presets).map((name) => (
-                                            <option key={name} value={name}>
-                                                {name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                )}
+                                <Menu label="Options ▾" title="Layout options" align="right">
+                                    {(close) => (
+                                        <>
+                                            <MenuItem onClick={() => { handleFitAll(); close() }} title="Resize each card to its content, keeping its position">
+                                                Fit all to content
+                                            </MenuItem>
+                                            <MenuItem onClick={() => { savePreset(); close() }} title="Save the current arrangement as a named layout">
+                                                Save this layout…
+                                            </MenuItem>
+                                            {Object.keys(presets).length > 0 && (
+                                                <>
+                                                    <MenuDivider />
+                                                    <MenuLabel>Apply saved layout</MenuLabel>
+                                                    {Object.keys(presets).map((name) => (
+                                                        <MenuItem key={name} onClick={() => { applyPreset(name); close() }}>
+                                                            {name}
+                                                        </MenuItem>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </Menu>
                             </>
                         )}
-                        {isEditMode && (
-                            <button
-                                type="button"
-                                onClick={addSection}
-                                className="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
-                            >
-                                Add section
-                            </button>
-                        )}
-                        {isEditMode && (
-                            <select
-                                aria-label="Add section from template"
-                                value=""
-                                onChange={(e) => {
-                                    const tpl = SECTION_TEMPLATES.find((t) => t.id === e.target.value)
-                                    if (tpl) addTemplateSection(tpl)
-                                    e.target.value = ''
-                                }}
-                                className="rounded-md border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-slate-200 hover:bg-slate-700"
-                            >
-                                <option value="">+ Template…</option>
-                                {SECTION_TEMPLATES.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.label}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
+                        <button
+                            type="button"
+                            onClick={addSection}
+                            className="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
+                        >
+                            + Section
+                        </button>
+                        <select
+                            aria-label="Add section from template"
+                            value=""
+                            onChange={(e) => {
+                                const tpl = SECTION_TEMPLATES.find((t) => t.id === e.target.value)
+                                if (tpl) addTemplateSection(tpl)
+                                e.target.value = ''
+                            }}
+                            className="rounded-md border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-slate-200 hover:bg-slate-700"
+                        >
+                            <option value="">+ Template…</option>
+                            {SECTION_TEMPLATES.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                    {t.label}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
@@ -833,7 +799,7 @@ function App() {
                             }}
                             className={clsx(
                                 'relative rounded-lg',
-                                isEditMode && 'bg-[radial-gradient(circle,_rgba(148,163,184,0.12)_1px,_transparent_1px)] [background-size:16px_16px]',
+                                'bg-[radial-gradient(circle,_rgba(148,163,184,0.08)_1px,_transparent_1px)] [background-size:16px_16px]',
                             )}
                             style={{ width: canvasSize.width, height: canvasSize.height, zoom: canvasZoom }}
                         >
@@ -851,6 +817,7 @@ function App() {
                                     onScaleChange={(scale) => updateSection(section.id, { scale })}
                                     onGuidesChange={setGuides}
                                     onSelect={(additive) => handleSelect(section.id, additive)}
+                                    onEdit={() => setEditingSectionId(section.id)}
                                     handleRef={(h) => {
                                         if (h) fitRefs.current.set(section.id, h)
                                         else fitRefs.current.delete(section.id)
@@ -881,8 +848,23 @@ function App() {
                     onConfirm={(imported) => {
                         replaceSheet(imported)
                         setShowQuickStart(false)
-                        setIsEditMode(true)
                     }}
+                />
+            )}
+
+            {editingSection && (
+                <SectionEditorModal
+                    section={editingSection}
+                    results={computed}
+                    references={references}
+                    onClose={() => setEditingSectionId(null)}
+                    onUpdateSection={(patch) => updateSection(editingSection.id, patch)}
+                    onDeleteSection={() => deleteSection(editingSection.id)}
+                    onDuplicateSection={() => duplicateSection(editingSection.id)}
+                    onAddField={(overrides) => addField(editingSection.id, overrides)}
+                    onUpdateField={(fieldId, patch) => updateField(editingSection.id, fieldId, patch)}
+                    onDeleteField={(fieldId) => deleteField(editingSection.id, fieldId)}
+                    onMoveField={(fieldId, direction) => moveField(editingSection.id, fieldId, direction)}
                 />
             )}
 

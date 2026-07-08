@@ -12,12 +12,12 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('view mode matches the visual snapshot', async ({ page }) => {
-    await expect(page.getByRole('heading', { level: 1, name: 'New Character' })).toBeVisible()
+    await expect(page.getByLabel('Character name')).toHaveValue('New Character')
     await expect(page).toHaveScreenshot('view-mode.png', { fullPage: true })
 })
 
-test('edit mode matches the visual snapshot', async ({ page }) => {
-    await page.getByRole('button', { name: 'Edit' }).click()
-    await expect(page.getByRole('button', { name: 'Done editing' })).toBeVisible()
-    await expect(page).toHaveScreenshot('edit-mode.png', { fullPage: true })
+test('the section editor modal matches the visual snapshot', async ({ page }) => {
+    await page.getByRole('button', { name: 'Edit section' }).first().click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page).toHaveScreenshot('section-editor.png', { fullPage: true })
 })

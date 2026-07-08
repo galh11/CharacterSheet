@@ -7,31 +7,27 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('loads the starter sheet', async ({ page }) => {
-    await expect(page.getByRole('heading', { level: 1, name: 'New Character' })).toBeVisible()
+    await expect(page.getByLabel('Character name')).toHaveValue('New Character')
     await expect(page.getByRole('heading', { name: 'Ability Scores' })).toBeVisible()
 })
 
-test('drag handles are available in play mode and edit mode', async ({ page }) => {
-    // Cards can be moved/resized without entering edit mode.
+test('drag handles and the section editor are available without an edit mode', async ({ page }) => {
+    // Cards can be moved/resized straight away.
     await expect(page.getByTitle(/Drag to move/).first()).toBeVisible()
-
-    await page.getByRole('button', { name: 'Edit' }).click()
-
-    await expect(page.getByRole('button', { name: 'Done editing' })).toBeVisible()
-    await expect(page.getByTitle(/Drag to move/).first()).toBeVisible()
+    // The pencil in the handle bar opens a per-section editor modal.
+    await page.getByRole('button', { name: 'Edit section' }).first().click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
 test('adding a section increases the section count', async ({ page }) => {
-    await page.getByRole('button', { name: 'Edit' }).click()
-
     await expect(page.locator('article')).toHaveCount(3)
-    await page.getByRole('button', { name: 'Add section' }).click()
+    await page.getByRole('button', { name: '+ Section' }).click()
     await expect(page.locator('article')).toHaveCount(4)
 })
 
 test('dragging a section moves it on the canvas', async ({ page }) => {
-    await page.getByRole('button', { name: 'Edit' }).click()
-
     const handle = page.getByTitle('Drag to move').first()
     const before = await handle.boundingBox()
     expect(before).not.toBeNull()
@@ -50,8 +46,7 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
 })
 
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {
-    await page.getByRole('button', { name: 'Edit' }).click()
-    await page.getByRole('button', { name: 'Add section' }).click()
+    await page.getByRole('button', { name: '+ Section' }).click()
     await expect(page.locator('article')).toHaveCount(4)
 
     await page.reload()

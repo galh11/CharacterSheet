@@ -324,8 +324,17 @@ function App() {
 
     const handleTidy = () => {
         // Fit each card to its content, then skyline-pack so tiles sit flush.
+        // Pack in the cards' current reading order (top→bottom, left→right) so
+        // Tidy keeps things roughly where you dragged them instead of resetting
+        // to the original section order.
+        const ROW_TOL = 48
         const width = canvasScrollRef.current?.clientWidth ?? 1200
-        setSectionLayouts(tidyLayouts(fittedItems(), width))
+        const items = fittedItems().sort((a, b) => {
+            const dy = a.layout.y - b.layout.y
+            if (Math.abs(dy) > ROW_TOL) return dy
+            return a.layout.x - b.layout.x
+        })
+        setSectionLayouts(tidyLayouts(items, width))
     }
 
     const handleFitAll = () => {

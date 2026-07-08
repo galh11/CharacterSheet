@@ -108,6 +108,10 @@ export function SectionEditorModal({
     const setMeta = (field: CharacterField, key: string, value: string) =>
         onUpdateField(field.id, { meta: { ...field.meta, [key]: value } })
 
+    // Remember the last-focused action-meta box so the reference inserter knows
+    // where to drop a {field} reference (search input steals focus on click).
+    const [focusedMeta, setFocusedMeta] = useState<{ fieldId: string; key: string } | null>(null)
+
     const handleDelete = () => {
         if (window.confirm(`Delete the “${section.title}” section and all its fields?`)) {
             onDeleteSection()
@@ -399,11 +403,26 @@ export function SectionEditorModal({
                                                     key={k}
                                                     value={field.meta?.[k] ?? ''}
                                                     onChange={(event) => setMeta(field, k, event.target.value)}
+                                                    onFocus={() => setFocusedMeta({ fieldId: field.id, key: k })}
                                                     placeholder={k}
                                                     className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
                                                     aria-label={`Action ${k}`}
                                                 />
                                             ))}
+                                        </div>
+                                    )}
+
+                                    {section.kind === 'actions' && focusedMeta?.fieldId === field.id && references.length > 0 && (
+                                        <div className="mt-1">
+                                            <div className="text-[10px] text-slate-500">
+                                                Insert a field into <span className="font-mono text-slate-400">{focusedMeta.key}</span> (wrapped in {'{ }'} for a live value)
+                                            </div>
+                                            <ReferenceInserter
+                                                references={references}
+                                                onInsert={(slug) =>
+                                                    setMeta(field, focusedMeta.key, `${field.meta?.[focusedMeta.key] ?? ''}{${slug}}`)
+                                                }
+                                            />
                                         </div>
                                     )}
 

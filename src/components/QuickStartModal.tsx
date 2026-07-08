@@ -11,11 +11,7 @@ interface QuickStartModalProps {
 
 const PLACEHOLDER = `Paste your D&D Beyond character JSON here for an exact import.
 
-How to get it: open
-https://character-service.dndbeyond.com/character/v5/character/<your-character-id>
-in your browser (the character must be public), select all, copy, and paste here.
-
-You can also paste a sheet previously exported from this app.`
+See the steps above to fetch it, or paste a sheet previously exported from this app.`
 
 export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
     const [text, setText] = useState('')
@@ -76,6 +72,42 @@ export function QuickStartModal({ onClose, onConfirm }: QuickStartModalProps) {
                         Paste your character <strong>JSON</strong> for an exact import, then review what we
                         detected before replacing your sheet.
                     </p>
+
+                    <details className="mt-3 rounded-md border border-slate-700 bg-slate-950/60 p-3 text-sm text-slate-300" open>
+                        <summary className="cursor-pointer font-semibold text-slate-100">
+                            How to get your character JSON from D&amp;D Beyond
+                        </summary>
+                        <ol className="mt-2 mb-0 list-decimal space-y-1 pl-5 text-xs text-slate-300">
+                            <li>
+                                Make the character <strong>public</strong>: on D&amp;D Beyond open the character,
+                                then <span className="text-slate-200">Manage → Privacy</span> (or the campaign's
+                                privacy settings) and set <span className="text-slate-200">Character Privacy</span>{' '}
+                                to <span className="text-slate-200">Public</span>. Private characters return nothing.
+                            </li>
+                            <li>
+                                Find the character ID — it's the number at the end of the sheet URL:{' '}
+                                <code className="rounded bg-slate-800 px-1 text-slate-200">
+                                    dndbeyond.com/characters/<strong>12345678</strong>
+                                </code>
+                                .
+                            </li>
+                            <li>
+                                Open the JSON endpoint in your browser (swap in your ID):{' '}
+                                <code className="break-all rounded bg-slate-800 px-1 text-slate-200">
+                                    https://character-service.dndbeyond.com/character/v5/character/12345678
+                                </code>
+                                .
+                            </li>
+                            <li>
+                                Select all (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>A</kbd>), copy, and paste it below —
+                                or use your browser's <span className="text-slate-200">Save As</span> to save a{' '}
+                                <code className="rounded bg-slate-800 px-1 text-slate-200">.json</code> file.
+                            </li>
+                        </ol>
+                        <p className="mt-2 mb-0 text-xs text-slate-400">
+                            You can also paste a sheet you previously exported from this app.
+                        </p>
+                    </details>
 
                     <textarea
                         value={text}

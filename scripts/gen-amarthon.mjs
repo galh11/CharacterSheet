@@ -160,13 +160,33 @@ S('Senses', 'default', [
 
 // 8. Attacks — to-hit and damage derived from ability mods + proficiency.
 S('Attacks', 'actions', [
-    F('Quarterstaff (Shillelagh)', 'text', '', {
-        description: 'Cast Shillelagh so the staff uses your spellcasting ability and deals 1d8. Topple mastery: on a hit the target makes a CON save (DC {8 + proficiency + wis_mod}) or falls Prone. Primal Strike: once per turn add 1d8 of the weapon’s damage type on a hit.',
-        meta: { hit: '+{wis_mod + proficiency}', damage: '1d8+{wis_mod}', type: 'bludgeoning', range: '5 ft' },
-    }),
-    F('Quarterstaff (mundane)', 'text', '', {
-        description: 'Without Shillelagh: Strength-based. Two-handed 1d8.',
+    F('Quarterstaff', 'text', '', {
+        description: 'Strength-based two-handed 1d8. Toggle Shillelagh to use your spellcasting ability (WIS) and a 1d8 die instead. Topple mastery: on a hit the target makes a CON save (DC {8 + proficiency + wis_mod}) or falls Prone.',
         meta: { hit: '+{str_mod + proficiency}', damage: '1d6+{str_mod}', type: 'bludgeoning', range: '5 ft' },
+        toggles: [
+            {
+                id: randomUUID(),
+                label: 'Shillelagh',
+                active: false,
+                hitMode: 'replace',
+                hit: '+{wis_mod + proficiency}',
+                damageMode: 'replace',
+                damage: '1d8+{wis_mod}',
+                type: 'bludgeoning',
+                description: 'Cast Shillelagh: the staff uses your spellcasting ability (WIS) and deals 1d8.',
+            },
+            {
+                id: randomUUID(),
+                label: 'Primal Strike',
+                active: false,
+                hitMode: 'add',
+                hit: '',
+                damageMode: 'add',
+                damage: '1d8',
+                type: 'bludgeoning',
+                description: 'Circle of the Moon: once per turn add 1d8 of the weapon’s damage type on a hit.',
+            },
+        ],
     }),
     F('Longbow', 'text', '', {
         description: 'Slow mastery: on a hit, reduce the target’s Speed by 10 ft until your next turn.',

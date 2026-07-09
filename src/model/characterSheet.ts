@@ -49,6 +49,37 @@ export const effectSchema = z.object({
 })
 export type FieldEffect = z.infer<typeof effectSchema>
 
+/** Whether a toggle adds to the base value or replaces it entirely. */
+export const toggleModeSchema = z.enum(['add', 'replace'])
+export type ToggleMode = z.infer<typeof toggleModeSchema>
+
+/**
+ * An activatable modifier on an action field (a weapon/attack). Each toggle is a
+ * named on/off switch shown in the action card; an action can have as many as you
+ * like (e.g. a Flame Tongue that *adds* 2d6 fire, or a Shillelagh that *replaces*
+ * the damage die and to-hit ability). While active it reshapes the action's
+ * attack roll and damage. Values support `{expr}` interpolation like the action's
+ * own meta, so they can reference ability mods, proficiency, etc.
+ */
+export const actionToggleSchema = z.object({
+    id: z.string().min(1),
+    /** Name shown on the toggle button, e.g. "Shillelagh". */
+    label: z.string().default(''),
+    /** Whether the toggle is currently on. */
+    active: z.boolean().default(false),
+    /** To-hit change: `add` adds this to the attack modifier, `replace` overrides it. */
+    hitMode: toggleModeSchema.default('add'),
+    hit: z.string().default(''),
+    /** Damage change: `add` appends a new damage part, `replace` swaps the base damage. */
+    damageMode: toggleModeSchema.default('add'),
+    damage: z.string().default(''),
+    /** Damage type for this toggle's damage (or the new base type when replacing). */
+    type: z.string().default(''),
+    /** Optional on-hover explanation of what the toggle does. */
+    description: z.string().default(''),
+})
+export type ActionToggle = z.infer<typeof actionToggleSchema>
+
 export const fieldSchema = z.object({
     id: z.string().min(1),
     label: z.string(),
@@ -63,6 +94,9 @@ export const fieldSchema = z.object({
     meta: z.record(z.string(), z.string()).optional(),
     /** Modifiers this field grants to other fields (relational effects). */
     effects: z.array(effectSchema).optional(),
+    /** Activatable modifiers for action fields (weapons/attacks): named on/off
+     *  switches that add or replace the action's damage and to-hit while active. */
+    toggles: z.array(actionToggleSchema).optional(),
     /** Whether this field's effects are currently applied. Boolean fields follow
      *  their own on/off value instead; for all others this toggles equip/active. */
     effectsActive: z.boolean().optional(),
@@ -109,12 +143,13 @@ export const sectionSchema = z.object({
     layout: layoutSchema,
 })
 
+const uid = (): string => crypto.randomUUID()
+
 /** Drop legacy standalone "deathsaves" sections, folding any recorded
  *  successes/failures into the HP section's meta. Death saves now live inside
  *  the HP tracker and surface only when Current HP hits 0, so this keeps older
  *  saves loadable without a dedicated section kind. */
-const foldLegacyDeathSaves = (input: unknown): unknown => {
-    if (!input || typeof input !== 'object') return input
+const foldLegacyDeathSaves = (input: unknown): unknown => {    if (!input || typeof input !== 'object') return input
     const sheet = input as { sections?: unknown }
     if (!Array.isArray(sheet.sections)) return input
     if (!sheet.sections.some((s) => (s as { kind?: unknown })?.kind === 'deathsaves')) return input
@@ -143,6 +178,57 @@ const foldLegacyDeathSaves = (input: unknown): unknown => {
     return { ...sheet, sections }
 }
 
+/** Convert a legacy single "extra damage" attack (meta.extra / extraType /
+ *  extraWhen / extraLabel) into a first-class action toggle, so every action's
+ *  activatable modifiers live in one repeatable list. Old saved sheets keep
+ *  working: the extra becomes an `add`-mode toggle (off by default, matching the
+ *  old extraWhen gate) and the stale meta keys are dropped. */
+const foldLegacyActionExtras = (input: unknown): unknown => {
+    if (!input || typeof input !== 'object') return input
+    const sheet = input as { sections?: unknown }
+    if (!Array.isArray(sheet.sections)) return input
+    const humanize = (slug: string): string =>
+        slug.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+    let touched = false
+    const sections = sheet.sections.map((s) => {
+        const fields = (s as { fields?: unknown }).fields
+        if (!Array.isArray(fields)) return s
+        let sectionTouched = false
+        const nextFields = fields.map((f) => {
+            const field = f as { meta?: Record<string, string>; toggles?: unknown[] }
+            const meta = field.meta
+            if (!meta || typeof meta !== 'object' || !meta.extra) return f
+            if (Array.isArray(field.toggles) && field.toggles.length > 0) return f
+            sectionTouched = true
+            const label = meta.extraLabel || (meta.extraWhen ? humanize(meta.extraWhen) : 'Extra damage')
+            const toggle = {
+                id: uid(),
+                label,
+                active: false,
+                hitMode: 'add' as const,
+                hit: '',
+                damageMode: 'add' as const,
+                damage: meta.extra,
+                type: meta.extraType ?? '',
+                description: '',
+            }
+            const restMeta: Record<string, string> = { ...meta }
+            delete restMeta.extra
+            delete restMeta.extraType
+            delete restMeta.extraWhen
+            delete restMeta.extraLabel
+            return { ...(field as object), meta: restMeta, toggles: [toggle] }
+        })
+        if (!sectionTouched) return s
+        touched = true
+        return { ...(s as object), fields: nextFields }
+    })
+    return touched ? { ...sheet, sections } : input
+}
+
+const foldLegacy = (input: unknown): unknown =>
+    foldLegacyActionExtras(foldLegacyDeathSaves(input))
+
 const sheetObjectSchema = z.object({
     id: z.string().min(1),
     name: z.string(),
@@ -151,13 +237,11 @@ const sheetObjectSchema = z.object({
     sections: z.array(sectionSchema),
 })
 
-export const characterSheetSchema = z.preprocess(foldLegacyDeathSaves, sheetObjectSchema)
+export const characterSheetSchema = z.preprocess(foldLegacy, sheetObjectSchema)
 export type SectionLayout = z.infer<typeof layoutSchema>
 export type CharacterSection = z.infer<typeof sectionSchema>
 export type CharacterSheet = z.infer<typeof sheetObjectSchema>
 export type CharacterField = z.infer<typeof fieldSchema>
-
-const uid = (): string => crypto.randomUUID()
 
 const ACCENTS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ef4444', '#10b981', '#ec4899']
 

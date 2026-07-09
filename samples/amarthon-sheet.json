@@ -1,9 +1,9 @@
 {
-  "id": "4cc94c21-9dc2-43d9-8bd7-620801f6022d",
+  "id": "e3dddf83-01af-48be-9a94-32057f006c81",
   "name": "Amarthon",
   "sections": [
     {
-      "id": "c111a9c2-8529-4b97-9703-7e6e974dc38a",
+      "id": "755e2fd6-c67e-408d-8128-d3f4ea570d1d",
       "title": "Character",
       "description": "",
       "accent": "#8b5cf6",
@@ -11,77 +11,77 @@
       "scale": 1,
       "fields": [
         {
-          "id": "8b606312-7681-4468-8692-cbe45e739732",
+          "id": "d35d43ab-da45-4573-b4cf-f4bed81cbd10",
           "label": "Race",
           "type": "text",
           "value": "Variant Human",
           "description": ""
         },
         {
-          "id": "31a72fd9-8ba7-44e1-be12-8f4084cc8821",
+          "id": "f917134a-01a5-4ae8-b9c5-1b7819cd6819",
           "label": "Size",
           "type": "text",
           "value": "Medium",
           "description": ""
         },
         {
-          "id": "55b192e2-1b36-4bce-8af1-210e084ca0d0",
+          "id": "dba4ab54-b66a-4d90-8cb6-77e4bdb133df",
           "label": "Class",
           "type": "text",
           "value": "Druid 8",
           "description": ""
         },
         {
-          "id": "f753b501-c6ad-4157-b9ef-600e5b7447cb",
+          "id": "6aee3ba6-93b5-4d33-86c9-a585f440b595",
           "label": "Level",
           "type": "number",
           "value": "8",
           "description": "Character level. Use “Level up” in the toolbar to increment, then update HP max, hit dice, spell slots and features."
         },
         {
-          "id": "51953095-1131-4349-a81d-4b3df45e84c1",
+          "id": "14c64f80-e0f7-49ac-90c0-3a2089bbdfcd",
           "label": "Subclass",
           "type": "text",
           "value": "Circle of the Moon",
           "description": ""
         },
         {
-          "id": "4b0090c0-c314-434f-a3fc-29641aea2928",
+          "id": "b68ae7fb-a5af-4188-8952-9444b9c9ed5c",
           "label": "Background",
           "type": "text",
           "value": "Sage",
           "description": ""
         },
         {
-          "id": "e163c4e5-2b0c-44c1-8b2c-a874f6333a42",
+          "id": "4ba53950-608b-4ccb-b113-aaa3dd0e744f",
           "label": "Primal Order",
           "type": "text",
           "value": "Magician",
           "description": ""
         },
         {
-          "id": "889e7e26-3c7c-414f-a73b-0458cd4dce7d",
+          "id": "6313562f-05c4-4bba-94a7-eacb53ffb5dc",
           "label": "Inspiration",
           "type": "boolean",
           "value": "false",
           "description": "Spend to reroll any d20. Toggle from the star in the toolbar."
         },
         {
-          "id": "e34e79d9-e68b-4b81-911d-c7bb908e8d8b",
+          "id": "2edbe500-0405-42d4-bc83-c9cf2c02e1c6",
           "label": "Armor",
           "type": "text",
           "value": "Light armor, Shields",
           "description": ""
         },
         {
-          "id": "24797037-f891-41c3-b0a3-7fab83bf528d",
+          "id": "9cabf1e9-20f9-41cc-882c-4a1435c41bf2",
           "label": "Weapons",
           "type": "text",
           "value": "Simple weapons",
           "description": ""
         },
         {
-          "id": "9a43b4bd-c969-4f58-8a43-6b46901d45a4",
+          "id": "e5f52659-ecbd-4997-86d0-0f3eef955db6",
           "label": "Tools",
           "type": "text",
           "value": "Herbalism Kit, Calligrapher’s Supplies",
@@ -96,7 +96,7 @@
       }
     },
     {
-      "id": "dd8e4c1b-ad53-452d-bc1d-aff618f981f5",
+      "id": "2c533230-52da-4db6-86ff-3e765f44d386",
       "title": "Ability Scores",
       "description": "",
       "accent": "#f59e0b",
@@ -104,84 +104,84 @@
       "scale": 1,
       "fields": [
         {
-          "id": "044c4973-1c69-499d-a755-72229bcc056e",
+          "id": "7d1a39ed-2d64-41e6-8088-672a15f55f50",
           "label": "STR",
           "type": "number",
           "value": "8",
           "description": ""
         },
         {
-          "id": "b7f4c661-dc8a-4cf1-b9e0-852027b4f9a3",
+          "id": "804d85d3-6747-4a95-beac-68995ceccf44",
           "label": "DEX",
           "type": "number",
           "value": "14",
           "description": ""
         },
         {
-          "id": "9afb04b4-7017-4cbb-89f0-30bccc55e01d",
+          "id": "9cbc2a4d-5777-452d-adaa-d1248159f40f",
           "label": "CON",
           "type": "number",
           "value": "17",
           "description": ""
         },
         {
-          "id": "e368a14b-0df0-46ac-8cd5-89085855c796",
+          "id": "e08d9e7e-3e49-4a3e-920a-fe7145d71bcc",
           "label": "INT",
           "type": "number",
           "value": "10",
           "description": ""
         },
         {
-          "id": "0fb04f77-2933-428a-91c4-5b79843787dc",
+          "id": "147145dd-1d9b-420c-bb07-753bc33dc2bf",
           "label": "WIS",
           "type": "number",
           "value": "19",
           "description": ""
         },
         {
-          "id": "d23c4eab-eaae-43df-9152-4b111e15f94f",
+          "id": "50f7c816-23b6-428c-aee3-c83cad408540",
           "label": "CHA",
           "type": "number",
           "value": "10",
           "description": ""
         },
         {
-          "id": "c8330d0a-cc3a-440c-8647-6b8bd712b617",
+          "id": "1a53b4c9-740c-4ce3-a3bf-d0d24deb82b7",
           "label": "STR Mod",
           "type": "computed",
           "value": "floor((str - 10) / 2)",
           "description": ""
         },
         {
-          "id": "7b566504-380d-43ca-9c60-8258d3c33705",
+          "id": "929be475-1aa4-4b80-ad5a-ecdeb3fdab5d",
           "label": "DEX Mod",
           "type": "computed",
           "value": "floor((dex - 10) / 2)",
           "description": ""
         },
         {
-          "id": "48f50b70-748f-43f8-8254-638f1f6b8280",
+          "id": "d31b0336-4a15-41c6-8923-1ad4a41d75a6",
           "label": "CON Mod",
           "type": "computed",
           "value": "floor((con - 10) / 2)",
           "description": ""
         },
         {
-          "id": "ed111094-0c2c-4b82-99c1-7b194cf0b1d9",
+          "id": "b22f4744-dbda-4f7e-8d45-328d02f5da54",
           "label": "INT Mod",
           "type": "computed",
           "value": "floor((int - 10) / 2)",
           "description": ""
         },
         {
-          "id": "6bad4f3a-8211-4d73-b52e-18d525e46dd7",
+          "id": "67bbad43-5eaa-484d-9b3a-5b431698379e",
           "label": "WIS Mod",
           "type": "computed",
           "value": "floor((wis - 10) / 2)",
           "description": ""
         },
         {
-          "id": "98eef790-1a69-436d-b4d9-b6e040efb630",
+          "id": "3bf26fe1-cc15-4dc8-9321-00ef1953d998",
           "label": "CHA Mod",
           "type": "computed",
           "value": "floor((cha - 10) / 2)",
@@ -196,7 +196,7 @@
       }
     },
     {
-      "id": "5c19e9af-6cfa-46b9-bcc8-e7f3ccf6c2b8",
+      "id": "d8ba2cb7-bb61-4790-a192-0d2a122c66cb",
       "title": "Saving Throws",
       "description": "",
       "accent": "#8b5cf6",
@@ -204,7 +204,7 @@
       "scale": 1,
       "fields": [
         {
-          "id": "144adc3d-313d-4911-a3d2-781f47759b75",
+          "id": "1a96f4a7-ea85-4387-ac2a-0454495a2ba6",
           "label": "Strength",
           "type": "number",
           "value": "",
@@ -216,7 +216,7 @@
           }
         },
         {
-          "id": "e306df54-a956-4c90-95c7-8be3375a3b5a",
+          "id": "52a34f52-2614-4e87-8fe6-663d9bda8172",
           "label": "Dexterity",
           "type": "number",
           "value": "",
@@ -228,7 +228,7 @@
           }
         },
         {
-          "id": "f1cc39e8-2b19-4efe-87b2-2df2436345af",
+          "id": "ad875db1-5e0a-4d0c-a0fc-19414970a093",
           "label": "Constitution",
           "type": "number",
           "value": "",
@@ -240,7 +240,7 @@
           }
         },
         {
-          "id": "d9ec4b41-740a-490b-a254-6836fefdd56c",
+          "id": "161dc508-8776-4ac6-9c07-8c983adbe079",
           "label": "Intelligence",
           "type": "number",
           "value": "",
@@ -252,7 +252,7 @@
           }
         },
         {
-          "id": "141fd75f-29fd-4273-a12d-8e941d43d189",
+          "id": "1913540a-e93c-40fe-a5d2-1c5cf5c2bac5",
           "label": "Wisdom",
           "type": "number",
           "value": "",
@@ -264,7 +264,7 @@
           }
         },
         {
-          "id": "cac4d835-e54c-4cd0-a2dc-51a402e5ee4f",
+          "id": "6d8ffd51-6eeb-4946-8f79-6ac8e81c2349",
           "label": "Charisma",
           "type": "number",
           "value": "",
@@ -284,7 +284,7 @@
       }
     },
     {
-      "id": "9f7b3719-7fce-46d4-bc8b-ed660e6df2b2",
+      "id": "7a9d0a02-0b87-435e-9826-cb5539ebd094",
       "title": "Skills",
       "description": "",
       "accent": "#8b5cf6",
@@ -292,7 +292,7 @@
       "scale": 1,
       "fields": [
         {
-          "id": "fd5c7daa-98f5-432f-bd78-9d3aab4e0982",
+          "id": "b9b3068e-a8fc-40c0-84da-1309d1a68d10",
           "label": "Acrobatics",
           "type": "number",
           "value": "",
@@ -304,7 +304,7 @@
           }
         },
         {
-          "id": "768682d1-bcd0-401a-9662-2032e104364a",
+          "id": "8a8cdb16-280b-4e2f-9407-124aeea420c9",
           "label": "Animal Handling",
           "type": "number",
           "value": "",
@@ -316,7 +316,7 @@
           }
         },
         {
-          "id": "579c38d0-9b46-4e37-8880-af998c03ae11",
+          "id": "51b521ee-769c-4732-b99b-4dd08f3cbfa3",
           "label": "Arcana",
           "type": "number",
           "value": "",
@@ -328,7 +328,7 @@
           }
         },
         {
-          "id": "f88731f7-5894-4b4a-9928-5b41cb55d007",
+          "id": "3d2772ae-4a58-46b4-b280-8d2788f68912",
           "label": "Athletics",
           "type": "number",
           "value": "",
@@ -340,7 +340,7 @@
           }
         },
         {
-          "id": "21cec2b3-eece-4519-80bb-112ae8baf21f",
+          "id": "53e449d3-b84c-4245-87f0-1a18ecda2fe2",
           "label": "Deception",
           "type": "number",
           "value": "",
@@ -352,7 +352,7 @@
           }
         },
         {
-          "id": "40a93181-91c1-4f10-916f-4ffa25ca08f9",
+          "id": "7d14f0c9-b459-4de2-b522-f38fab9bc73d",
           "label": "History",
           "type": "number",
           "value": "",
@@ -364,7 +364,7 @@
           }
         },
         {
-          "id": "468fff3a-4d5b-47b4-b689-50d47c72dd3b",
+          "id": "82f89378-343c-472e-a981-d69cedc2959a",
           "label": "Insight",
           "type": "number",
           "value": "",
@@ -376,7 +376,7 @@
           }
         },
         {
-          "id": "2b6b2cc9-0700-4404-95e2-a6f60bce33d7",
+          "id": "90c2e80b-20b8-4f79-a84b-5b39da7f3286",
           "label": "Intimidation",
           "type": "number",
           "value": "",
@@ -388,7 +388,7 @@
           }
         },
         {
-          "id": "a7635842-6817-4736-8608-ea3253610eaa",
+          "id": "3d2f6ba3-fd3c-4700-bfa6-a714c900fee9",
           "label": "Investigation",
           "type": "number",
           "value": "",
@@ -400,7 +400,7 @@
           }
         },
         {
-          "id": "76fe2420-7978-42cf-9699-2e86c5ed0137",
+          "id": "919dfb87-f2d0-4505-856d-15a0355f0a34",
           "label": "Medicine",
           "type": "number",
           "value": "",
@@ -412,7 +412,7 @@
           }
         },
         {
-          "id": "820ba687-13d8-4377-b46a-4523d78f64ba",
+          "id": "5110e26e-dc44-4403-934c-90aede06621e",
           "label": "Nature",
           "type": "number",
           "value": "",
@@ -424,7 +424,7 @@
           }
         },
         {
-          "id": "bb728142-049e-48f3-8e14-5b63a4ec7d45",
+          "id": "4dbaa552-0da1-47a5-9a43-a25259c08e23",
           "label": "Perception",
           "type": "number",
           "value": "",
@@ -436,7 +436,7 @@
           }
         },
         {
-          "id": "ad305571-194d-49c0-b354-9de0ba94f412",
+          "id": "01dac8ca-0344-429a-89d9-ab27dce02f54",
           "label": "Performance",
           "type": "number",
           "value": "",
@@ -448,7 +448,7 @@
           }
         },
         {
-          "id": "341db2ea-1ec7-49bf-a2f7-97fc053ba6d8",
+          "id": "fb196c81-9f2a-4165-b110-7afa52a2f91a",
           "label": "Persuasion",
           "type": "number",
           "value": "",
@@ -460,7 +460,7 @@
           }
         },
         {
-          "id": "a6acd130-9503-46db-83c8-aeae1819138e",
+          "id": "7a3e8b8d-b212-45fb-992f-b22988c09c68",
           "label": "Religion",
           "type": "number",
           "value": "",
@@ -472,7 +472,7 @@
           }
         },
         {
-          "id": "cd20142f-1150-4968-a784-0114bf7f1296",
+          "id": "4bec2b7c-8f8c-42a8-b0ea-6ac4b7d7098f",
           "label": "Sleight of Hand",
           "type": "number",
           "value": "",
@@ -484,7 +484,7 @@
           }
         },
         {
-          "id": "07587329-63e9-4c59-bc43-83a68e2719e2",
+          "id": "1bae842b-9299-4e7d-aa14-a49668298f41",
           "label": "Stealth",
           "type": "number",
           "value": "",
@@ -496,7 +496,7 @@
           }
         },
         {
-          "id": "32423e82-3a63-439e-800d-aa719e61aeae",
+          "id": "55aac93c-937e-4b92-b86a-57234c43f961",
           "label": "Survival",
           "type": "number",
           "value": "",
@@ -516,7 +516,7 @@
       }
     },
     {
-      "id": "acbda884-6572-4861-9077-ad85dd1ce6ea",
+      "id": "7ee1d4b9-341a-43e5-bd36-73c2564391bb",
       "title": "Senses",
       "description": "",
       "accent": "#8b5cf6",
@@ -524,21 +524,21 @@
       "scale": 1,
       "fields": [
         {
-          "id": "1bef474a-6889-4b2c-bd96-3f84891e9e51",
+          "id": "14a68049-14d0-4523-a8bf-0dd71d3f86a9",
           "label": "Passive Perception",
           "type": "computed",
           "value": "10 + wis_mod + proficiency",
           "description": ""
         },
         {
-          "id": "3b004289-e26b-4969-9db6-0fad67ef98d4",
+          "id": "d6372b3a-5ec6-41ed-8d4d-74716cadf492",
           "label": "Passive Insight",
           "type": "computed",
           "value": "10 + wis_mod + proficiency",
           "description": ""
         },
         {
-          "id": "819e8e9b-afd3-4a51-a3b4-8e000cf17734",
+          "id": "70faa753-425e-42ed-988f-6e6121994dff",
           "label": "Passive Investigation",
           "type": "computed",
           "value": "10 + int_mod",
@@ -553,7 +553,7 @@
       }
     },
     {
-      "id": "130a9b2a-e036-4041-b291-9c73e8bd2097",
+      "id": "8ea81e3d-1ff6-40ef-b78b-9c5f31141a2e",
       "title": "Combat",
       "description": "",
       "accent": "#ef4444",
@@ -561,49 +561,49 @@
       "scale": 1,
       "fields": [
         {
-          "id": "d6b77636-1758-4d79-b655-9d4668111d05",
+          "id": "9744f552-ed1f-432d-8fd9-71b44ff3fb18",
           "label": "AC",
           "type": "computed",
           "value": "12 + dex_mod + 2",
           "description": "Studded Leather (base 12) + DEX mod + Shield (+2). Barkskin sets a floor of 16."
         },
         {
-          "id": "3142e4cc-8844-40c5-9139-20c4718b3acc",
+          "id": "b0fb950a-3811-4717-9bbe-bd5a90e37542",
           "label": "Initiative",
           "type": "computed",
           "value": "dex_mod",
           "description": ""
         },
         {
-          "id": "15ccb0c0-5bf3-4968-965c-3439c788aba1",
+          "id": "7fbec1f9-0c90-4be7-a68a-0c4748dd6eee",
           "label": "Speed",
           "type": "number",
           "value": "30",
           "description": ""
         },
         {
-          "id": "6cd56fa4-b44c-49d7-8e61-8c5389be2d5c",
+          "id": "758ca1e0-1828-4ced-ba79-0c7086a1c60b",
           "label": "Passive Perception",
           "type": "computed",
           "value": "10 + wis_mod + proficiency",
           "description": "Proficient in Perception."
         },
         {
-          "id": "9a453781-7ff3-4fa4-93f5-e455af0d9d38",
+          "id": "c158ec09-1550-4354-b671-ec07c65026af",
           "label": "Spell Save DC",
           "type": "computed",
           "value": "8 + proficiency + wis_mod",
           "description": "Druid spellcasting (Wisdom)."
         },
         {
-          "id": "31822946-b0c6-48c6-9f4f-cefb47ecd160",
+          "id": "f4b8d368-8f9d-4197-ad4b-5e9e2533a25e",
           "label": "Spell Attack",
           "type": "computed",
           "value": "proficiency + wis_mod",
           "description": ""
         },
         {
-          "id": "9800ffdd-3ae5-4c78-9fc4-650e232e6f7d",
+          "id": "7ae19c36-51cd-4990-82ec-47623272ff0d",
           "label": "Proficiency",
           "type": "number",
           "value": "3",
@@ -618,7 +618,7 @@
       }
     },
     {
-      "id": "094d533f-2ad0-4c5f-a506-8f713ac9964c",
+      "id": "8a7909ed-acb5-413f-90d2-cd96e422ba94",
       "title": "Hit Points",
       "description": "",
       "accent": "#10b981",
@@ -626,42 +626,42 @@
       "scale": 1,
       "fields": [
         {
-          "id": "4b634140-58b6-4a39-b60f-85e5427b2994",
+          "id": "00cc40f1-79f6-4e3f-b290-e55d3f8d60c9",
           "label": "Current HP",
           "type": "number",
           "value": "67",
           "description": ""
         },
         {
-          "id": "c9e252d4-77c0-4a10-8c5c-565c5ba7cd18",
+          "id": "ad25a0ca-738e-4edc-8ad1-3d89329b0e9b",
           "label": "Max HP",
           "type": "number",
           "value": "67",
           "description": ""
         },
         {
-          "id": "32c54e06-ddee-48db-a082-966d16a412a0",
+          "id": "304dc556-603b-4726-a980-aff7e8e80158",
           "label": "Temp HP",
           "type": "number",
           "value": "0",
           "description": ""
         },
         {
-          "id": "8d02adcb-f255-4cb9-8ad1-8ba4383838c2",
+          "id": "152b84fb-692e-47cd-b7ee-47013174b091",
           "label": "Resistances",
           "type": "text",
           "value": "",
           "description": "Comma-separated damage types halved on the Damage button."
         },
         {
-          "id": "1be7ff08-f99a-4609-aa09-3eb3c3e54f00",
+          "id": "ceea35a6-a67e-4eaf-a734-73830d598951",
           "label": "Vulnerabilities",
           "type": "text",
           "value": "",
           "description": "Comma-separated damage types doubled on the Damage button."
         },
         {
-          "id": "74178da9-9530-419a-a1bc-ce516286e26d",
+          "id": "f4902588-e321-4da6-a0b7-b5dbcc88c85d",
           "label": "Hit Dice (d8)",
           "type": "resource",
           "value": "8",
@@ -681,7 +681,7 @@
       }
     },
     {
-      "id": "9505c342-14da-4acf-827f-68a57742c8ba",
+      "id": "06c356af-0717-48d7-af0b-21da6a60204c",
       "title": "Attacks",
       "description": "",
       "accent": "#f59e0b",
@@ -689,33 +689,44 @@
       "scale": 1,
       "fields": [
         {
-          "id": "735dcbcf-b99f-40df-a460-53b8b80e053a",
-          "label": "Quarterstaff (Shillelagh)",
+          "id": "7c594e1e-7df6-46b4-b4e1-cc8a5395258a",
+          "label": "Quarterstaff",
           "type": "text",
           "value": "",
-          "description": "Cast Shillelagh so the staff uses your spellcasting ability and deals 1d8. Topple mastery: on a hit the target makes a CON save (DC {8 + proficiency + wis_mod}) or falls Prone. Primal Strike: once per turn add 1d8 of the weapon’s damage type on a hit.",
-          "meta": {
-            "hit": "+{wis_mod + proficiency}",
-            "damage": "1d8+{wis_mod}",
-            "type": "bludgeoning",
-            "range": "5 ft"
-          }
-        },
-        {
-          "id": "890b6436-593b-45d7-b675-bc988b43a598",
-          "label": "Quarterstaff (mundane)",
-          "type": "text",
-          "value": "",
-          "description": "Without Shillelagh: Strength-based. Two-handed 1d8.",
+          "description": "Strength-based two-handed 1d8. Toggle Shillelagh to use your spellcasting ability (WIS) and a 1d8 die instead. Topple mastery: on a hit the target makes a CON save (DC {8 + proficiency + wis_mod}) or falls Prone.",
           "meta": {
             "hit": "+{str_mod + proficiency}",
             "damage": "1d6+{str_mod}",
             "type": "bludgeoning",
             "range": "5 ft"
-          }
+          },
+          "toggles": [
+            {
+              "id": "f70a3576-07c0-4777-b6c2-ae39491de979",
+              "label": "Shillelagh",
+              "active": false,
+              "hitMode": "replace",
+              "hit": "+{wis_mod + proficiency}",
+              "damageMode": "replace",
+              "damage": "1d8+{wis_mod}",
+              "type": "bludgeoning",
+              "description": "Cast Shillelagh: the staff uses your spellcasting ability (WIS) and deals 1d8."
+            },
+            {
+              "id": "00733f6d-60f5-4dd8-b188-8ed4324ad109",
+              "label": "Primal Strike",
+              "active": false,
+              "hitMode": "add",
+              "hit": "",
+              "damageMode": "add",
+              "damage": "1d8",
+              "type": "bludgeoning",
+              "description": "Circle of the Moon: once per turn add 1d8 of the weapon’s damage type on a hit."
+            }
+          ]
         },
         {
-          "id": "a26effae-4f63-4135-a20f-13943c367432",
+          "id": "cadd6c40-3ba4-4baa-9345-fe9ec31466de",
           "label": "Longbow",
           "type": "text",
           "value": "",
@@ -728,7 +739,7 @@
           }
         },
         {
-          "id": "88ef6b90-07b8-41e9-8bc6-dec34bd13615",
+          "id": "9480fff5-76d6-463d-9b78-8fe3efa8a6cb",
           "label": "Poison Spray (cantrip)",
           "type": "text",
           "value": "",
@@ -744,11 +755,11 @@
         "x": 344,
         "y": 478,
         "w": 300,
-        "h": 392
+        "h": 310
       }
     },
     {
-      "id": "ea3bb08c-f461-45ab-b411-9554761bdbf7",
+      "id": "093980d8-a58e-483c-9de2-e5e6909b2825",
       "title": "Spellcasting",
       "description": "",
       "accent": "#06b6d4",
@@ -756,35 +767,35 @@
       "scale": 1,
       "fields": [
         {
-          "id": "50fe1140-982f-484d-9f6f-3123b67c753a",
+          "id": "6ee860bf-2812-443d-89cb-85ebd474ddb0",
           "label": "Ability",
           "type": "text",
           "value": "Wisdom",
           "description": ""
         },
         {
-          "id": "84261c77-b5b1-47bd-bca3-d25ece3dd30b",
+          "id": "b7403598-94c3-4fc2-83db-13847c0ac233",
           "label": "Spell Save DC",
           "type": "computed",
           "value": "8 + proficiency + wis_mod",
           "description": ""
         },
         {
-          "id": "a9bfe49b-227e-42c9-a9fd-50a8c3cf3a3d",
+          "id": "a9edbbc3-c3dc-4abd-916d-45c45ae168b8",
           "label": "Spell Attack",
           "type": "computed",
           "value": "proficiency + wis_mod",
           "description": ""
         },
         {
-          "id": "da18177a-5bba-40f9-a9dc-deac6d796a01",
+          "id": "844e85dc-9cb8-4d31-91b2-1b9b5f2effa1",
           "label": "Prepared (class)",
           "type": "text",
           "value": "Druid — prepares from the whole Druid list",
           "description": "Circle of the Moon druids can swap prepared spells after a Long Rest."
         },
         {
-          "id": "354bef58-3081-4acd-9cda-b928228f00e7",
+          "id": "77696a3c-055a-40f2-bb93-11c3d36c7cae",
           "label": "Concentration",
           "type": "boolean",
           "value": "false",
@@ -799,7 +810,7 @@
       }
     },
     {
-      "id": "f06d7988-1751-4864-be47-bd5392278071",
+      "id": "582bb6da-2ac0-406c-a4cc-72d1466a1ca0",
       "title": "Spell Slots",
       "description": "",
       "accent": "#8b5cf6",
@@ -807,7 +818,7 @@
       "scale": 1,
       "fields": [
         {
-          "id": "0a26cac5-8774-478c-b0d9-d8aedaa430f9",
+          "id": "4dfa23b0-b785-4b7c-befc-c243688c2c32",
           "label": "Level 1",
           "type": "resource",
           "value": "4",
@@ -818,7 +829,7 @@
           }
         },
         {
-          "id": "4a8b15d4-3de3-4f31-983c-23bb87295a29",
+          "id": "862d04dd-57aa-4b72-9cd4-6d69062b2d06",
           "label": "Level 2",
           "type": "resource",
           "value": "3",
@@ -829,7 +840,7 @@
           }
         },
         {
-          "id": "55b1d320-21a8-41b0-9455-f35493cc77a4",
+          "id": "43a074b4-dc27-4cab-8412-678a610fbaa8",
           "label": "Level 3",
           "type": "resource",
           "value": "3",
@@ -840,7 +851,7 @@
           }
         },
         {
-          "id": "5340b43d-73b0-46b1-a7af-a2d76d32a262",
+          "id": "1a361dc3-1ded-40b9-a06e-284c9fcfa1ec",
           "label": "Level 4",
           "type": "resource",
           "value": "2",
@@ -859,7 +870,7 @@
       }
     },
     {
-      "id": "25c4300f-1da9-4bda-a52f-05b3e0a78ea3",
+      "id": "ffc2c9a2-40d1-41ad-8784-b4a264dec6be",
       "title": "Cantrips",
       "description": "",
       "accent": "#06b6d4",
@@ -867,42 +878,42 @@
       "scale": 1,
       "fields": [
         {
-          "id": "b4f67145-ef6b-49c2-934d-f15278b0a8fd",
+          "id": "60b06256-35ea-49fb-b3c4-011809bd199f",
           "label": "Guidance",
           "type": "text",
           "value": "Druid",
           "description": "Concentration, 1 min. Touch a willing creature; add 1d4 to one ability check of its choice."
         },
         {
-          "id": "c1982fd8-01b5-4d57-b977-660abf8ddd6f",
+          "id": "ee567054-5606-45ba-90d5-ecc197664994",
           "label": "Message",
           "type": "text",
           "value": "Druid",
           "description": "Whisper a message to a creature within 120 ft; it can reply."
         },
         {
-          "id": "82795ca3-fba9-4cf4-b50b-bd158d2eb3b5",
+          "id": "96131a81-e589-4712-b82e-8ebbfcbee233",
           "label": "Shillelagh",
           "type": "text",
           "value": "Druid",
           "description": "Bonus Action: your club/quarterstaff uses your spellcasting ability, deals 1d8, and counts as magical for 1 min."
         },
         {
-          "id": "97516ac2-6d30-444d-98c4-f49f61ef430e",
+          "id": "4146acbd-c960-45bb-9f7e-294918bc1eb4",
           "label": "Poison Spray",
           "type": "text",
           "value": "Druid",
           "description": "CON save or take 2d12 poison (at level 8). Range 10 ft."
         },
         {
-          "id": "c9a9a631-77be-43b9-b0c8-7ef2f93dcec6",
+          "id": "02cdc8c0-44f9-45f2-8cb5-eafa8a19227b",
           "label": "Minor Illusion",
           "type": "text",
           "value": "Magic Initiate (Wizard)",
           "description": "Create a sound or image for 1 min."
         },
         {
-          "id": "7f34ddad-300e-4f4e-9e78-64e28c2b89c6",
+          "id": "12f088d5-e64c-4418-8831-fa6d8731589b",
           "label": "Booming Blade",
           "type": "text",
           "value": "Magic Initiate (Wizard)",
@@ -917,7 +928,7 @@
       }
     },
     {
-      "id": "6e689fb5-beac-457f-b7fc-070fca8fa3fa",
+      "id": "a5ed995a-4d80-4da3-adfd-0936f80c7e46",
       "title": "Prepared Spells",
       "description": "",
       "accent": "#8b5cf6",
@@ -925,147 +936,147 @@
       "scale": 1,
       "fields": [
         {
-          "id": "739d86be-c7d4-4f82-8ecd-ee7b55f4ae73",
+          "id": "f0a01c62-f26b-4be7-80e1-26d422a5f316",
           "label": "— Level 1 —",
           "type": "text",
           "value": "",
           "description": ""
         },
         {
-          "id": "12732bb1-7ede-4627-90e0-4077b08b6e1b",
+          "id": "cd6b514c-77f2-4f80-a1f3-8f4cc2218685",
           "label": "Absorb Elements",
           "type": "text",
           "value": "1",
           "description": ""
         },
         {
-          "id": "6122c70c-38a3-40fe-a0e2-585cc0a8ae7f",
+          "id": "ee66da12-2b3e-42d1-bcf5-4a0873492bf0",
           "label": "Detect Magic",
           "type": "text",
           "value": "1",
           "description": "Concentration · Ritual."
         },
         {
-          "id": "d047a024-106b-4937-bba3-01a79d014727",
+          "id": "75ce9884-5e16-4db7-bedd-ddad7766fcb0",
           "label": "Healing Word",
           "type": "text",
           "value": "1",
           "description": "Bonus Action heal 2d4 + WIS mod at range."
         },
         {
-          "id": "006925c9-7a9e-430a-bade-dcf0d568b9ec",
+          "id": "49fe5909-46dd-43f5-8941-a9061d19b1b1",
           "label": "Speak with Animals",
           "type": "text",
           "value": "1",
           "description": "Ritual · always prepared."
         },
         {
-          "id": "083f3126-742c-4a10-820a-408203041528",
+          "id": "07d1447e-d9de-4eb5-9c8b-2e72b153bb40",
           "label": "Find Familiar",
           "type": "text",
           "value": "1",
           "description": "Ritual · via Wild Companion (spell slot or Wild Shape use)."
         },
         {
-          "id": "f2334b91-ba71-42bf-9ba2-66fd954929bf",
+          "id": "93eea8b3-d1ad-4399-a2de-f93e743bb559",
           "label": "Shield",
           "type": "text",
           "value": "1",
           "description": "Magic Initiate: cast free 1/Long Rest, or with a slot. Reaction, +5 AC."
         },
         {
-          "id": "d2c39830-021e-49c6-bc82-54adc172b227",
+          "id": "86d68b94-038e-4d60-964f-1a4e30dcfb19",
           "label": "Silvery Barbs",
           "type": "text",
           "value": "1",
           "description": "Feat spell. Reaction to force a reroll of a hit/save/check."
         },
         {
-          "id": "9419059e-59d4-4ff6-b179-20f13f7591e7",
+          "id": "57bd2c4d-0e36-4215-857b-66d8d7e48679",
           "label": "— Level 2 —",
           "type": "text",
           "value": "",
           "description": ""
         },
         {
-          "id": "eddab348-d21f-4ccc-99bc-6d63045dcdd6",
+          "id": "9b7a20bf-9426-4ad6-a98f-5be056d07057",
           "label": "Aid",
           "type": "text",
           "value": "2",
           "description": "Raise HP maximum and current HP by 5 for three creatures."
         },
         {
-          "id": "34020855-3cb4-48d7-863c-e7bebb153c1e",
+          "id": "a4053fe9-07c9-4f6d-af56-ef97a9c81603",
           "label": "Barkskin",
           "type": "text",
           "value": "2",
           "description": "Target’s AC can’t be less than 16."
         },
         {
-          "id": "86a4cc73-fa57-413f-bf48-d91f7c56702f",
+          "id": "97549e24-d475-4afb-bb29-b6790c844093",
           "label": "Pass without Trace",
           "type": "text",
           "value": "2",
           "description": "Concentration. +10 to Stealth for the party."
         },
         {
-          "id": "3600b465-e80c-4e49-9a95-e76220e4dfcb",
+          "id": "d201069d-41d3-4f05-8922-e39feb21a01b",
           "label": "Misty Step",
           "type": "text",
           "value": "2",
           "description": "Feat spell. Bonus Action teleport 30 ft."
         },
         {
-          "id": "df0db65f-4af8-4270-93d5-deabb9e549da",
+          "id": "6ef2b7d1-b6df-4de5-ba34-d5ce3e3df282",
           "label": "— Level 3 —",
           "type": "text",
           "value": "",
           "description": ""
         },
         {
-          "id": "12f99eac-156c-4a08-a347-db49334a5573",
+          "id": "db128c1d-5fdd-4ed6-b3ba-42fcc8c7bdce",
           "label": "Dispel Magic",
           "type": "text",
           "value": "3",
           "description": ""
         },
         {
-          "id": "6677aa6f-8613-45a6-80c1-6208ed87572e",
+          "id": "3d9f4fb8-bf01-494a-8839-b2e260788627",
           "label": "Revivify",
           "type": "text",
           "value": "3",
           "description": "Return a creature dead < 1 min to life with 1 HP."
         },
         {
-          "id": "971d8eb9-fb4a-43ef-9d68-c59fd4283741",
+          "id": "02bf3e07-b219-43e6-a179-bf2ca6a16e08",
           "label": "Syluné’s Viper",
           "type": "text",
           "value": "3",
           "description": ""
         },
         {
-          "id": "2cc153dc-24c9-4597-a57d-57d44d535364",
+          "id": "b37c836d-b08d-4347-a4cd-5aa27becdbaa",
           "label": "— Level 4 —",
           "type": "text",
           "value": "",
           "description": ""
         },
         {
-          "id": "cffee388-4177-4696-a69f-063eccb124a4",
+          "id": "2c814e50-0244-401b-a02c-cb149683bf51",
           "label": "Polymorph",
           "type": "text",
           "value": "4",
           "description": "Concentration."
         },
         {
-          "id": "8cdd6021-049f-412a-b409-330edd981a8a",
+          "id": "c8b61971-f019-40d0-81c3-e6f34773c389",
           "label": "Wall of Fire",
           "type": "text",
           "value": "4",
           "description": "Concentration."
         },
         {
-          "id": "d2fc8cbe-e22b-453d-975f-76623ff9dbcc",
+          "id": "6aaa35ca-d9d8-4486-9217-2a0b3b3cd3c7",
           "label": "Fire Shield",
           "type": "text",
           "value": "4",
@@ -1074,13 +1085,13 @@
       ],
       "layout": {
         "x": 344,
-        "y": 890,
+        "y": 808,
         "w": 300,
         "h": 726
       }
     },
     {
-      "id": "d74e18c1-4056-4a3e-854b-a639542853b2",
+      "id": "569b9c90-4140-44d9-9ced-65e74d477fec",
       "title": "Resources",
       "description": "",
       "accent": "#ec4899",
@@ -1088,7 +1099,7 @@
       "scale": 1,
       "fields": [
         {
-          "id": "296e1032-d8cc-4c7b-996a-ac5d2adab39f",
+          "id": "cd4eef2a-aecc-46c1-9840-c753946e89a4",
           "label": "Wild Shape",
           "type": "resource",
           "value": "3",
@@ -1099,7 +1110,7 @@
           }
         },
         {
-          "id": "4d30b423-3a23-4574-81d7-45abef43896e",
+          "id": "e2743cf0-0c19-4413-ae55-b4d8d1788dbd",
           "label": "Moonlight Step",
           "type": "resource",
           "value": "4",
@@ -1110,7 +1121,7 @@
           }
         },
         {
-          "id": "a66b7e06-e617-44b3-b30f-11b2d2c8ef7e",
+          "id": "23be6d6e-7b79-4666-ad1f-ffb3dc507c60",
           "label": "Shield (Magic Initiate)",
           "type": "resource",
           "value": "1",
@@ -1129,7 +1140,7 @@
       }
     },
     {
-      "id": "c7149bbe-ecbd-4af3-8a6f-679a03067ea6",
+      "id": "5701591f-b883-4288-b32a-01ef895e9a98",
       "title": "Conditions",
       "description": "",
       "accent": "#ef4444",
@@ -1137,70 +1148,70 @@
       "scale": 1,
       "fields": [
         {
-          "id": "92aa9823-2f30-4d9a-bbbb-dcaa6a5fdc58",
+          "id": "2d64a79e-2601-49e9-a5de-d4d477aa537c",
           "label": "Wild Shaped",
           "type": "boolean",
           "value": "false",
           "description": "Currently in a Beast form."
         },
         {
-          "id": "a3c9bb28-4600-4266-8492-506a8bc018d1",
+          "id": "2ad6210b-0007-49ed-a1fb-d886e5de9ab7",
           "label": "Concentrating",
           "type": "boolean",
           "value": "false",
           "description": "War Caster: Advantage on CON saves to keep Concentration."
         },
         {
-          "id": "f0476ed1-4488-4ce1-8443-77f62c1e8d81",
+          "id": "67450e40-903b-4f21-a9f9-de32aa47d3eb",
           "label": "Barkskin",
           "type": "boolean",
           "value": "false",
           "description": "AC floor 16 while active."
         },
         {
-          "id": "c6ea7b59-d117-4d74-aa60-d32feaf07a5a",
+          "id": "6fc59171-bf05-4906-b630-e468ee11c7ce",
           "label": "Bloodied",
           "type": "boolean",
           "value": "false",
           "description": "At or below half HP (33). Auto-set by the HP tracker."
         },
         {
-          "id": "8bfc0eb7-95a2-4bec-b621-4be54ca95080",
+          "id": "8a576baf-4017-4ac5-b69f-55703f51bcb2",
           "label": "Prone",
           "type": "boolean",
           "value": "false",
           "description": ""
         },
         {
-          "id": "eeb1e0fe-367a-4883-8d36-d3d2960f5fe9",
+          "id": "41513fff-8eb4-4a4f-9fac-877f8684375c",
           "label": "Grappled",
           "type": "boolean",
           "value": "false",
           "description": ""
         },
         {
-          "id": "3c99c136-4b9e-4ca3-9d31-f0806aa91375",
+          "id": "8c9f9519-717f-4a43-936a-38bd0ca5b39b",
           "label": "Frightened",
           "type": "boolean",
           "value": "false",
           "description": ""
         },
         {
-          "id": "11dfe011-987c-49bb-b5ec-1d4faa42e02e",
+          "id": "c502875f-1ca4-424d-9719-eed2d42aec3a",
           "label": "Poisoned",
           "type": "boolean",
           "value": "false",
           "description": ""
         },
         {
-          "id": "84158adb-9de1-4900-929e-7ecc58128f8b",
+          "id": "5179d541-6e82-47a9-b431-1bc14246e0a1",
           "label": "Restrained",
           "type": "boolean",
           "value": "false",
           "description": ""
         },
         {
-          "id": "91e7f083-a990-4c24-9501-6f4acdb69c88",
+          "id": "7caae5c1-fda0-40ca-82dc-610774a04bf3",
           "label": "Stunned",
           "type": "boolean",
           "value": "false",
@@ -1215,7 +1226,7 @@
       }
     },
     {
-      "id": "35fd057e-4cee-4e8e-a665-051fea894ef4",
+      "id": "ca14a41c-448d-4bb2-a168-7a12bcf0a807",
       "title": "Features & Traits",
       "description": "",
       "accent": "#8b5cf6",
@@ -1223,91 +1234,91 @@
       "scale": 1,
       "fields": [
         {
-          "id": "a9a669d0-6f80-470e-a108-b22893542386",
+          "id": "d57ad6c0-85c2-48fd-baff-2a991afa33ab",
           "label": "Druidic",
           "type": "text",
           "value": "",
           "description": "You know Druidic, the secret language of druids, and can leave hidden messages. You automatically spot such messages and can decipher them."
         },
         {
-          "id": "49bb4313-539d-419d-a607-44543c694823",
+          "id": "96ca04f3-7e1e-4afa-b4dd-7d87b56df5d5",
           "label": "Primal Order — Magician",
           "type": "text",
           "value": "",
           "description": "You know one extra Druid cantrip (Poison Spray). Add your WIS mod (min +1) to your Intelligence (Arcana or Nature) checks."
         },
         {
-          "id": "6da7727e-34d5-48a5-aa67-bdf5a6bacfc5",
+          "id": "a7126c12-4d6f-46c9-b94f-54fac374b965",
           "label": "Wild Shape (3/rest)",
           "type": "text",
           "value": "",
           "description": "Bonus Action: transform into a known Beast form (max CR 1, no Fly Speed until — from level 8 you may take a form with a Fly Speed). Lasts hours = half your level. 3 uses at level 8; regain one on a Short Rest, all on a Long Rest."
         },
         {
-          "id": "78423aa8-8ceb-41ba-87fb-bfd14991770d",
+          "id": "a07456b8-d5a2-413f-94c7-fe8862b1e358",
           "label": "Wild Companion",
           "type": "text",
           "value": "",
           "description": "Magic action: expend a spell slot or a Wild Shape use to cast Find Familiar without Materials; the familiar is Fey and lasts until your next Long Rest."
         },
         {
-          "id": "8209d4e1-9f95-4d54-9619-d615936c2f61",
+          "id": "64415107-8f29-4d06-8422-b5023a584578",
           "label": "Circle Forms",
           "type": "text",
           "value": "",
           "description": "Circle of the Moon: while in Wild Shape you can use a Magic action to expend a spell slot and regain 1d8 HP per slot level; your beast forms may have higher CR. (See the subclass table for the CR cap.)"
         },
         {
-          "id": "ed761554-0c05-4044-854b-f870ade93096",
+          "id": "048f56a4-617f-40a1-9d3c-9e43655d4243",
           "label": "Wild Resurgence",
           "type": "text",
           "value": "",
           "description": "Once per turn, if you have no Wild Shape uses left, expend a spell slot to regain one (no action). Also, once per Long Rest, expend a Wild Shape use to gain a level 1 spell slot."
         },
         {
-          "id": "8a5a2f30-131c-446a-a124-f1362dc829df",
+          "id": "fab5d199-5306-43e6-a1ee-084783c119ff",
           "label": "Improved Circle Forms",
           "type": "text",
           "value": "",
           "description": "While in Wild Shape you can use your WIS mod in place of Con for concentration and add your WIS mod to the beast form’s attack damage; you also gain the ability to spend a slot to heal in beast form."
         },
         {
-          "id": "43298562-4ba5-4f19-9d47-b4e9097384ae",
+          "id": "1a27f462-9944-4095-8958-1b233c354ebb",
           "label": "Elemental Fury — Primal Strike",
           "type": "text",
           "value": "",
           "description": "Once on each of your turns when you hit with an attack roll (including in Wild Shape), deal an extra 1d8 damage of the attack’s type."
         },
         {
-          "id": "3dc3b507-e3b3-4466-8c4b-d499a0fba4a3",
+          "id": "30216ec8-1ac1-4062-ba1b-bdac77764a96",
           "label": "Moonlight Step (4/Long)",
           "type": "text",
           "value": "",
           "description": "Circle of the Moon: Bonus Action to teleport up to 30 ft to a space you can see; you have Advantage on your next attack this turn. WIS-mod uses per Long Rest; regain uses by expending a level 2+ slot."
         },
         {
-          "id": "1f798727-cc9f-49e0-86fa-e94c11174710",
+          "id": "616c7de2-043a-4ad8-b8ed-60afad42606d",
           "label": "Spellcasting",
           "type": "text",
           "value": "",
           "description": "Wisdom-based druid casting. Prepare spells from the whole Druid list; swap after a Long Rest. Save DC 15, spell attack +7."
         },
         {
-          "id": "2a1b4d05-8e6d-444b-9ae8-36bfec95c9aa",
+          "id": "62e1089e-fc2c-4399-ab4c-dab9b4a7ce4c",
           "label": "War Caster (feat)",
           "type": "text",
           "value": "",
           "description": "Advantage on CON saves to maintain Concentration; cast somatic spells with hands full; cast a spell (1 action, single target) as an opportunity attack."
         },
         {
-          "id": "70eee4c1-ed00-4132-a39f-579c69973149",
+          "id": "722ca5e8-e360-4213-8f57-115068eb7f55",
           "label": "Magic Initiate — Wizard (feat)",
           "type": "text",
           "value": "",
           "description": "Two wizard cantrips (Minor Illusion, Booming Blade) and a level 1 wizard spell (Shield) you can cast free 1/Long Rest or with slots."
         },
         {
-          "id": "cd6a9bf5-d2d4-4624-b46e-9c66d19409d1",
+          "id": "44ff72f4-0fe8-403d-a5a7-7ca2420515ea",
           "label": "Homebrew feats",
           "type": "text",
           "value": "",
@@ -1322,7 +1333,7 @@
       }
     },
     {
-      "id": "b802eba2-f61d-4025-87a7-edf8b9e175b0",
+      "id": "dffb6fb6-f896-4a15-b531-549e996a6ca3",
       "title": "Languages",
       "description": "",
       "accent": "#8b5cf6",
@@ -1330,21 +1341,21 @@
       "scale": 1,
       "fields": [
         {
-          "id": "7aba6cfb-224e-47c6-a7b3-1abe90046783",
+          "id": "6cead470-d1e3-42b2-859b-efda5dfd67ca",
           "label": "Common",
           "type": "text",
           "value": "fluent",
           "description": ""
         },
         {
-          "id": "ed0aa035-2934-4df9-afab-6184c4b97a32",
+          "id": "0b1d26be-ddcd-4251-9266-023fa6ca84f3",
           "label": "Elvish",
           "type": "text",
           "value": "fluent",
           "description": ""
         },
         {
-          "id": "10b17474-e3e4-43fc-9252-aa83c3afb36f",
+          "id": "cb97a531-dd15-45da-8d4c-384bed86a705",
           "label": "Druidic",
           "type": "text",
           "value": "fluent",
@@ -1359,7 +1370,7 @@
       }
     },
     {
-      "id": "edfdef54-46ce-42a0-a18b-984708da256a",
+      "id": "6eb7e5f5-c314-4620-a62c-6b1131f06a9d",
       "title": "Inventory",
       "description": "",
       "accent": "#a3a3a3",
@@ -1367,7 +1378,7 @@
       "scale": 1,
       "fields": [
         {
-          "id": "6efaf21a-14bd-4f2c-b002-6e0fbcf99d1b",
+          "id": "ea10398d-4ff0-4b82-9098-b392ded3cf01",
           "label": "GP",
           "type": "number",
           "value": "346",
@@ -1377,7 +1388,7 @@
           }
         },
         {
-          "id": "e41d39d9-c44e-4fea-a4a9-4770269a0734",
+          "id": "b2c04c64-5be2-4f95-aee0-cd4bc9748d6b",
           "label": "SP",
           "type": "number",
           "value": "0",
@@ -1387,7 +1398,7 @@
           }
         },
         {
-          "id": "48e61c1b-eea1-448c-96fb-3559a1a4f9bd",
+          "id": "7bf6800e-035e-44d5-9740-388d4bce141b",
           "label": "CP",
           "type": "number",
           "value": "0",
@@ -1397,154 +1408,154 @@
           }
         },
         {
-          "id": "acf36bc7-0321-4573-9e75-f5ee90a5278e",
+          "id": "8bb4027a-8a0e-4a35-bc87-35b651d1c53f",
           "label": "Ring of Quick Recovery",
           "type": "text",
           "value": "worn",
           "description": "Adventurer’s Ring: when you regain hit points, regain an additional 3 (once per turn). Also sheds a cold, fuel-free flame (Bright Light 20 ft)."
         },
         {
-          "id": "cb013ae3-7f89-456d-a333-03cc1f8781b8",
+          "id": "5b3ba448-3eb6-4f82-99e4-e6061b7e457b",
           "label": "Amulet — Beast Whisper",
           "type": "text",
           "value": "worn",
           "description": "Holy-symbol amulet: Advantage on Wisdom (Animal Handling) checks."
         },
         {
-          "id": "4375a597-3e14-4575-96dc-ef00e11377ec",
+          "id": "cb705866-fdf9-49c2-8429-59a6205f0e4c",
           "label": "Quarterstaff — True Strike Echo",
           "type": "text",
           "value": "equipped",
           "description": "1/Long Rest, gain Advantage on one attack roll."
         },
         {
-          "id": "90acf25a-56dc-46b3-9181-3d31cb32e710",
+          "id": "752038bd-4543-4486-b70b-4862c3984ddc",
           "label": "Spell Scroll — Fire Ball ×2",
           "type": "text",
           "value": "carried",
           "description": "Scroll casts Fire Ball (8d6). Save DC 13 / attack +5."
         },
         {
-          "id": "014f2512-f9be-4356-a65c-27996df35731",
+          "id": "af20dcd9-60a5-4fd3-9cd5-8c3da281ee77",
           "label": "Spell Scroll — Counterspell ×2",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "8f103acf-4943-4ec5-99cc-2193b23f9814",
+          "id": "3f162555-0c84-447b-8b9e-d8d67b7c1838",
           "label": "Spell Scroll — Slow ×2",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "657e568d-8f4a-435e-88b9-5206dd795368",
+          "id": "a291672f-4f22-459f-9897-31afd08d2e1b",
           "label": "Potion of Healing (Greater) ×3",
           "type": "text",
           "value": "carried",
           "description": "Regain 4d4 + 4 HP."
         },
         {
-          "id": "a29af611-3a93-4427-814b-39fa1585d42d",
+          "id": "6771b091-f01c-4dcd-adc2-28395bcb540a",
           "label": "Potion of Healing (Superior) ×4",
           "type": "text",
           "value": "carried",
           "description": "Regain 8d4 + 8 HP."
         },
         {
-          "id": "ff642df5-aca2-4254-b7ab-788c860ebc45",
+          "id": "764c1573-acac-4910-98fe-b43196a72c15",
           "label": "Deep North Expedition Cloak",
           "type": "text",
           "value": "worn",
           "description": "Resistance to environmental cold damage; Advantage on Survival checks to navigate/track/avoid getting lost in arctic terrain."
         },
         {
-          "id": "40996484-54d1-44a9-87ed-7e9f7a5d8d74",
+          "id": "41aa4b93-88e8-41b1-bd77-4758bd4acccc",
           "label": "Storm Hood of Kaldweave",
           "type": "text",
           "value": "worn",
           "description": "See through nonmagical blowing snow/fog/freezing rain; ranged attacks against you in such conditions take −2 to hit."
         },
         {
-          "id": "f7536807-4eea-4194-aa75-0cb88197aa84",
+          "id": "8981203d-839c-45ef-953c-6c32f8ff41a6",
           "label": "Whale-Oil Lantern Kit",
           "type": "text",
           "value": "carried",
           "description": "Flame can’t be extinguished by nonmagical wind/snow/rain; Advantage on sight Perception in snow/fog/freezing rain while lit."
         },
         {
-          "id": "aee85534-db76-467d-b782-b8f112ece727",
+          "id": "1c5b1437-4c6b-4c74-b6bd-62ba4ec9bfd9",
           "label": "Studded Leather (worn), Shield (worn)",
           "type": "text",
           "value": "equipped",
           "description": ""
         },
         {
-          "id": "92c63fcd-4311-4ae5-9057-1860049599a9",
+          "id": "9f26c0bf-0a52-4d4e-b13e-27b73b2777b3",
           "label": "Longbow + Arrows ×20",
           "type": "text",
           "value": "equipped",
           "description": ""
         },
         {
-          "id": "8ef33498-98d9-40ba-91f1-f428eb9aee73",
+          "id": "70c64853-5499-449f-82e9-eca2667d019f",
           "label": "Leather Armor (spare), Sickle",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "921085a8-4d30-4f94-b946-b0d52cd261b6",
+          "id": "e68e8a75-e10e-4ea9-b352-46cd9fe95da0",
           "label": "Staff (arcane focus), Component Pouch",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "788a7027-d81d-4b61-846a-fe82e77854cb",
+          "id": "b22ecc1d-2bec-433b-b51b-73c91358ed91",
           "label": "Herbalism Kit, Healer’s Kit ×3",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "cc781a84-061a-4e15-9728-499cf4d4fa0c",
+          "id": "2019c180-d633-49a9-b777-c4fccbfeccfd",
           "label": "Backpack, Bedroll, Tent, Waterskin",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "519bce63-d174-4155-a2c5-fea71abd943d",
+          "id": "6f56d0d5-1313-4c95-be3a-3e539509a6c5",
           "label": "Rations ×5, Rope, Climber’s Kit, Pole",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "2d265a58-258b-4089-80ea-23b8f39d8ab2",
+          "id": "f850de69-6991-492d-875e-43ed1e4035da",
           "label": "Bullseye Lantern, Tinderbox, Torch ×10",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "d910e63e-3ece-4ffa-9542-a29028f1f1a3",
+          "id": "39d2af90-6ced-42e7-95d8-3b644fa7adaf",
           "label": "Caltrops, Acid ×2, Antitoxin ×3",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "76d7c520-26e6-4e17-b2de-32954d6bdab0",
+          "id": "a74e545a-e6a8-4647-87ab-b82dacb13a4f",
           "label": "Dynamite ×2, Blasting Powder ×5",
           "type": "text",
           "value": "carried",
           "description": ""
         },
         {
-          "id": "e946634a-1579-4cda-9ffc-9ffd7968585b",
+          "id": "a3c1c03c-84a9-4601-aa16-e21968b37ecb",
           "label": "Sled, Military Saddle, Piton",
           "type": "text",
           "value": "carried",

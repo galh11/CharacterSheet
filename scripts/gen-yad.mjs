@@ -163,7 +163,20 @@ S('Attacks', 'actions', [
     }),
     F('Flame Tongue Handaxe', 'text', '', {
         description: 'Uses the d10 fisticuffs die. Ignite as a Bonus Action with the 🔥 Flame Tongue toggle to add 2d6 fire.',
-        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame_tongue', extraLabel: 'Flame Tongue', range: '20/60' },
+        meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'slashing', range: '20/60' },
+        toggles: [
+            {
+                id: randomUUID(),
+                label: 'Flame Tongue',
+                active: false,
+                hitMode: 'add',
+                hit: '',
+                damageMode: 'add',
+                damage: '2d6',
+                type: 'fire',
+                description: 'Ignite as a Bonus Action: +2d6 fire on hits; sheds Bright Light 40 ft.',
+            },
+        ],
     }),
     F('Javelin', 'text', '', {
         description: 'Thrown weapon (uses the d10 fisticuffs die).',
@@ -252,7 +265,7 @@ S('Resources', 'default', [
 
 // 14. Conditions & states.
 S('Conditions', 'conditions', [
-    F('Flame Tongue', 'boolean', 'false', { description: 'Handaxe ignited (Bonus Action): +2d6 fire on hits; Bright Light 40 ft.' }),
+    F('Flame Tongue', 'boolean', 'false', { description: 'Handaxe ignited (Bonus Action): sheds Bright Light 40 ft. Its +2d6 fire is the 🔥 Flame Tongue toggle on the Handaxe attack.' }),
     F('Down But Not Out', 'boolean', 'false', { description: 'While active, your Unarmed/Pugilist-weapon damage gains +CON mod + exhaustion levels (auto-added to attack damage).' }),
     F('Large Form', 'boolean', 'false', { description: 'Large: advantage on STR checks, +10 ft Speed.' }),
     F('Dig Deep', 'boolean', 'false', { description: 'Resistance to B/P/S; ignore exhaustion < 6. Add b/p/s to HP Resistances while active.' }),

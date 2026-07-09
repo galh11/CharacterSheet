@@ -67,7 +67,7 @@ src/
   components/
     SectionCard.tsx        # section frame: header, ✎ pencil, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
-    SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects) — opened by the ✎ pencil
+    SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened by the ✎ pencil
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper + handle bar
     RollLog.tsx            # floating roll panel: latest roll + expandable history, adv/dis, resizable
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
@@ -121,6 +121,17 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   and `tags` for bidirectional attribution in the UI.
 - `{expr}` **interpolation** (`compute.interpolate`) lets action meta (to-hit,
   damage, temp HP…) embed live values, e.g. `+{str_mod + proficiency}`.
+- **Action toggles**: an action/weapon field can carry a list of `toggles`
+  (`ActionToggle` in `characterSheet.ts`) — named on/off switches shown in the
+  action card. Each toggle can **add** or **replace** the action's damage
+  (`damageMode`) and to-hit (`hitMode`), set a damage `type`, and use `{expr}`
+  interpolation, so one weapon covers e.g. a Shillelagh (replace the die + ability)
+  or a Flame Tongue (add 2d6 fire). Add as many as you like in the section editor
+  (`ActionTogglesEditor`); `ActionCards` folds the active ones into attack/damage
+  rolls. The legacy single `meta.extra`/`extraWhen`/`extraLabel`/`extraType`
+  "extra damage" is migrated into an `add`-mode toggle on load
+  (`foldLegacyActionExtras`). Cross-field buffs still use field `effects`
+  (relational effects); toggles only reshape their own action's rolls.
 - **Section kinds** drive specialized widgets in `SectionBody` (abilities, hp,
   skills, actions, hitdice, conditions, spellslots, initiative,
   currency, inventory, timers); the default kind is a plain label/value list. The

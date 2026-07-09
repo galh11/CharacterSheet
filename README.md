@@ -20,6 +20,12 @@ one hover away.
   set, or typed tags like advantage / resistance). Bonuses are attributed both
   ways (the source shows what it grants, the target shows where a bonus came
   from) and can be toggled on/off like equipping an item.
+- **Action toggles** — a weapon/attack can carry any number of on/off toggles
+  that reshape its rolls while active: **add** or **replace** the damage dice,
+  change the damage type, or adjust the to-hit ability — each with live `{expr}`
+  values. One quarterstaff covers both its mundane Strength swing and a
+  Shillelagh that replaces the die and uses your spellcasting ability; a handaxe
+  adds 2d6 fire only when its Flame Tongue toggle is lit.
 - **Play tools** — a dice engine with advantage/disadvantage, a roll log, rests,
   hit-dice spending, HP/temp-HP, conditions, buff timers, and specialized
   section widgets (abilities, skills, actions, spell slots, and a D&D-Beyond-style

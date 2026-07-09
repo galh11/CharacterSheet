@@ -62,15 +62,72 @@ describe('ActionCards', () => {
         expect(onSpend).toHaveBeenCalledWith('moxie_points', 1)
     })
 
-    it('gates extra damage on its toggle (extraWhen)', () => {
+    it('applies an active toggle that replaces the base damage and to-hit', () => {
         const section = actionsSection([
-            field({ id: 'f', label: 'Handaxe', meta: { damage: '1d6', type: 'slashing', extra: '2d6', extraType: 'fire', extraWhen: 'flame' } }),
+            field({
+                id: 'f',
+                label: 'Quarterstaff',
+                meta: { hit: '+{str_mod + proficiency}', damage: '1d6+{str_mod}', type: 'bludgeoning' },
+                toggles: [
+                    {
+                        id: 't',
+                        label: 'Shillelagh',
+                        active: true,
+                        hitMode: 'replace',
+                        hit: '+{wis_mod + proficiency}',
+                        damageMode: 'replace',
+                        damage: '1d8+{wis_mod}',
+                        type: 'bludgeoning',
+                        description: '',
+                    },
+                ],
+            }),
         ])
-        const props = { section, results: new Map(), onUpdateField: () => { }, onRoll: () => { } }
-        const { rerender } = render(<SectionBody {...props} scope={{ flame: 0 }} />)
-        expect(screen.getByTitle(/Inactive/)).toBeInTheDocument()
-        rerender(<SectionBody {...props} scope={{ flame: 1 }} />)
-        expect(screen.queryByTitle(/Inactive/)).toBeNull()
+        render(
+            <SectionBody
+                section={section}
+                results={new Map()}
+                onUpdateField={() => { }}
+                scope={{ str_mod: 2, wis_mod: 4, proficiency: 3 }}
+                onRoll={() => { }}
+            />,
+        )
+        // Damage die and to-hit reflect the toggle's replacements, not the base weapon.
+        expect(screen.getByText(/1d8\+4/)).toBeInTheDocument()
+        expect(screen.getByText('+7')).toBeInTheDocument()
+    })
+
+    it('adds an extra damage part for an active add-mode toggle', () => {
+        const section = actionsSection([
+            field({
+                id: 'f',
+                label: 'Handaxe',
+                meta: { damage: '1d6', type: 'slashing' },
+                toggles: [
+                    { id: 't', label: 'Flame Tongue', active: true, hitMode: 'add', hit: '', damageMode: 'add', damage: '2d6', type: 'fire', description: '' },
+                ],
+            }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{}} onRoll={() => { }} />)
+        expect(screen.getByText(/1d6/)).toBeInTheDocument()
+        expect(screen.getByText(/2d6 fire/)).toBeInTheDocument()
+    })
+
+    it('flips a toggle active state via onUpdateField', () => {
+        const onUpdateField = vi.fn()
+        const section = actionsSection([
+            field({
+                id: 'f',
+                label: 'Handaxe',
+                meta: { damage: '1d6', type: 'slashing' },
+                toggles: [
+                    { id: 't', label: 'Flame Tongue', active: false, hitMode: 'add', hit: '', damageMode: 'add', damage: '2d6', type: 'fire', description: '' },
+                ],
+            }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={onUpdateField} scope={{}} onRoll={() => { }} />)
+        fireEvent.click(screen.getByRole('switch', { name: 'Flame Tongue' }))
+        expect(onUpdateField).toHaveBeenCalledWith('f', { toggles: [expect.objectContaining({ active: true })] })
     })
 })
 

@@ -18,6 +18,14 @@ describe('useSheet', () => {
         expect(result.current.sheet.name).toBe('Frodo')
     })
 
+    it('sets and clears the portrait', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.setPortrait('data:image/jpeg;base64,abc'))
+        expect(result.current.sheet.portrait).toBe('data:image/jpeg;base64,abc')
+        act(() => result.current.setPortrait(undefined))
+        expect(result.current.sheet.portrait).toBeUndefined()
+    })
+
     it('adds and deletes sections', () => {
         const { result } = renderHook(() => useSheet())
         const before = result.current.sheet.sections.length

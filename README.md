@@ -25,6 +25,8 @@ one hover away.
   section widgets (abilities, skills, actions, spell slots, and a D&D-Beyond-style
   inventory whose coin purse and items share one card…).
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
+- **Character portrait** — add a D&D-Beyond-style circular avatar in the top bar;
+  click to upload or replace an image (auto-downscaled), hover to remove it.
 - **Quick start** — paste your **D&D Beyond character JSON** (from the
   character-service API) or load it as a `.json` file for an exact import. It
   derives ability scores + modifiers, AC, skills, saving throws, passive

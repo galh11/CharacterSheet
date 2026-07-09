@@ -47,7 +47,7 @@ src/
   main.tsx                 # React entry point
   index.css                # Tailwind import + base styles
   model/
-    characterSheet.ts      # zod schema: sheet > sections > fields (+ effects) + layout; slugify
+    characterSheet.ts      # zod schema: sheet (+ optional portrait) > sections > fields (+ effects) + layout; slugify
     formula.ts             # safe arithmetic evaluator (no eval/Function): + - * / %, floor/ceil/round/abs/min/max/sqrt
     compute.ts             # resolveSheet: computed fields + relational effects -> results/scope/contributions/tags; interpolate {expr}
     dice.ts                # d20 (advantage/disadvantage), damage, crit flags, roll formatting
@@ -134,6 +134,10 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   healing or long rest.
 - Editing is **per-section** via the `SectionEditorModal` (opened by the ✎
   pencil) — there is **no global edit mode**.
+- **Portrait**: the sheet carries an optional `portrait` (an image data URL) set
+  via `useSheet.setPortrait`. The top bar shows it as a circular avatar next to
+  the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled
+  to 256px JPEG by `App.readImageAsDataUrl`), and a hover ✕ removes it.
 - Import is **JSON-only**: `parseCharacterJson` reads a D&D Beyond
   character-service payload (with or without the `data` wrapper). The older OCR /
   tolerant-text importers were removed.

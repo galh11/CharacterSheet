@@ -146,6 +146,8 @@ const foldLegacyDeathSaves = (input: unknown): unknown => {
 const sheetObjectSchema = z.object({
     id: z.string().min(1),
     name: z.string(),
+    /** Optional character portrait as an image data URL, shown in the top bar. */
+    portrait: z.string().optional(),
     sections: z.array(sectionSchema),
 })
 

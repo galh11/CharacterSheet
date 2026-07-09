@@ -32,6 +32,35 @@ import { useSheet } from './state/useSheet'
 import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode, RollLogEntry } from './model/dice'
 
+/** Read an image file, downscale it to fit within `max` px (keeping aspect
+ *  ratio), and return a compact JPEG data URL suitable for localStorage. */
+const readImageAsDataUrl = (file: File, max: number): Promise<string> =>
+    new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file)
+        const img = new Image()
+        img.onload = () => {
+            URL.revokeObjectURL(url)
+            const scale = Math.min(1, max / Math.max(img.width, img.height))
+            const w = Math.max(1, Math.round(img.width * scale))
+            const h = Math.max(1, Math.round(img.height * scale))
+            const canvas = document.createElement('canvas')
+            canvas.width = w
+            canvas.height = h
+            const ctx = canvas.getContext('2d')
+            if (!ctx) {
+                reject(new Error('no canvas context'))
+                return
+            }
+            ctx.drawImage(img, 0, 0, w, h)
+            resolve(canvas.toDataURL('image/jpeg', 0.85))
+        }
+        img.onerror = () => {
+            URL.revokeObjectURL(url)
+            reject(new Error('image load failed'))
+        }
+        img.src = url
+    })
+
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
     const [headerCollapsed, setHeaderCollapsed] = useState(false)
@@ -76,6 +105,7 @@ function App() {
     })
     const importRef = useRef<HTMLInputElement>(null)
     const captureRef = useRef<HTMLDivElement>(null)
+    const portraitRef = useRef<HTMLInputElement>(null)
     const canvasScrollRef = useRef<HTMLDivElement>(null)
     const panRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; moved: boolean } | null>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
@@ -95,6 +125,7 @@ function App() {
         redo,
         replaceSheet,
         renameSheet,
+        setPortrait,
         updateSection,
         setSectionLayout,
         setSectionLayouts,
@@ -292,6 +323,21 @@ function App() {
             setNotice('Sheet imported.')
         } else {
             setNotice(result.error)
+        }
+    }
+
+    const handlePortrait = async (file: File | undefined) => {
+        if (!file) return
+        if (!file.type.startsWith('image/')) {
+            setNotice('Please choose an image file.')
+            return
+        }
+        try {
+            const dataUrl = await readImageAsDataUrl(file, 256)
+            setPortrait(dataUrl)
+            setNotice('Portrait updated.')
+        } catch {
+            setNotice('Could not read that image.')
         }
     }
 
@@ -612,6 +658,45 @@ function App() {
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-3 p-4 md:px-8">
             <header className="sticky top-0 z-40 -mx-4 border-b border-slate-800 bg-slate-950/85 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" style={{ borderTopColor: theme, borderTopWidth: 2 }}>
                 <div className="flex flex-wrap items-center gap-2">
+                    <div className="group relative shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => portraitRef.current?.click()}
+                            className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 bg-slate-900 text-slate-500 hover:text-slate-200"
+                            style={{ borderColor: theme }}
+                            aria-label={sheet.portrait ? 'Change character portrait' : 'Add character portrait'}
+                            title={sheet.portrait ? 'Change portrait' : 'Add a character portrait'}
+                        >
+                            {sheet.portrait ? (
+                                <img src={sheet.portrait} alt="Character portrait" className="h-full w-full object-cover" />
+                            ) : (
+                                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
+                                    <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
+                                </svg>
+                            )}
+                        </button>
+                        {sheet.portrait && (
+                            <button
+                                type="button"
+                                onClick={() => setPortrait(undefined)}
+                                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xs leading-none text-slate-300 hover:bg-slate-700 hover:text-white group-hover:flex"
+                                aria-label="Remove character portrait"
+                                title="Remove portrait"
+                            >
+                                ×
+                            </button>
+                        )}
+                    </div>
+                    <input
+                        ref={portraitRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(event) => {
+                            void handlePortrait(event.target.files?.[0])
+                            event.target.value = ''
+                        }}
+                    />
                     <input
                         value={sheet.name}
                         onChange={(event) => renameSheet(event.target.value)}

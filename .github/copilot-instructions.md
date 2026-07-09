@@ -23,9 +23,13 @@ Other agents may be working **in parallel**. For any change to the repo:
 - Run the full gate before opening the PR: `npm run lint`, `npm run build`,
   `npm run test:run`, `npm run check:docs` (plus `npm run test:e2e` if you
   touched UI).
-- Push the branch and open a PR (`gh pr create --fill`, or the GitHub PR tools).
-  CI runs and, when green, the change **auto-merges** to `main` — do not approve
-  it yourself.
+- Push the branch and open a PR (use the GitHub PR tooling, or `gh pr create
+  --fill` if the `gh` CLI is installed). CI runs and, when green, the change
+  **auto-merges** to `main` — do not approve it yourself.
+- **Confirm it merged** — don't stop at "PR opened". After CI passes, verify with
+  git: `git fetch origin --prune`, then `git ls-remote --heads origin <branch>`
+  prints nothing (the branch auto-deletes on merge). If CI fails, fix on the same
+  branch and push again.
 - The task is **done only when the PR is merged**.
 
 ## Keep docs in sync (CI-enforced)

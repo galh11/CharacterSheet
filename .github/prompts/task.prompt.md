@@ -19,10 +19,13 @@ push to `main` directly.
 3. **Gate.** Run `npm run lint`, `npm run build`, `npm run test:run`, and
    `npm run check:docs` (plus `npm run test:e2e` if you touched UI). Fix anything
    that fails.
-4. **Land.** Rebase on `origin/main`, push the branch, and open a PR
-   (`gh pr create --fill`). CI gates it and it **auto-merges** when green — do
-   not approve it yourself. The task is done only when the PR is merged; then
-   clean up the worktree (`git worktree remove …`).
+4. **Land.** Rebase on `origin/main`, push the branch, and open a PR (the GitHub
+   PR tooling, or `gh pr create --fill`). CI gates it and it **auto-merges** when
+   green — do not approve it yourself. **Confirm the merge**: after CI passes,
+   `git fetch origin --prune` and check the branch is gone
+   (`git ls-remote --heads origin <branch>` prints nothing), or via
+   `gh pr view --json state`. If CI fails, fix on the same branch and push again.
+   Done only once merged — then clean up (`git worktree remove …`).
 
 Task:
 ${input:task:Describe the change to implement}

@@ -9,6 +9,9 @@ import {
     type SectionKind,
     type FieldEffect,
     type EffectOp,
+    type ActionToggle,
+    type ToggleMode,
+    type ToggleDamagePart,
 } from '../model/characterSheet'
 
 interface SectionEditorModalProps {
@@ -198,6 +201,205 @@ function EffectsEditor({
                 className="mt-1 rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800"
             >
                 + effect
+            </button>
+        </div>
+    )
+}
+
+/** Labeled inputs for an action field's core meta (to-hit, damage, resource
+ *  cost…), so the editor shows friendly names instead of cryptic slugs. */
+const ACTION_META_FIELDS: { key: string; label: string; placeholder: string }[] = [
+    { key: 'hit', label: 'To-hit', placeholder: '+{str_mod + proficiency}' },
+    { key: 'damage', label: 'Damage dice', placeholder: '1d8+{str_mod}' },
+    { key: 'type', label: 'Damage type', placeholder: 'slashing' },
+    { key: 'range', label: 'Range', placeholder: '5 ft' },
+    { key: 'temp', label: 'Temp HP formula', placeholder: '{pugilist} + {con_mod}' },
+    { key: 'cost', label: 'Resource cost (amount)', placeholder: '1' },
+    { key: 'costField', label: 'Resource to spend (slug)', placeholder: 'moxie_points' },
+    { key: 'costLabel', label: 'Resource label', placeholder: 'Moxie' },
+    { key: 'refill', label: 'Refill resource (slug)', placeholder: 'ki_points' },
+    { key: 'refillCost', label: 'Refill cost resource (slug)', placeholder: '' },
+]
+
+const TOGGLE_MODES: { value: ToggleMode; label: string }[] = [
+    { value: 'add', label: 'add to' },
+    { value: 'replace', label: 'replace' },
+]
+
+/** Editor for an action's activatable toggles — named on/off switches that add or
+ *  replace the action's damage and to-hit while active (e.g. a Shillelagh that
+ *  replaces the damage die, or a Flame Tongue that adds 2d6 fire). Add as many as
+ *  you like. */
+function ActionTogglesEditor({
+    field,
+    onUpdateField,
+}: {
+    field: CharacterField
+    onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
+}) {
+    const toggles = field.toggles ?? []
+    const setToggles = (next: ActionToggle[]) => onUpdateField(field.id, { toggles: next })
+    const update = (index: number, patch: Partial<ActionToggle>) =>
+        setToggles(toggles.map((t, i) => (i === index ? { ...t, ...patch } : t)))
+    const remove = (index: number) => setToggles(toggles.filter((_, i) => i !== index))
+    const add = () =>
+        setToggles([
+            ...toggles,
+            {
+                id: crypto.randomUUID(),
+                label: '',
+                active: false,
+                hitMode: 'add',
+                hit: '',
+                parts: [],
+                setType: '',
+                description: '',
+            },
+        ])
+    const updatePart = (toggleIndex: number, partIndex: number, patch: Partial<ToggleDamagePart>) =>
+        update(toggleIndex, {
+            parts: (toggles[toggleIndex].parts ?? []).map((p, i) => (i === partIndex ? { ...p, ...patch } : p)),
+        })
+    const addPart = (toggleIndex: number) =>
+        update(toggleIndex, { parts: [...(toggles[toggleIndex].parts ?? []), { mode: 'add', damage: '', type: '' }] })
+    const removePart = (toggleIndex: number, partIndex: number) =>
+        update(toggleIndex, { parts: (toggles[toggleIndex].parts ?? []).filter((_, i) => i !== partIndex) })
+
+    return (
+        <div className="mt-2 rounded border border-slate-800 bg-slate-950/60 p-2">
+            <div className="text-[11px] font-semibold text-slate-300">Toggles (on/off modifiers)</div>
+            {toggles.length === 0 && (
+                <p className="my-1 text-[10px] text-slate-500">
+                    e.g. a <span className="font-mono">Shillelagh</span> that <em>replaces</em> damage with{' '}
+                    <span className="font-mono">1d8+{'{wis_mod}'}</span>, a Flame Tongue that <em>adds</em>{' '}
+                    <span className="font-mono">2d6</span> fire, or one activation that adds several typed parts at once.
+                </p>
+            )}
+            <div className="mt-1 flex flex-col gap-2">
+                {toggles.map((toggle, i) => (
+                    <div key={toggle.id} className="rounded border border-slate-800 bg-slate-900/60 p-2">
+                        <div className="flex items-center gap-1">
+                            <input
+                                value={toggle.label}
+                                onChange={(event) => update(i, { label: event.target.value })}
+                                placeholder="Toggle name (e.g. Shillelagh)"
+                                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100"
+                                aria-label="Toggle name"
+                            />
+                            <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Start active?">
+                                <input
+                                    type="checkbox"
+                                    checked={toggle.active}
+                                    onChange={(event) => update(i, { active: event.target.checked })}
+                                />
+                                on
+                            </label>
+                            <button
+                                type="button"
+                                onClick={() => remove(i)}
+                                className="rounded px-1 text-slate-500 hover:bg-slate-800 hover:text-rose-300"
+                                aria-label="Remove toggle"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        {/* Damage parts — add as many typed parts as you like. */}
+                        <div className="mt-1 flex flex-col gap-1">
+                            {(toggle.parts ?? []).map((part, pi) => (
+                                <div key={pi} className="flex items-center gap-1">
+                                    <span className="w-14 text-[10px] text-slate-500">{pi === 0 ? 'Damage' : ''}</span>
+                                    <select
+                                        value={part.mode}
+                                        onChange={(event) => updatePart(i, pi, { mode: event.target.value as ToggleMode })}
+                                        className="rounded border border-slate-700 bg-slate-900 px-1 py-1 text-[11px] text-slate-200"
+                                        aria-label="Toggle damage mode"
+                                    >
+                                        {TOGGLE_MODES.map((o) => (
+                                            <option key={o.value} value={o.value}>
+                                                {o.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        value={part.damage}
+                                        onChange={(event) => updatePart(i, pi, { damage: event.target.value })}
+                                        placeholder="1d8+{wis_mod}"
+                                        className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
+                                        aria-label="Toggle damage dice"
+                                    />
+                                    <input
+                                        value={part.type}
+                                        onChange={(event) => updatePart(i, pi, { type: event.target.value })}
+                                        placeholder="type"
+                                        className="w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
+                                        aria-label="Toggle damage type"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removePart(i, pi)}
+                                        className="rounded px-1 text-slate-500 hover:bg-slate-800 hover:text-rose-300"
+                                        aria-label="Remove damage part"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => addPart(i)}
+                                className="self-start rounded border border-slate-700 px-2 py-0.5 text-[10px] text-slate-300 hover:bg-slate-800"
+                            >
+                                + damage part
+                            </button>
+                        </div>
+                        <div className="mt-1 flex items-center gap-1">
+                            <span className="w-14 text-[10px] text-slate-500">To-hit</span>
+                            <select
+                                value={toggle.hitMode}
+                                onChange={(event) => update(i, { hitMode: event.target.value as ToggleMode })}
+                                className="rounded border border-slate-700 bg-slate-900 px-1 py-1 text-[11px] text-slate-200"
+                                aria-label="Toggle to-hit mode"
+                            >
+                                {TOGGLE_MODES.map((o) => (
+                                    <option key={o.value} value={o.value}>
+                                        {o.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <input
+                                value={toggle.hit}
+                                onChange={(event) => update(i, { hit: event.target.value })}
+                                placeholder="+{wis_mod + proficiency} (leave blank for none)"
+                                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
+                                aria-label="Toggle to-hit"
+                            />
+                        </div>
+                        <div className="mt-1 flex items-center gap-1">
+                            <span className="w-14 text-[10px] text-slate-500" title="Recolour the whole attack to one damage type while active (e.g. True Strike → radiant)">Set type</span>
+                            <input
+                                value={toggle.setType}
+                                onChange={(event) => update(i, { setType: event.target.value })}
+                                placeholder="override all damage types (e.g. radiant) — optional"
+                                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
+                                aria-label="Toggle set damage type"
+                            />
+                        </div>
+                        <input
+                            value={toggle.description}
+                            onChange={(event) => update(i, { description: event.target.value })}
+                            placeholder="What does this toggle do? (hover text)"
+                            className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-400"
+                            aria-label="Toggle description"
+                        />
+                    </div>
+                ))}
+            </div>
+            <button
+                type="button"
+                onClick={add}
+                className="mt-1 rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800"
+            >
+                + Add toggle
             </button>
         </div>
     )
@@ -529,19 +731,25 @@ export function SectionEditorModal({
                                     )}
 
                                     {section.kind === 'actions' && (
-                                        <div className="mt-2 grid grid-cols-3 gap-1">
-                                            {(['hit', 'damage', 'type', 'extra', 'extraType', 'range', 'extraWhen', 'extraLabel', 'temp', 'cost', 'costField', 'costLabel', 'refill', 'refillCost'] as const).map((k) => (
-                                                <input
-                                                    key={k}
-                                                    value={field.meta?.[k] ?? ''}
-                                                    onChange={(event) => setMeta(field, k, event.target.value)}
-                                                    onFocus={() => setFocusedMeta({ fieldId: field.id, key: k })}
-                                                    placeholder={k}
-                                                    className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
-                                                    aria-label={`Action ${k}`}
-                                                />
+                                        <div className="mt-2 grid grid-cols-2 gap-1.5">
+                                            {ACTION_META_FIELDS.map(({ key, label, placeholder }) => (
+                                                <label key={key} className="flex flex-col gap-0.5 text-[10px] text-slate-500">
+                                                    {label}
+                                                    <input
+                                                        value={field.meta?.[key] ?? ''}
+                                                        onChange={(event) => setMeta(field, key, event.target.value)}
+                                                        onFocus={() => setFocusedMeta({ fieldId: field.id, key })}
+                                                        placeholder={placeholder}
+                                                        className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                        aria-label={`Action ${label}`}
+                                                    />
+                                                </label>
                                             ))}
                                         </div>
+                                    )}
+
+                                    {section.kind === 'actions' && (
+                                        <ActionTogglesEditor field={field} onUpdateField={onUpdateField} />
                                     )}
 
                                     {section.kind === 'actions' && focusedMeta?.fieldId === field.id && references.length > 0 && (

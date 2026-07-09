@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
-import { slugify, type CharacterField, type CharacterSection, type EffectOp } from '../model/characterSheet'
+import { slugify, type CharacterField, type CharacterSection, type EffectOp, type ActionToggle } from '../model/characterSheet'
 import { interpolate, type Contribution, type EffectTag } from '../model/compute'
 import {
     rollD20,
@@ -679,15 +679,55 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onToggleFlag, onTempHp }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onTempHp }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
-    /** Extra damage is active unless it is gated on a toggle (meta.extraWhen) that is off. */
-    const extraActive = (m: Record<string, string>) => !m.extraWhen || (scope?.[m.extraWhen] ?? 0) > 0
+    const activeToggles = (field: CharacterField): ActionToggle[] => (field.toggles ?? []).filter((t) => t.active)
+
+    /** Effective to-hit modifier after applying active toggles (replace overrides,
+     *  add sums). Returns null when the action has no attack roll at all. */
+    const effectiveHit = (field: CharacterField): number | null => {
+        const m = field.meta ?? {}
+        const toggles = activeToggles(field)
+        const hasHit = Boolean(m.hit) || toggles.some((t) => t.hit)
+        if (!hasHit) return null
+        let mod = m.hit ? parseModifier(val(m.hit)) : 0
+        for (const t of toggles) {
+            if (!t.hit) continue
+            if (t.hitMode === 'replace') mod = parseModifier(val(t.hit))
+            else mod += parseModifier(val(t.hit))
+        }
+        return mod
+    }
+
+    /** Effective damage parts after applying active toggles: a `replace` part
+     *  swaps the base weapon damage; `add` parts append extra typed parts. A
+     *  toggle's `setType` recolours the whole attack to one damage type. */
+    const effectiveParts = (field: CharacterField): { expr: string; type?: string }[] => {
+        const m = field.meta ?? {}
+        let base = m.damage ? { expr: m.damage, type: m.type || '' } : null
+        const added: { expr: string; type?: string }[] = []
+        let typeOverride = ''
+        for (const t of activeToggles(field)) {
+            for (const part of t.parts) {
+                if (!part.damage) continue
+                if (part.mode === 'replace') base = { expr: part.damage, type: part.type || base?.type || '' }
+                else added.push({ expr: part.damage, type: part.type || '' })
+            }
+            if (t.setType) typeOverride = t.setType
+        }
+        const parts = [...(base ? [base] : []), ...added]
+        return typeOverride ? parts.map((p) => ({ ...p, type: typeOverride })) : parts
+    }
+
     const sit = bonus ?? 0
     const mode = rollMode ?? 'normal'
+    const setToggle = (field: CharacterField, toggleId: string, active: boolean) =>
+        onUpdateField(field.id, {
+            toggles: (field.toggles ?? []).map((t) => (t.id === toggleId ? { ...t, active } : t)),
+        })
     const rollAttack = (field: CharacterField) => {
-        const mod = parseModifier(val(field.meta?.hit))
+        const mod = effectiveHit(field) ?? 0
         const series = rollD20Series(mod + sit, mode, repeat ?? 1, bonusDie ?? 0)
         const d = d20Detail(series, mod, sit, bonusDie ?? 0, mode)
         onRoll?.({
@@ -699,10 +739,10 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
         })
     }
     const rollFieldDamage = (field: CharacterField, crit: boolean) => {
-        const m = field.meta ?? {}
-        const mk = (e?: string) => (crit ? doubleDice(val(e)) : val(e))
-        const parts = [{ expr: mk(m.damage), type: m.type }]
-        if (extraActive(m)) parts.push({ expr: mk(m.extra), type: m.extraType })
+        const parts = effectiveParts(field).map((p) => ({
+            expr: crit ? doubleDice(val(p.expr)) : val(p.expr),
+            type: p.type,
+        }))
         const dmg = rollDamage(parts)
         if (dmg.parts.length === 0) return
         const detail = dmg.parts.map((p) => `${p.result.total}${p.type ? ` ${p.type}` : ''}`).join(' + ')
@@ -735,54 +775,51 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
         <div className="flex flex-col gap-2">
             {section.fields.map((field) => {
                 const m = field.meta ?? {}
-                const hit = val(m.hit)
-                const damage = val(m.damage)
-                const extra = val(m.extra)
-                const extraOn = extraActive(m)
-                const hasMeta = hit || damage || m.type || extra || m.range
-                const canAttack = Boolean(m.hit)
-                const canDamage = Boolean(m.damage || m.extra)
+                const hitMod = effectiveHit(field)
+                const parts = effectiveParts(field)
+                const toggles = field.toggles ?? []
+                const hasMeta = hitMod !== null || parts.length > 0 || m.range
+                const canAttack = hitMod !== null
+                const canDamage = parts.length > 0
                 const canSpend = Boolean(m.costField)
                 const canTemp = Boolean(m.temp)
                 const canRestore = Boolean(m.refill)
-                const canToggle = Boolean(m.extraWhen)
-                const showRow = canAttack || canDamage || canSpend || canTemp || canRestore || canToggle
-                const toggleLabel = m.extraLabel || (m.extraWhen ? m.extraWhen.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : '')
+                const showRow = canAttack || canDamage || canSpend || canTemp || canRestore || toggles.length > 0
                 return (
                     <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="font-medium text-slate-100">{field.label}</span>
-                            {hit && <span className="rounded-md bg-slate-700/70 px-1.5 py-0.5 font-mono text-xs text-slate-100 ring-1 ring-slate-600">{hit}</span>}
-                            {damage && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.type))}>{damage}{m.type ? ` ${m.type}` : ''}</span>}
-                            {extra && extraOn && <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.extraType))}>{extra}{m.extraType ? ` ${m.extraType}` : ''}</span>}
-                            {extra && !extraOn && m.extraWhen && (
-                                <span className="rounded-md bg-slate-800/60 px-1.5 py-0.5 font-mono text-xs text-slate-500 ring-1 ring-slate-700" title="Inactive — toggle it on to add this damage">
-                                    {extra}{m.extraType ? ` ${m.extraType}` : ''} · off
+                            {hitMod !== null && <span className="rounded-md bg-slate-700/70 px-1.5 py-0.5 font-mono text-xs text-slate-100 ring-1 ring-slate-600">{signed(hitMod)}</span>}
+                            {parts.map((p, i) => (
+                                <span key={i} className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(p.type))}>
+                                    {val(p.expr)}{p.type ? ` ${p.type}` : ''}
                                 </span>
-                            )}
+                            ))}
                             {m.range && <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">{m.range}</span>}
                             {!hasMeta && field.value && <span className="font-mono text-xs text-slate-300">{field.value}</span>}
                         </div>
                         {showRow && onRoll && (
                             <div className="mt-1.5 flex flex-wrap gap-1 print:hidden">
-                                {canToggle && onToggleFlag && (
-                                    <button
-                                        type="button"
-                                        onClick={() => onToggleFlag(m.extraWhen!)}
-                                        role="switch"
-                                        aria-checked={extraOn}
-                                        aria-label={toggleLabel}
-                                        className={clsx(
-                                            'rounded px-2 py-0.5 text-[11px] font-medium ring-1 transition-colors',
-                                            extraOn
-                                                ? 'bg-amber-400/20 text-amber-200 ring-amber-400/60'
-                                                : 'bg-slate-800 text-slate-400 ring-slate-700 hover:text-slate-200',
-                                        )}
-                                        title={extraOn ? `${toggleLabel} active — click to turn off` : `Activate ${toggleLabel}`}
-                                    >
-                                        {extraOn ? '🔥' : '○'} {toggleLabel}
-                                    </button>
-                                )}
+                                {toggles.map((t) => (
+                                    <Tooltip key={t.id} content={t.description || ''}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setToggle(field, t.id, !t.active)}
+                                            role="switch"
+                                            aria-checked={t.active}
+                                            aria-label={t.label || 'Toggle'}
+                                            className={clsx(
+                                                'rounded px-2 py-0.5 text-[11px] font-medium ring-1 transition-colors',
+                                                t.active
+                                                    ? 'bg-amber-400/20 text-amber-200 ring-amber-400/60'
+                                                    : 'bg-slate-800 text-slate-400 ring-slate-700 hover:text-slate-200',
+                                            )}
+                                            title={t.active ? `${t.label} active — click to turn off` : `Activate ${t.label}`}
+                                        >
+                                            {t.active ? '🔥' : '○'} {t.label || 'Toggle'}
+                                        </button>
+                                    </Tooltip>
+                                ))}
                                 {canAttack && <button type="button" onClick={() => rollAttack(field)} className="rounded bg-cyan-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-cyan-500">🎲 Attack</button>}
                                 {canDamage && <button type="button" onClick={() => rollFieldDamage(field, false)} className="rounded bg-rose-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-rose-500">🎲 Damage</button>}
                                 {canDamage && <button type="button" onClick={() => rollFieldDamage(field, true)} className="rounded border border-amber-500/50 px-2 py-0.5 text-[11px] font-medium text-amber-300 hover:bg-amber-900/30" title="Roll damage with doubled dice (critical hit)">Crit</button>}

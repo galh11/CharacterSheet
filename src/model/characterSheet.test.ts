@@ -83,4 +83,117 @@ describe('characterSheetSchema', () => {
             expect(parsed.data.sections[0].fields[1].meta?.ability).toBe('STR')
         }
     })
+
+    it('migrates a legacy meta.extra attack into an action toggle', () => {
+        const parsed = characterSheetSchema.safeParse({
+            id: 'sheet-1',
+            name: 'Legacy',
+            sections: [
+                {
+                    id: 'section-1',
+                    title: 'Attacks',
+                    kind: 'actions',
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [
+                        {
+                            id: 'f1',
+                            label: 'Handaxe',
+                            type: 'text',
+                            value: '',
+                            meta: { damage: '1d6', type: 'slashing', extra: '2d6', extraType: 'fire', extraLabel: 'Flame Tongue', extraWhen: 'flame' },
+                        },
+                    ],
+                },
+            ],
+        })
+        expect(parsed.success).toBe(true)
+        if (parsed.success) {
+            const field = parsed.data.sections[0].fields[0]
+            // The stale extra* meta keys are dropped in favour of a toggle.
+            expect(field.meta?.extra).toBeUndefined()
+            expect(field.meta?.extraWhen).toBeUndefined()
+            expect(field.meta?.damage).toBe('1d6')
+            expect(field.toggles).toHaveLength(1)
+            expect(field.toggles?.[0]).toMatchObject({
+                label: 'Flame Tongue',
+                active: false,
+            })
+            expect(field.toggles?.[0].parts).toEqual([{ mode: 'add', damage: '2d6', type: 'fire' }])
+        }
+    })
+
+    it('migrates a legacy single-damage toggle into the parts list', () => {
+        const parsed = characterSheetSchema.safeParse({
+            id: 'sheet-1',
+            name: 'Legacy toggle',
+            sections: [
+                {
+                    id: 'section-1',
+                    title: 'Attacks',
+                    kind: 'actions',
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [
+                        {
+                            id: 'f1',
+                            label: 'Quarterstaff',
+                            type: 'text',
+                            value: '',
+                            meta: { damage: '1d6+{str_mod}', type: 'bludgeoning' },
+                            toggles: [
+                                { id: 't1', label: 'Shillelagh', active: true, hitMode: 'replace', hit: '+{wis_mod + proficiency}', damageMode: 'replace', damage: '1d8+{wis_mod}', type: 'bludgeoning' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        })
+        expect(parsed.success).toBe(true)
+        if (parsed.success) {
+            const toggle = parsed.data.sections[0].fields[0].toggles?.[0]
+            expect(toggle?.parts).toEqual([{ mode: 'replace', damage: '1d8+{wis_mod}', type: 'bludgeoning' }])
+        }
+    })
+
+    it('accepts action toggles with multiple typed damage parts and a setType', () => {
+        const parsed = characterSheetSchema.safeParse({
+            id: 'sheet-1',
+            name: 'Toggled',
+            sections: [
+                {
+                    id: 'section-1',
+                    title: 'Attacks',
+                    kind: 'actions',
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [
+                        {
+                            id: 'f1',
+                            label: 'Booming Blade Sword',
+                            type: 'text',
+                            value: '',
+                            meta: { damage: '1d8', type: 'slashing' },
+                            toggles: [
+                                {
+                                    id: 't1',
+                                    label: 'Empowered Strike',
+                                    active: false,
+                                    setType: 'radiant',
+                                    parts: [
+                                        { mode: 'add', damage: '1d8', type: 'thunder' },
+                                        { mode: 'add', damage: '1d6', type: 'cold' },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        })
+        expect(parsed.success).toBe(true)
+        if (parsed.success) {
+            const toggle = parsed.data.sections[0].fields[0].toggles?.[0]
+            expect(toggle?.parts).toHaveLength(2)
+            expect(toggle?.setType).toBe('radiant')
+            expect(toggle?.hitMode).toBe('add')
+        }
+    })
 })

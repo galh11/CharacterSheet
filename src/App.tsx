@@ -20,8 +20,10 @@ import { SectionCard } from './components/SectionCard'
 import { SectionEditorModal } from './components/SectionEditorModal'
 import { QuickStartModal } from './components/QuickStartModal'
 import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
+import { AboutModal } from './components/AboutModal'
 import { RollLog } from './components/RollLog'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
+import { APP_VERSION } from './version'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { loadPresets, savePresets, type Presets } from './state/presets'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
@@ -65,6 +67,7 @@ function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
     const [headerCollapsed, setHeaderCollapsed] = useState(false)
     const [showHitDice, setShowHitDice] = useState(false)
+    const [showAbout, setShowAbout] = useState(false)
     const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
     const [guides, setGuides] = useState<SnapGuide[]>([])
@@ -970,6 +973,11 @@ function App() {
                                     <MenuItem onClick={() => { void handleExportPng(); close() }} title="Export the canvas as a PNG image">
                                         Export PNG
                                     </MenuItem>
+                                    <MenuDivider />
+                                    <MenuLabel>About</MenuLabel>
+                                    <MenuItem onClick={() => { setShowAbout(true); close() }} title="Show the app version and changelog">
+                                        What's new · v{APP_VERSION}
+                                    </MenuItem>
                                 </>
                             )}
                         </Menu>
@@ -1128,6 +1136,8 @@ function App() {
                     onApply={spendHitDice}
                 />
             )}
+
+            {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
 
             {editingSection && (
                 <SectionEditorModal

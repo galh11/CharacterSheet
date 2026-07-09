@@ -10,6 +10,11 @@ export default defineConfig(({ command }) => ({
     // Production builds are served from the repo-scoped GitHub Pages path;
     // dev (and Playwright's dev server) stay at root.
     base: command === 'build' ? '/CharacterSheet/' : '/',
+    // Stamp the moment this bundle was built so the "What's new" panel can tell
+    // you when the deployed build was produced (see src/version.ts).
+    define: {
+        __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    },
     plugins: [
         react(),
         tailwindcss(),

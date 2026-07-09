@@ -46,6 +46,7 @@ src/
   App.tsx                  # top-level layout, header/toolbar, canvas wiring, modals, handlers
   main.tsx                 # React entry point
   index.css                # Tailwind import + base styles
+  version.ts               # APP_VERSION + CHANGELOG (PR-linked) + build time; source for the ⋯ More "What's new" panel
   model/
     characterSheet.ts      # zod schema: sheet (+ optional portrait) > sections > fields (+ effects) + layout; slugify
     formula.ts             # safe arithmetic evaluator (no eval/Function): + - * / %, floor/ceil/round/abs/min/max/sqrt
@@ -72,6 +73,7 @@ src/
     RollLog.tsx            # floating roll panel: latest roll + expandable history, adv/dis, resizable
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
     HitDiceModal.tsx       # spend hit dice on a short rest
+    AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
     QuickStartModal.tsx    # D&D Beyond JSON import review + confirm (paste or file upload)
     Tooltip.tsx            # hover/focus description bubble
   test/
@@ -156,6 +158,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 - Import is **JSON-only**: `parseCharacterJson` reads a D&D Beyond
   character-service payload (with or without the `data` wrapper). The older OCR /
   tolerant-text importers were removed.
+- **App version & changelog**: `version.ts` is the single source of truth —
+  `APP_VERSION` (the top `CHANGELOG` entry's version) plus a PR-linked release
+  list and a Vite-injected `__APP_BUILD_TIME__`. The ⋯ More menu shows
+  `What's new · v<APP_VERSION>`, which opens `AboutModal` (version, build time,
+  and each release's summary + GitHub PR link). Ship a user-visible change →
+  prepend a `CHANGELOG` entry (bumping the version) in the same PR.
 - **Tidy** (`layout.compactLayouts`) packs cards toward the top-left; other
   `layout.ts` helpers handle snapping, alignment, distribution, and overlap.
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the

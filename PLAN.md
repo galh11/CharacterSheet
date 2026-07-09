@@ -3,7 +3,7 @@
 A crammed, interactive D&D 5e player cheat sheet. The goal: a fully editable
 canvas where the player can create/edit sections and fields, drag things around,
 define calculations and relational effects, write on-hover descriptions, and
-quick-start by importing a D&D Beyond character JSON export.
+save or load a whole sheet as JSON.
 
 ## Vision / Requirements
 
@@ -14,9 +14,8 @@ quick-start by importing a D&D Beyond character JSON export.
   (e.g. ability modifiers, saving throws, spell save DC).
 - **On-hover descriptions**: every field/section can carry an editable tooltip,
   useful for rules reminders in and out of combat.
-- **Quick start**: import a D&D Beyond character JSON export (paste it or load a
-  `.json` file) to auto-generate a starter cheat sheet.
-- **Persistence**: never lose work (localStorage) + JSON export/import.
+- **Persistence & portability**: never lose work (localStorage) + whole-sheet
+  JSON export/import and shareable links.
 
 ## Status Legend
 
@@ -51,19 +50,22 @@ quick-start by importing a D&D Beyond character JSON export.
 - [x] Tooltip component shown on hover.
 - [x] Edit description inline in edit mode.
 
-### Phase F — Quick-start import  [x]
+### Phase F — Quick-start import  [x] (later removed)
 - [x] Paste D&D Beyond text → parse abilities, AC, HP, etc. into a sheet.
 - [x] Upload screenshot → OCR text → same parser.
 - [x] Review/confirm before replacing current sheet.
+- Note (later): the D&D Beyond importer (and the earlier OCR / text parsers) were
+  **removed entirely** — translating DDB exports into this app's rich feature set
+  was never reliable. Import now only loads a sheet this app exported.
 
 ### Phase G — Toolbar & polish  [x]
-- [x] Toolbar: edit toggle, add section, quick start, export, import, reset.
+- [x] Toolbar: edit toggle, add section, export, import, reset.
 - [x] JSON export / import.
 - [x] Visual polish + responsive behavior.
 
 ### Phase H — Testing & QA  [x]
 - [x] Unit/component tests (Vitest + React Testing Library) for the model,
-      state, importer, and components.
+      state, and components.
 - [x] End-to-end tests (Playwright) for load, edit, drag, and persistence flows.
 - [x] Visual regression snapshots for view and edit modes.
 - [x] Coverage reporting (`npm run test:coverage`).
@@ -92,11 +94,12 @@ quick-start by importing a D&D Beyond character JSON export.
 - [~] Pre-commit hooks: skipped — husky invokes `bash`, which resolves to the WSL
       launcher on this machine (admin prompt). CI enforces lint/build/tests instead.
 
-### Phase M — Importer depth  [x]
+### Phase M — Importer depth  [x] (later removed)
 - [x] Parse attacks, inventory, and saves & skills tables from D&D Beyond.
 - [x] Add tests for the OCR path (`import/ocr.ts`).
-- Note (later): OCR + tolerant text parser were **removed**; import is now
-  JSON-only (D&D Beyond character JSON or an exported sheet).
+- Note (later): OCR + tolerant text parser were **removed**, then the D&D Beyond
+  JSON importer itself was **removed** too — import is now whole-sheet JSON only
+  (a sheet exported from this app).
 
 ### Phase N — Interactive play sheet  [x]
 Everything from the earlier suggestion rounds that we agreed to build:
@@ -171,14 +174,13 @@ D&D extras
       target slug. `resolveSheet` folds numeric effects into the scope and returns
       `contributions` + `tags` for bidirectional attribution; per-field effect
       editor with an equip/active toggle (boolean fields follow their own value).
-- [x] **Richer D&D Beyond JSON import**: derive AC from equipped armour + DEX, all
-      18 skills with proficiency/expertise, saving throws, passive perception, and
-      currency (on top of abilities, HP, speed, initiative, inventory, languages).
-      Save fields use full ability-name labels so their slugs don't clobber the
-      ability scores.
-- [x] **Robust Quick start**: uncontrolled textarea (handles ~1 MB pastes), a
-      `.json` file-upload option, DDB-first detection, and clearer errors (e.g.
-      a private character returns no data); on-screen steps for fetching the JSON.
+- [x] **Richer D&D Beyond JSON import** (later removed): derived AC from equipped
+      armour + DEX, all 18 skills with proficiency/expertise, saving throws,
+      passive perception, and currency (on top of abilities, HP, speed,
+      initiative, inventory, languages). The whole DDB importer was later removed.
+- [x] **Robust Quick start** (later removed): uncontrolled textarea (handled ~1 MB
+      pastes), a `.json` file-upload option, DDB-first detection, and clearer
+      errors. Removed together with the importer.
 - [x] **Roll log UX**: show only the latest roll with an expandable history,
       always-visible Clear, and a resizable + persisted panel.
 - [x] **Layout & menus**: Tidy rewritten to pack cards into the nearest-corner

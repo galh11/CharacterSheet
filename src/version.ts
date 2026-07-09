@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.2.0',
+        date: '2026-07-09',
+        summary: 'Remove the D&D Beyond importer; import/export now covers this app’s own sheets only.',
+    },
+    {
         version: '1.1.0',
         date: '2026-07-09',
         pr: 11,

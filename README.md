@@ -9,6 +9,12 @@ one hover away.
 
 - **Free-form canvas** — drag and resize section cards anywhere; the layout is
   saved automatically. **Tidy** packs cards toward the top-left.
+- **Per-view drawer** — drag a card onto the half-circle tab that peeks in from
+  the right edge (or use its ⊟ button) to tuck it into a free-canvas scratch-pad
+  where you can arrange tucked cards freely; ⊞ restores them. The canvas and
+  stack views each have their own drawer, and tucked cards still feed their
+  fields into calculations. The tab stays put while the drawer holds anything and
+  disappears when it's empty.
 - **Editable everything** — add/rename/delete sections and fields through a
   per-section editor (the ✎ pencil on each card); there is no separate edit mode.
 - **Typed fields** — `text`, `number`, `boolean`, `computed`, `counter`, and

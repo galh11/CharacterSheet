@@ -64,6 +64,15 @@ const readImageAsDataUrl = (file: File, max: number): Promise<string> =>
         img.src = url
     })
 
+/** Whether a section is tucked into the given view's drawer scratch-pad. */
+const inDrawer = (
+    section: { drawer?: { canvas?: boolean; stack?: boolean } },
+    view: 'canvas' | 'stack',
+): boolean => Boolean(section.drawer?.[view])
+
+/** Width of the sliding drawer panel (never wider than the viewport). */
+const DRAWER_W = 'min(440px, 92vw)'
+
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
     const [headerCollapsed, setHeaderCollapsed] = useState(false)
@@ -87,6 +96,9 @@ function App() {
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [pinned, setPinned] = useState<Set<string>>(new Set())
     const [drawerOpen, setDrawerOpen] = useState(false)
+    const [draggingId, setDraggingId] = useState<string | null>(null)
+    const [dropHot, setDropHot] = useState(false)
+    const [headerH, setHeaderH] = useState(0)
     const [containerWidth, setContainerWidth] = useState(0)
     const [fitWidth, setFitWidth] = useState(() => {
         try {
@@ -116,6 +128,9 @@ function App() {
     const captureRef = useRef<HTMLDivElement>(null)
     const portraitRef = useRef<HTMLInputElement>(null)
     const canvasScrollRef = useRef<HTMLDivElement>(null)
+    const headerRef = useRef<HTMLElement>(null)
+    const drawerTabRef = useRef<HTMLButtonElement>(null)
+    const drawerPanelRef = useRef<HTMLDivElement>(null)
     const panRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; moved: boolean } | null>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
@@ -174,6 +189,10 @@ function App() {
         }
         return s
     }, [references, sheet])
+
+    // The drawer is per-view: tucking a card in the canvas doesn't hide it in the
+    // stack, and vice-versa. `view` picks which view's drawer we're acting on.
+    const view: 'canvas' | 'stack' = stackView ? 'stack' : 'canvas'
 
     const pushRoll = (entry: Omit<RollLogEntry, 'id'>) =>
         setRollLog((log) => [{ ...entry, id: crypto.randomUUID() }, ...log].slice(0, 40))
@@ -400,7 +419,7 @@ function App() {
     }
 
     const canvasSize = useMemo(() => {
-        const shown = sheet.sections.filter((section) => !section.hidden)
+        const shown = sheet.sections.filter((section) => !inDrawer(section, 'canvas'))
         const width = Math.max(
             960,
             ...shown.map((section) => section.layout.x + section.layout.w + 48),
@@ -422,7 +441,7 @@ function App() {
      *  blow out). Best run in play mode — edit mode renders bulky field editors. */
     const fittedItems = (): Placed[] =>
         sheet.sections
-            .filter((s) => !s.hidden)
+            .filter((s) => !inDrawer(s, 'canvas'))
             .map((s) => {
                 const handle = fitRefs.current.get(s.id)
                 const w = handle ? Math.min(340, handle.measureWidth()) : s.layout.w
@@ -449,7 +468,20 @@ function App() {
     }
 
     const hideSection = (id: string) => {
-        updateSection(id, { hidden: true })
+        const section = sheet.sections.find((s) => s.id === id)
+        if (!section) return
+        // Tuck the card into the current view's drawer, placing it on the drawer's
+        // free canvas (keep any existing spot, else stack below what's there).
+        const tucked = sheet.sections.filter((s) => s.id !== id && inDrawer(s, view) && s.drawerLayout)
+        const bottom = tucked.reduce((m, s) => Math.max(m, s.drawerLayout!.y + s.drawerLayout!.h), 0)
+        const drawerLayout = section.drawerLayout ?? {
+            x: 16,
+            y: tucked.length ? bottom + 16 : 16,
+            w: Math.min(300, Math.max(180, section.layout.w)),
+            h: Math.min(220, Math.max(80, section.layout.h)),
+        }
+        updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: true }, drawerLayout })
+        setDrawerOpen(true)
         setSelectedIds((prev) => {
             if (!prev.has(id)) return prev
             const next = new Set(prev)
@@ -458,7 +490,30 @@ function App() {
         })
     }
 
-    const showSection = (id: string) => updateSection(id, { hidden: false })
+    const showSection = (id: string) => {
+        const section = sheet.sections.find((s) => s.id === id)
+        if (!section) return
+        updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: false } })
+    }
+
+    // True when a screen point falls over the active drawer drop zone: the peeking
+    // tab while the drawer is closed, or the open panel itself.
+    const isOverDrawerZone = (x: number, y: number): boolean => {
+        const zone = drawerOpen ? drawerPanelRef.current : drawerTabRef.current
+        if (!zone) return false
+        const r = zone.getBoundingClientRect()
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+    }
+
+    // Called when a canvas card's move-drag ends; tuck it away if it was dropped
+    // over the drawer zone (returns true so the layout move is not committed).
+    const handleCardDrop = (id: string, x: number, y: number, moved: boolean): boolean => {
+        if (moved && isOverDrawerZone(x, y)) {
+            hideSection(id)
+            return true
+        }
+        return false
+    }
 
     // Drag empty canvas background to pan (scroll) the viewport. A click that
     // doesn't move clears the current selection.
@@ -585,6 +640,18 @@ function App() {
         return () => ro.disconnect()
     }, [stackView])
 
+    // Track the header's height so the fixed drawer overlay docks just beneath it
+    // (the header collapses, so this can't be a constant).
+    useEffect(() => {
+        const el = headerRef.current
+        if (!el) return
+        const measure = () => setHeaderH(el.offsetHeight)
+        measure()
+        const ro = new ResizeObserver(measure)
+        ro.observe(el)
+        return () => ro.disconnect()
+    }, [])
+
     useEffect(() => {
         try {
             localStorage.setItem('character-sheet:fit-width', fitWidth ? '1' : '0')
@@ -627,11 +694,34 @@ function App() {
             (f) => f.label.toLowerCase().includes(q) || (f.description ?? '').toLowerCase().includes(q),
         )
     }
-    const visibleSections = sheet.sections.filter((s) => !s.hidden && matchesQuery(s))
-    const hiddenSections = sheet.sections.filter((s) => s.hidden)
-    const stackSections = [...visibleSections].sort(
+    const canvasSections = sheet.sections.filter((s) => !inDrawer(s, 'canvas') && matchesQuery(s))
+    const stackVisible = sheet.sections.filter((s) => !inDrawer(s, 'stack') && matchesQuery(s))
+    const stackSections = [...stackVisible].sort(
         (a, b) => (pinned.has(a.id) ? 0 : 1) - (pinned.has(b.id) ? 0 : 1),
     )
+    // Sections tucked into the current view's drawer, plus their effective
+    // scratch-pad positions (default-placing any that lack a saved spot).
+    const drawerSections = sheet.sections.filter((s) => inDrawer(s, view))
+    const showDrawerTab = drawerSections.length > 0 || draggingId != null
+    const drawerPlaced = drawerSections.reduce<{ items: { section: typeof drawerSections[number]; layout: SectionLayout }[]; y: number }>(
+        (acc, s) => {
+            const layout = s.drawerLayout ?? {
+                x: 16,
+                y: acc.y,
+                w: Math.min(300, Math.max(180, s.layout.w)),
+                h: Math.min(220, Math.max(80, s.layout.h)),
+            }
+            return {
+                items: [...acc.items, { section: s, layout }],
+                y: s.drawerLayout ? acc.y : layout.y + layout.h + 16,
+            }
+        },
+        { items: [], y: 16 },
+    ).items
+    const drawerCanvasSize = {
+        width: Math.max(300, ...drawerPlaced.map((p) => p.layout.x + p.layout.w + 24)),
+        height: Math.max(300, ...drawerPlaced.map((p) => p.layout.y + p.layout.h + 24)),
+    }
     const editingSection = editingSectionId ? sheet.sections.find((s) => s.id === editingSectionId) ?? null : null
 
     const renderCard = (section: (typeof sheet.sections)[number], collapsible: boolean) => (
@@ -665,7 +755,7 @@ function App() {
 
     return (
         <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-3 p-4 md:px-8">
-            <header className="sticky top-0 z-40 -mx-4 border-b border-slate-800 bg-slate-950/85 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" style={{ borderTopColor: theme, borderTopWidth: 2 }}>
+            <header ref={headerRef} className="sticky top-0 z-40 -mx-4 border-b border-slate-800 bg-slate-950/85 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" style={{ borderTopColor: theme, borderTopWidth: 2 }}>
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="group relative shrink-0">
                         <button
@@ -854,14 +944,14 @@ function App() {
                             onClick={() => setDrawerOpen((v) => !v)}
                             className={clsx(
                                 'rounded-md border px-3 py-2 text-sm',
-                                drawerOpen || hiddenSections.length > 0
+                                drawerOpen || drawerSections.length > 0
                                     ? 'border-amber-500/70 text-amber-200 hover:bg-slate-800'
                                     : 'border-slate-600 text-slate-200 hover:bg-slate-800',
                             )}
-                            title="Show the drawer of tucked-away sections"
+                            title={`Open the ${view} drawer of tucked-away sections`}
                             aria-pressed={drawerOpen}
                         >
-                            Drawer{hiddenSections.length > 0 ? ` (${hiddenSections.length})` : ''}
+                            Drawer{drawerSections.length > 0 ? ` (${drawerSections.length})` : ''}
                         </button>
                         {!stackView && (
                             <>
@@ -1037,28 +1127,6 @@ function App() {
                     </div>
                 )}
 
-                {drawerOpen && (
-                    <div className="mb-3 rounded-md border border-amber-800/40 bg-slate-900/60 p-2">
-                        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-amber-200">
-                            <span>Drawer</span>
-                            <span className="text-slate-500">— tucked-away sections; restore to put them back on the canvas</span>
-                            <button type="button" onClick={() => setDrawerOpen(false)} className="ml-auto rounded border border-slate-700 px-2 py-0.5 text-slate-400 hover:bg-slate-800">Close</button>
-                        </div>
-                        {hiddenSections.length === 0 ? (
-                            <p className="m-0 px-1 py-1 text-xs text-slate-500">Nothing here yet. Use the ⊟ button on a card to tuck it away.</p>
-                        ) : (
-                            <div className="flex flex-wrap gap-1.5">
-                                {hiddenSections.map((section) => (
-                                    <div key={section.id} className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-950/60 px-2 py-1 text-xs" style={{ borderLeftColor: section.accent, borderLeftWidth: 3 }}>
-                                        <span className="text-slate-200">{section.title || 'Untitled'}</span>
-                                        <button type="button" onClick={() => showSection(section.id)} className="rounded border border-slate-600 px-1.5 py-0.5 text-slate-300 hover:bg-slate-800" title="Restore to the canvas">Restore</button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {stackView ? (
                     <div ref={captureRef} className="columns-1 gap-4 md:columns-2 xl:columns-3" style={{ zoom: densityZoom }}>
                         {stackSections.map((section) => (
@@ -1079,7 +1147,7 @@ function App() {
                             )}
                             style={{ width: canvasSize.width, height: canvasSize.height, zoom: canvasZoom }}
                         >
-                            {visibleSections.map((section) => (
+                            {canvasSections.map((section) => (
                                 <CanvasItem
                                     key={section.id}
                                     layout={section.layout}
@@ -1087,7 +1155,7 @@ function App() {
                                     zoom={canvasZoom}
                                     selected={selectedIds.has(section.id)}
                                     siblings={sheet.sections
-                                        .filter((s) => s.id !== section.id && !s.hidden)
+                                        .filter((s) => s.id !== section.id && !inDrawer(s, 'canvas'))
                                         .map((s) => s.layout)}
                                     onLayoutCommit={(layout) => commitLayout(section.id, layout)}
                                     onScaleChange={(scale) => updateSection(section.id, { scale })}
@@ -1095,6 +1163,13 @@ function App() {
                                     onSelect={(additive) => handleSelect(section.id, additive)}
                                     onEdit={() => setEditingSectionId(section.id)}
                                     onHide={() => hideSection(section.id)}
+                                    onDragStart={() => setDraggingId(section.id)}
+                                    onDragMove={(x, y) => setDropHot(isOverDrawerZone(x, y))}
+                                    onDragEnd={(x, y, moved) => {
+                                        setDraggingId(null)
+                                        setDropHot(false)
+                                        return handleCardDrop(section.id, x, y, moved)
+                                    }}
                                     handleRef={(h) => {
                                         if (h) fitRefs.current.set(section.id, h)
                                         else fitRefs.current.delete(section.id)
@@ -1126,6 +1201,78 @@ function App() {
                     onClose={() => setShowHitDice(false)}
                     onApply={spendHitDice}
                 />
+            )}
+
+            {showDrawerTab && (
+                <button
+                    ref={drawerTabRef}
+                    type="button"
+                    onClick={() => setDrawerOpen((v) => !v)}
+                    className={clsx(
+                        'fixed top-1/2 z-30 flex h-20 w-7 -translate-y-1/2 flex-col items-center justify-center gap-1 rounded-l-2xl border border-r-0 shadow-lg transition-colors print:hidden',
+                        dropHot
+                            ? 'border-amber-400 bg-amber-500/30 text-amber-100'
+                            : draggingId
+                                ? 'animate-pulse border-amber-500/70 bg-slate-800 text-amber-200'
+                                : 'border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800',
+                    )}
+                    style={{ right: drawerOpen ? DRAWER_W : 0 }}
+                    title={draggingId ? 'Drop here to tuck this card into the drawer' : drawerOpen ? 'Close the drawer' : 'Open the drawer'}
+                    aria-label={`${drawerOpen ? 'Close' : 'Open'} the drawer`}
+                >
+                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="7" rx="1" />
+                        <rect x="3" y="13" width="18" height="7" rx="1" />
+                        <line x1="10" y1="7.5" x2="14" y2="7.5" />
+                        <line x1="10" y1="16.5" x2="14" y2="16.5" />
+                    </svg>
+                    {drawerSections.length > 0 && (
+                        <span className="rounded-full bg-amber-500/80 px-1 text-[10px] font-semibold leading-tight text-slate-950">{drawerSections.length}</span>
+                    )}
+                </button>
+            )}
+
+            {drawerOpen && (
+                <div
+                    ref={drawerPanelRef}
+                    className="fixed right-0 z-30 flex flex-col border-l border-amber-800/40 bg-slate-950/95 shadow-2xl backdrop-blur print:hidden"
+                    style={{ top: headerH, bottom: 0, width: DRAWER_W }}
+                >
+                    <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-2 text-xs font-medium text-amber-200">
+                        <span className="whitespace-nowrap">Drawer · {view === 'stack' ? 'Stack' : 'Canvas'}</span>
+                        <span className="truncate text-slate-500">— drag to arrange; ⊞ restores a card</span>
+                        <button type="button" onClick={() => setDrawerOpen(false)} className="ml-auto rounded border border-slate-700 px-2 py-0.5 text-slate-400 hover:bg-slate-800">Close</button>
+                    </div>
+                    {drawerPlaced.length === 0 ? (
+                        <p className="m-3 text-xs text-slate-500">
+                            Nothing tucked away here yet. Drag a card onto the drawer tab, or use the ⊟ button on a
+                            card, to stash it in this {view} drawer.
+                        </p>
+                    ) : (
+                        <div className="relative flex-1 overflow-auto bg-[radial-gradient(circle,_rgba(148,163,184,0.08)_1px,_transparent_1px)] [background-size:16px_16px]">
+                            <div className="relative" style={{ width: drawerCanvasSize.width, height: drawerCanvasSize.height }}>
+                                {drawerPlaced.map(({ section, layout }) => (
+                                    <CanvasItem
+                                        key={section.id}
+                                        layout={layout}
+                                        scale={section.scale}
+                                        zoom={1}
+                                        drawerMode
+                                        siblings={drawerPlaced
+                                            .filter((p) => p.section.id !== section.id)
+                                            .map((p) => p.layout)}
+                                        onLayoutCommit={(l) => updateSection(section.id, { drawerLayout: l })}
+                                        onScaleChange={(scale) => updateSection(section.id, { scale })}
+                                        onEdit={() => setEditingSectionId(section.id)}
+                                        onHide={() => showSection(section.id)}
+                                    >
+                                        {renderCard(section, false)}
+                                    </CanvasItem>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             )}
 
             {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}

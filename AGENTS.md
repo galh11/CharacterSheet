@@ -191,10 +191,17 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   whole canvas so its content fills the current window width (adapts to window
   resize / browser page zoom via the container's `clientWidth`). **Spread across
   width** (`layout.tidyLayouts`) fits cards to content then skyline-packs them
-  across the measured window width. A section's `hidden` flag (zod schema, default
-  `false`) tucks it into the **drawer** (a toolbar panel) via the ⊟ button;
-  hidden cards leave the canvas but still feed their fields into computed
-  formulas, and **Restore** returns them.
+  across the measured window width. A section's per-view `drawer` flags (zod
+  schema: `{ canvas?, stack? }`) tuck it into that view's **drawer** — an
+  independent, free-canvas scratch-pad — so tucking a card in the canvas doesn't
+  affect the stack, and vice-versa (the legacy shared `hidden` boolean migrates
+  into `{ canvas: true, stack: true }`). Tuck a card via the ⊟ handle button, or
+  on the canvas by **dragging** it onto the peeking half-circle drawer tab that
+  appears on the right edge while you drag; the tab also persists whenever the
+  current view's drawer holds ≥1 card (and hides when empty). Opening the drawer
+  reveals a scrollable scratch-pad where tucked cards get their own
+  `drawerLayout` and can be dragged/resized freely; ⊞ restores a card to the
+  sheet. Drawer cards still feed their fields into computed formulas.
 
 ## Testing
 

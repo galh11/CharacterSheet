@@ -195,6 +195,20 @@ D&D extras
       Replaces the single `meta.extra` "extra damage" model (auto-migrated), with
       clearer labeled action inputs in the section editor.
 
+### Phase Q — Drawer overhaul  [x]
+- [x] **Per-view drawer**: the drawer is now independent per view — a card tucked
+      away in the canvas stays visible in the stack and vice-versa (section
+      `drawer: { canvas?, stack? }`; the legacy shared `hidden` boolean migrates
+      to both). Tucked cards still feed their fields into calculations.
+- [x] **Drag-to-tuck**: dragging a canvas card reveals a peeking half-circle
+      drawer tab on the right edge; dropping the card on it stashes it. The tab
+      also persists whenever the current view's drawer holds ≥1 card and hides
+      when empty.
+- [x] **Free-canvas scratch-pad**: opening the drawer shows a scrollable pad where
+      tucked cards get their own `drawerLayout` and can be dragged/resized freely;
+      ⊞ restores a card to the sheet.
+- [ ] **Follow-up**: drag-to-reorder tiles in the stack view (separate PR).
+
 ## Notes
 
 - Keep changes scoped per phase; commit at each phase boundary.

@@ -29,6 +29,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     {
         version: '1.0.0',
         date: '2026-07-09',
+        pr: 9,
         summary: 'Show the app version, build time, and a readable changelog in the ⋯ More menu.',
     },
     {

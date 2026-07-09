@@ -383,7 +383,7 @@ function StatBlock({ section, results, contributions, effectTags }: SectionBodyP
     )
 }
 
-function HpWidget({ section, onUpdateField }: SectionBodyProps) {
+function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal }: SectionBodyProps) {
     const [amount, setAmount] = useState('')
     const [dmgType, setDmgType] = useState('')
     const [concSave, setConcSave] = useState<number | null>(null)
@@ -402,6 +402,38 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
     const reduceN = reduction ? toNum(reduction.value) : 0
     const pct = maxN > 0 ? Math.max(0, Math.min(100, (curN / maxN) * 100)) : 0
 
+    // Death saves live in the HP section's meta and only surface once Current HP
+    // hits 0 — there is no separate death-saves section.
+    const succN = Math.max(0, Math.min(3, Number(section.meta?.deathSuccesses) || 0))
+    const failN = Math.max(0, Math.min(3, Number(section.meta?.deathFailures) || 0))
+    const dying = !!cur && curN <= 0
+    const deathStatus = succN >= 3 ? 'Stable' : failN >= 3 ? 'Dead' : null
+    const setDeaths = (s: number, f: number) =>
+        onUpdateSection?.({ meta: { ...section.meta, deathSuccesses: String(s), deathFailures: String(f) } })
+    const rollDeathSave = () => {
+        const r = rollD20(0, 'normal')
+        let s = succN
+        let f = failN
+        let detail: string
+        if (r.natural === 20) {
+            onHeal?.(1)
+            s = 0
+            f = 0
+            detail = 'Nat 20 — regain 1 HP and wake up!'
+        } else if (r.natural === 1) {
+            f = Math.min(3, failN + 2)
+            detail = 'Nat 1 — two failures'
+        } else if (r.natural >= 10) {
+            s = Math.min(3, succN + 1)
+            detail = `${r.natural} — success`
+        } else {
+            f = Math.min(3, failN + 1)
+            detail = `${r.natural} — failure`
+        }
+        setDeaths(s, f)
+        onRoll?.({ title: 'Death save', detail, total: r.natural, kind: 'save', crit: r.crit })
+    }
+
     const apply = (sign: 1 | -1) => {
         const amt = Math.abs(toNum(amount))
         if (!amt || !cur) return
@@ -419,9 +451,14 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
                 dmg -= absorbed
             }
             if (dmg > 0) onUpdateField(cur.id, { value: String(Math.max(0, curN - dmg)) })
+            // Taking damage while already at 0 HP is an automatic death-save failure.
+            if (curN <= 0 && taken > 0 && failN < 3) setDeaths(succN, Math.min(3, failN + 1))
             if (conc && conc.value === 'true' && taken > 0) setConcSave(Math.max(10, Math.floor(taken / 2)))
         } else {
-            onUpdateField(cur.id, { value: String(maxN > 0 ? Math.min(maxN, curN + amt) : curN + amt) })
+            const next = maxN > 0 ? Math.min(maxN, curN + amt) : curN + amt
+            onUpdateField(cur.id, { value: String(next) })
+            // Healing above 0 stabilises the character and clears death saves.
+            if (next > 0 && (succN || failN)) setDeaths(0, 0)
         }
         setAmount('')
     }
@@ -459,6 +496,38 @@ function HpWidget({ section, onUpdateField }: SectionBodyProps) {
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div className={clsx('h-full rounded-full transition-all', pct > 50 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-rose-500')} style={{ width: `${pct}%` }} />
             </div>
+            {dying && (
+                <div className="flex flex-col gap-2 rounded-md border border-rose-500/40 bg-rose-950/30 p-2">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold uppercase tracking-wide text-rose-300">Death saves</span>
+                        {deathStatus && (
+                            <span className={clsx('rounded px-2 py-0.5 text-xs font-semibold', deathStatus === 'Stable' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300')}>
+                                {deathStatus}
+                            </span>
+                        )}
+                    </div>
+                    <PipRow label="Successes" value={succN} max={3} color="bg-emerald-400 ring-emerald-300" onSet={(v) => setDeaths(v, failN)} />
+                    <PipRow label="Failures" value={failN} max={3} color="bg-rose-500 ring-rose-400" onSet={(v) => setDeaths(succN, v)} />
+                    <div className="flex items-center gap-2 print:hidden">
+                        {onRoll && (
+                            <button
+                                type="button"
+                                onClick={rollDeathSave}
+                                className="rounded bg-violet-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-violet-500"
+                            >
+                                🎲 Roll save
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setDeaths(0, 0)}
+                            className="ml-auto rounded border border-slate-600 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            )}
             {reduction && (
                 <Tooltip content={reduction.description || `Each hit you take is reduced by ${reduceN} before temp HP.`}>
                     <span className="w-fit cursor-help rounded bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-300 ring-1 ring-amber-500/40">
@@ -843,71 +912,6 @@ function PipRow({ label, value, max, color, onSet }: {
     )
 }
 
-function DeathSaves({ section, onUpdateField, onRoll, onHeal }: SectionBodyProps) {
-    const succ = section.fields.find((f) => f.label.toLowerCase().startsWith('success'))
-    const fail = section.fields.find((f) => f.label.toLowerCase().startsWith('fail'))
-    const succN = succ ? toNum(succ.value) : 0
-    const failN = fail ? toNum(fail.value) : 0
-    const status = succN >= 3 ? 'Stable' : failN >= 3 ? 'Dead' : null
-    const rollSave = () => {
-        const r = rollD20(0, 'normal')
-        let s = succN
-        let f = failN
-        let detail: string
-        if (r.natural === 20) {
-            onHeal?.(1)
-            s = 0
-            f = 0
-            detail = 'Nat 20 — regain 1 HP and wake up!'
-        } else if (r.natural === 1) {
-            f = Math.min(3, failN + 2)
-            detail = 'Nat 1 — two failures'
-        } else if (r.natural >= 10) {
-            s = Math.min(3, succN + 1)
-            detail = `${r.natural} — success`
-        } else {
-            f = Math.min(3, failN + 1)
-            detail = `${r.natural} — failure`
-        }
-        if (succ && s !== succN) onUpdateField(succ.id, { value: String(s) })
-        if (fail && f !== failN) onUpdateField(fail.id, { value: String(f) })
-        onRoll?.({ title: 'Death save', detail, total: r.natural, kind: 'save', crit: r.crit })
-    }
-    return (
-        <div className="flex flex-col gap-2">
-            {succ && <PipRow label="Successes" value={succN} max={3} color="bg-emerald-400 ring-emerald-300" onSet={(v) => onUpdateField(succ.id, { value: String(v) })} />}
-            {fail && <PipRow label="Failures" value={failN} max={3} color="bg-rose-500 ring-rose-400" onSet={(v) => onUpdateField(fail.id, { value: String(v) })} />}
-            <div className="flex items-center gap-2">
-                {status && (
-                    <span className={clsx('rounded px-2 py-0.5 text-xs font-semibold', status === 'Stable' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300')}>
-                        {status}
-                    </span>
-                )}
-                {onRoll && (succ || fail) && (
-                    <button
-                        type="button"
-                        onClick={rollSave}
-                        className="rounded bg-violet-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-violet-500 print:hidden"
-                    >
-                        🎲 Roll save
-                    </button>
-                )}
-                <button
-                    type="button"
-                    onClick={() => {
-                        if (succ) onUpdateField(succ.id, { value: '0' })
-                        if (fail) onUpdateField(fail.id, { value: '0' })
-                    }}
-                    className="ml-auto rounded border border-slate-600 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800 print:hidden"
-                >
-                    Reset
-                </button>
-            </div>
-            {!succ && !fail && <p className="text-xs italic text-slate-500">Add "Successes" and "Failures" fields.</p>}
-        </div>
-    )
-}
-
 function Conditions({ section, onUpdateField, onAddField }: SectionBodyProps) {
     const active = section.fields.filter((f) => f.value === 'true')
     const have = new Set(section.fields.map((f) => f.label.toLowerCase()))
@@ -1120,8 +1124,6 @@ export function SectionBody(props: SectionBodyProps) {
             return <ActionCards {...props} />
         case 'hitdice':
             return <HitDiceWidget {...props} />
-        case 'deathsaves':
-            return <DeathSaves {...props} />
         case 'conditions':
             return <Conditions {...props} />
         case 'spellslots':

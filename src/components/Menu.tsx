@@ -34,18 +34,18 @@ export function Menu({ label, title, align = 'left', className, children }: Menu
     }, [open])
 
     // Nudge the panel back on-screen if it would spill past either edge (the
-    // toolbar wraps, so a button can end up anywhere across the width).
+    // toolbar wraps, so a button can end up anywhere across the width). The
+    // panel only renders while open, so we (re)measure and set the shift on
+    // open and leave the stale value untouched while closed.
     useEffect(() => {
-        if (!open) {
-            setShift(0)
-            return
-        }
+        if (!open) return
         const el = menuRef.current
         if (!el) return
         const rect = el.getBoundingClientRect()
         const margin = 8
         if (rect.right > window.innerWidth - margin) setShift(window.innerWidth - margin - rect.right)
         else if (rect.left < margin) setShift(margin - rect.left)
+        else setShift(0)
     }, [open])
 
     return (

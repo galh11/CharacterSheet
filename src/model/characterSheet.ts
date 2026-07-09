@@ -83,7 +83,6 @@ export const sectionKindSchema = z.enum([
     'skills',
     'actions',
     'hitdice',
-    'deathsaves',
     'conditions',
     'spellslots',
     'initiative',
@@ -106,16 +105,51 @@ export const sectionSchema = z.object({
     layout: layoutSchema,
 })
 
-export const characterSheetSchema = z.object({
+/** Drop legacy standalone "deathsaves" sections, folding any recorded
+ *  successes/failures into the HP section's meta. Death saves now live inside
+ *  the HP tracker and surface only when Current HP hits 0, so this keeps older
+ *  saves loadable without a dedicated section kind. */
+const foldLegacyDeathSaves = (input: unknown): unknown => {
+    if (!input || typeof input !== 'object') return input
+    const sheet = input as { sections?: unknown }
+    if (!Array.isArray(sheet.sections)) return input
+    if (!sheet.sections.some((s) => (s as { kind?: unknown })?.kind === 'deathsaves')) return input
+    let succ = 0
+    let fail = 0
+    for (const s of sheet.sections) {
+        if ((s as { kind?: unknown })?.kind !== 'deathsaves') continue
+        const fields = (s as { fields?: unknown }).fields
+        if (!Array.isArray(fields)) continue
+        for (const f of fields) {
+            const label = String((f as { label?: unknown })?.label ?? '').toLowerCase()
+            const value = Number((f as { value?: unknown })?.value) || 0
+            if (label.startsWith('success')) succ = Math.max(succ, value)
+            else if (label.startsWith('fail')) fail = Math.max(fail, value)
+        }
+    }
+    const sections = sheet.sections
+        .filter((s) => (s as { kind?: unknown })?.kind !== 'deathsaves')
+        .map((s) => {
+            if ((s as { kind?: unknown })?.kind !== 'hp' || (!succ && !fail)) return s
+            const meta = { ...((s as { meta?: Record<string, string> }).meta ?? {}) }
+            if (succ) meta.deathSuccesses = String(succ)
+            if (fail) meta.deathFailures = String(fail)
+            return { ...(s as object), meta }
+        })
+    return { ...sheet, sections }
+}
+
+const sheetObjectSchema = z.object({
     id: z.string().min(1),
     name: z.string(),
     sections: z.array(sectionSchema),
 })
 
-export type CharacterField = z.infer<typeof fieldSchema>
+export const characterSheetSchema = z.preprocess(foldLegacyDeathSaves, sheetObjectSchema)
 export type SectionLayout = z.infer<typeof layoutSchema>
 export type CharacterSection = z.infer<typeof sectionSchema>
-export type CharacterSheet = z.infer<typeof characterSheetSchema>
+export type CharacterSheet = z.infer<typeof sheetObjectSchema>
+export type CharacterField = z.infer<typeof fieldSchema>
 
 const uid = (): string => crypto.randomUUID()
 

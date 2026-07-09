@@ -207,8 +207,15 @@ export const useSheet = () => {
                 ...c,
                 sections: c.sections.map((section) => {
                     const maxHp = section.fields.find((f) => f.label.toLowerCase() === 'max hp')?.value
+                    // A long rest brings HP to full, so clear any recorded death
+                    // saves stored on the HP section's meta.
+                    const meta =
+                        kind === 'long' && section.kind === 'hp' && (section.meta?.deathSuccesses || section.meta?.deathFailures)
+                            ? { ...section.meta, deathSuccesses: '0', deathFailures: '0' }
+                            : section.meta
                     return {
                         ...section,
+                        meta,
                         fields: section.fields.map((field) => {
                             const label = field.label.toLowerCase()
                             if (kind === 'long') {
@@ -217,14 +224,13 @@ export const useSheet = () => {
                                 if (label === 'exhaustion') {
                                     return { ...field, value: String(Math.max(0, (Number(field.value) || 0) - 1)) }
                                 }
-                                // Hit dice, spell slots and death saves reset on a long rest.
+                                // Hit dice and spell slots refill on a long rest.
                                 if (section.kind === 'hitdice' && field.max != null) {
                                     return { ...field, value: String(field.max) }
                                 }
                                 if (section.kind === 'spellslots' && field.max != null) {
                                     return { ...field, value: String(field.max) }
                                 }
-                                if (section.kind === 'deathsaves') return { ...field, value: '0' }
                             }
                             if (field.type === 'resource' && field.max != null) {
                                 const recharge = field.meta?.recharge ?? 'long'
@@ -257,8 +263,14 @@ export const useSheet = () => {
                     const curN = Number(cur.value) || 0
                     const maxN = Number(max.value) || 0
                     const next = maxN > 0 ? Math.min(maxN, curN + amount) : curN + amount
+                    // Regaining any HP stabilises the character: clear death saves.
+                    const meta =
+                        next > 0 && (section.meta?.deathSuccesses || section.meta?.deathFailures)
+                            ? { ...section.meta, deathSuccesses: '0', deathFailures: '0' }
+                            : section.meta
                     return {
                         ...section,
+                        meta,
                         fields: section.fields.map((f) => (f.id === cur.id ? { ...f, value: String(next) } : f)),
                     }
                 }),

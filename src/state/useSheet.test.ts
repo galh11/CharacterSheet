@@ -222,16 +222,17 @@ describe('useSheet', () => {
                 fields: [{ id: 'l1', label: '1st', type: 'resource' as const, value: '0', max: 4, description: '' }],
             },
             {
-                id: 'ds',
-                title: 'Death Saves',
+                id: 'hp',
+                title: 'Hit Points',
                 description: '',
                 accent: '#000',
-                kind: 'deathsaves' as const,
+                kind: 'hp' as const,
                 scale: 1,
+                meta: { deathSuccesses: '2', deathFailures: '1' },
                 layout: { x: 0, y: 0, w: 1, h: 1 },
                 fields: [
-                    { id: 'succ', label: 'Successes', type: 'counter' as const, value: '2', max: 3, description: '' },
-                    { id: 'fail', label: 'Failures', type: 'counter' as const, value: '1', max: 3, description: '' },
+                    { id: 'cur', label: 'Current HP', type: 'number' as const, value: '0', description: '' },
+                    { id: 'maxhp', label: 'Max HP', type: 'number' as const, value: '30', description: '' },
                 ],
             },
         ],
@@ -243,6 +244,8 @@ describe('useSheet', () => {
         }
         return undefined
     }
+    const hpMeta = (api: ReturnType<typeof useSheet>) =>
+        api.sheet.sections.find((s) => s.kind === 'hp')?.meta
 
     it('long rest refills hit dice and spell slots and clears death saves', () => {
         const { result } = renderHook(() => useSheet())
@@ -250,8 +253,18 @@ describe('useSheet', () => {
         act(() => result.current.rest('long'))
         expect(findVal(result.current, 'd12')).toBe('5')
         expect(findVal(result.current, 'l1')).toBe('4')
-        expect(findVal(result.current, 'succ')).toBe('0')
-        expect(findVal(result.current, 'fail')).toBe('0')
+        expect(findVal(result.current, 'cur')).toBe('30')
+        expect(hpMeta(result.current)?.deathSuccesses).toBe('0')
+        expect(hpMeta(result.current)?.deathFailures).toBe('0')
+    })
+
+    it('healing above 0 HP clears recorded death saves', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(recoverySheet()))
+        act(() => result.current.healHp(5))
+        expect(findVal(result.current, 'cur')).toBe('5')
+        expect(hpMeta(result.current)?.deathSuccesses).toBe('0')
+        expect(hpMeta(result.current)?.deathFailures).toBe('0')
     })
 
     it('short rest leaves hit dice and spell slots untouched', () => {

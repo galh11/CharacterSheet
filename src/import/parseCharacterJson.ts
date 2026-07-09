@@ -283,18 +283,35 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
         place({ id: crypto.randomUUID(), title: 'Character', description: 'Class, level, and race.', accent: '#a855f7', fields: summaryFields })
     }
 
-    // Inventory.
-    const inventoryFields: CharacterField[] = []
+    // Inventory — one D&D-Beyond-style section: coin purse across the top, then
+    // the item list. Currency travels with the gear instead of a separate card.
+    const coinFields: CharacterField[] = []
+    const currencies = asObj(data.currencies)
+    if (currencies) {
+        for (const c of CURRENCIES) {
+            const amount = num(currencies[c.key]) ?? 0
+            if (amount > 0) coinFields.push(createField({ label: c.label, type: 'number', value: String(amount), meta: { coin: c.key } }))
+        }
+    }
+    const itemFields: CharacterField[] = []
     for (const entry of asArr(data.inventory)) {
         const o = asObj(entry)
         const name = o && str(asObj(o.definition)?.name)
         if (!name) continue
         const qty = (o && num(o.quantity)) ?? 1
-        inventoryFields.push(createField({ label: name.slice(0, 40), type: 'text', value: qty > 1 ? `x${qty}` : '' }))
+        itemFields.push(createField({ label: name.slice(0, 40), type: 'text', value: qty > 1 ? `x${qty}` : '' }))
     }
-    if (inventoryFields.length > 0) {
-        detected.push(`${inventoryFields.length} inventory items`)
-        place({ id: crypto.randomUUID(), title: 'Inventory', description: 'Imported equipment.', accent: '#a3a3a3', fields: inventoryFields })
+    if (coinFields.length > 0 || itemFields.length > 0) {
+        if (coinFields.length > 0) detected.push('currency')
+        if (itemFields.length > 0) detected.push(`${itemFields.length} inventory items`)
+        place({
+            id: crypto.randomUUID(),
+            title: 'Inventory',
+            description: 'Coins and equipment imported from D&D Beyond.',
+            accent: '#a3a3a3',
+            kind: 'inventory',
+            fields: [...coinFields, ...itemFields],
+        })
     }
 
     // Languages (from modifiers of type "language").
@@ -314,18 +331,6 @@ export const parseCharacterJson = (input: unknown): ParseResult => {
             accent: '#f59e0b',
             fields: [createField({ label: 'Languages', type: 'text', value: Array.from(languages).join(', ').slice(0, 120) })],
         })
-    }
-
-    // Currency.
-    const currencies = asObj(data.currencies)
-    if (currencies) {
-        const coinFields = CURRENCIES.filter((c) => (num(currencies[c.key]) ?? 0) > 0).map((c) =>
-            createField({ label: c.label, type: 'number', value: String(num(currencies[c.key]) ?? 0) }),
-        )
-        if (coinFields.length > 0) {
-            detected.push('currency')
-            place({ id: crypto.randomUUID(), title: 'Currency', description: 'Coins carried.', accent: '#f59e0b', kind: 'currency', fields: coinFields })
-        }
     }
 
     const name = str(data.name) ?? 'Imported Character'

@@ -87,6 +87,7 @@ export const sectionKindSchema = z.enum([
     'spellslots',
     'initiative',
     'currency',
+    'inventory',
     'timers',
 ])
 export type SectionKind = z.infer<typeof sectionKindSchema>

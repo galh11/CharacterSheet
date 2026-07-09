@@ -275,8 +275,12 @@ S('Languages', 'default', [
     F('Druidic', 'text', 'fluent'),
 ])
 
-// 17. Notable gear — magic and renamed/custom items with effects.
-S('Notable Gear', 'default', [
+// 17. Inventory — one D&D-Beyond-style section: coin purse at the top, then
+// notable gear (some grant effects) and mundane equipment together.
+S('Inventory', 'inventory', [
+    F('GP', 'number', 346, { meta: { coin: 'gp' } }),
+    F('SP', 'number', 0, { meta: { coin: 'sp' } }),
+    F('CP', 'number', 0, { meta: { coin: 'cp' } }),
     F('Ring of Quick Recovery', 'text', 'worn', { description: 'Adventurer’s Ring: when you regain hit points, regain an additional 3 (once per turn). Also sheds a cold, fuel-free flame (Bright Light 20 ft).' }),
     F('Amulet — Beast Whisper', 'text', 'worn', { description: 'Holy-symbol amulet: Advantage on Wisdom (Animal Handling) checks.' }),
     F('Quarterstaff — True Strike Echo', 'text', 'equipped', { description: '1/Long Rest, gain Advantage on one attack roll.' }),
@@ -288,17 +292,6 @@ S('Notable Gear', 'default', [
     F('Deep North Expedition Cloak', 'text', 'worn', { description: 'Resistance to environmental cold damage; Advantage on Survival checks to navigate/track/avoid getting lost in arctic terrain.' }),
     F('Storm Hood of Kaldweave', 'text', 'worn', { description: 'See through nonmagical blowing snow/fog/freezing rain; ranged attacks against you in such conditions take −2 to hit.' }),
     F('Whale-Oil Lantern Kit', 'text', 'carried', { description: 'Flame can’t be extinguished by nonmagical wind/snow/rain; Advantage on sight Perception in snow/fog/freezing rain while lit.' }),
-], '#06b6d4')
-
-// 18. Currency.
-S('Currency', 'currency', [
-    F('GP', 'number', 346),
-    F('SP', 'number', 0),
-    F('CP', 'number', 0),
-], '#f59e0b')
-
-// 19. Equipment — mundane gear and consumables.
-S('Equipment', 'default', [
     F('Studded Leather (worn), Shield (worn)', 'text', 'equipped'),
     F('Longbow + Arrows ×20', 'text', 'equipped'),
     F('Leather Armor (spare), Sickle', 'text', 'carried'),
@@ -310,7 +303,7 @@ S('Equipment', 'default', [
     F('Caltrops, Acid ×2, Antitoxin ×3', 'text', 'carried'),
     F('Dynamite ×2, Blasting Powder ×5', 'text', 'carried'),
     F('Sled, Military Saddle, Piton', 'text', 'carried'),
-])
+], '#a3a3a3')
 
 // Reading order: identity -> abilities -> checks -> defence/vitals -> offence ->
 // magic -> traits -> resources/states -> info/inventory. Tidy and stack view
@@ -321,7 +314,7 @@ const ORDER = [
     'Combat', 'Hit Points', 'Death Saves',
     'Attacks', 'Spellcasting', 'Spell Slots', 'Cantrips', 'Prepared Spells',
     'Resources', 'Conditions', 'Features & Traits',
-    'Languages', 'Notable Gear', 'Equipment', 'Currency',
+    'Languages', 'Inventory',
 ]
 sections.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title))
 // Re-pack the default free-canvas layout so it follows the new order too.

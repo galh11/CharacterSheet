@@ -141,3 +141,42 @@ describe('HpWidget death saves', () => {
         expect(onUpdateSection).toHaveBeenCalledWith({ meta: { deathSuccesses: '0', deathFailures: '0' } })
     })
 })
+
+describe('InventoryWidget', () => {
+    const inventorySection = (fields: CharacterField[]): CharacterSection => ({
+        id: 'inv',
+        title: 'Inventory',
+        description: '',
+        accent: '#000',
+        kind: 'inventory',
+        scale: 1,
+        fields,
+        layout: { x: 0, y: 0, w: 1, h: 1 },
+    })
+
+    it('renders coin fields as a purse of steppers and steps them', () => {
+        const onUpdateField = vi.fn()
+        const section = inventorySection([
+            field({ id: 'gp', label: 'GP', type: 'number', value: '5', meta: { coin: 'gp' } }),
+            field({ id: 'rope', label: 'Rope', value: 'carried' }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={onUpdateField} />)
+        // The coin value lives in an editable input, the item value in its own input.
+        expect(screen.getByLabelText('GP')).toHaveValue('5')
+        fireEvent.click(screen.getByRole('button', { name: 'Increase GP' }))
+        expect(onUpdateField).toHaveBeenCalledWith('gp', { value: '6' })
+    })
+
+    it('lists non-coin fields as editable item rows', () => {
+        const onUpdateField = vi.fn()
+        const section = inventorySection([
+            field({ id: 'gp', label: 'GP', type: 'number', value: '5', meta: { coin: 'gp' } }),
+            field({ id: 'rope', label: 'Rope', value: 'carried' }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={onUpdateField} />)
+        const item = screen.getByLabelText('Rope quantity')
+        expect(item).toHaveValue('carried')
+        fireEvent.change(item, { target: { value: '×2' } })
+        expect(onUpdateField).toHaveBeenCalledWith('rope', { value: '×2' })
+    })
+})

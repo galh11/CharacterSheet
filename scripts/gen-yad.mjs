@@ -279,8 +279,12 @@ S('Languages', 'default', [
     F('Elvish', 'text', 'fluent'),
 ])
 
-// 17. Notable gear — magic items and special equipment that grant effects.
-S('Notable Gear', 'default', [
+// 17. Inventory — one D&D-Beyond-style section: coin purse at the top (Bone
+// Marks is a homebrew denomination), then notable gear (some grant effects) and
+// mundane equipment together.
+S('Inventory', 'inventory', [
+    F('Bone Marks', 'number', 108, { description: 'Homebrew currency.', meta: { coin: 'bones' } }),
+    F('GP', 'number', 0, { meta: { coin: 'gp' } }),
     F('Ring of Protection (Bone-Carved)', 'text', 'worn', {
         description: '+1 to AC while worn (a relational effect — toggle it off in the editor to unequip).',
         effects: [{ target: 'ac', op: 'add', value: '1' }],
@@ -297,16 +301,6 @@ S('Notable Gear', 'default', [
     F('Horizon Society Salvage Harness', 'text', 'worn', { description: 'Carrying capacity doubled; 1/Long Rest, negate a level of Exhaustion from travel, marching, climbing, or environment.' }),
     F('Reinforced Rope Coil', 'text', 'carried', { description: 'Advantage on Athletics (STR) to climb or prevent a fall; immune to cold; 10 HP.' }),
     F('Ice-Anchor Pitons', 'text', '×10', { description: 'Secure a rope for Advantage on Athletics climbing; anchor holds 2,000 lb.' }),
-], '#06b6d4')
-
-// 18. Currency (steppers). Bone Marks is a homebrew denomination.
-S('Currency', 'currency', [
-    F('Bone Marks', 'number', 108, { description: 'Homebrew currency.' }),
-    F('GP', 'number', 0),
-], '#f59e0b')
-
-// 19. Equipment — consumables and mundane gear.
-S('Equipment', 'default', [
     F('Potion of Healing (Greater)', 'text', '×5', { description: 'Regain 4d4 + 4 HP.' }),
     F('Potion of Healing (Superior)', 'text', '×3', { description: 'Regain 8d4 + 8 HP.' }),
     F('Javelins', 'text', '×3'),
@@ -316,7 +310,7 @@ S('Equipment', 'default', [
     F('Bullseye Lantern, Tinderbox', 'text', 'carried'),
     F('Rations ×10, Waterskin', 'text', 'carried'),
     F('Climber’s Kit, Crowbar, Pole, Rope', 'text', 'carried'),
-])
+], '#a3a3a3')
 
 // Reading order: identity → abilities → ability-derived → defence/vitals →
 // offence → resources & states → traits → movement/info/inventory. Tidy and
@@ -327,7 +321,7 @@ const ORDER = [
     'Combat', 'Hit Points', 'Death Saves',
     'Attacks', 'Bonus Actions', 'Reactions',
     'Resources', 'Conditions', 'Features & Traits',
-    'Movement & Physique', 'Languages', 'Notable Gear', 'Equipment', 'Currency',
+    'Movement & Physique', 'Languages', 'Inventory',
 ]
 sections.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title))
 // Re-pack the default free-canvas layout so it follows the new order too.

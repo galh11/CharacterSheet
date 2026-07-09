@@ -42,6 +42,7 @@ const SECTION_KINDS: { value: SectionKind; label: string }[] = [
     { value: 'spellslots', label: 'Spell slots' },
     { value: 'initiative', label: 'Initiative' },
     { value: 'currency', label: 'Currency' },
+    { value: 'inventory', label: 'Inventory' },
     { value: 'timers', label: 'Buff timers' },
 ]
 
@@ -512,6 +513,19 @@ export function SectionEditorModal({
                                             className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
                                             aria-label="Initiative modifier"
                                         />
+                                    )}
+
+                                    {section.kind === 'inventory' && (
+                                        <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-400">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!field.meta?.coin}
+                                                onChange={(event) =>
+                                                    setMeta(field, 'coin', event.target.checked ? field.label.toLowerCase() : '')
+                                                }
+                                            />
+                                            Currency coin (shown as a stepper in the coin purse)
+                                        </label>
                                     )}
 
                                     {section.kind === 'actions' && (

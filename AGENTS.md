@@ -123,7 +123,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   damage, temp HP…) embed live values, e.g. `+{str_mod + proficiency}`.
 - **Section kinds** drive specialized widgets in `SectionBody` (abilities, hp,
   skills, actions, hitdice, conditions, spellslots, initiative,
-  currency, timers); the default kind is a plain label/value list. The **HP**
+  currency, inventory, timers); the default kind is a plain label/value list. The
+  **inventory** kind is a D&D-Beyond-style single card: fields flagged
+  `meta.coin` (a coin code like `gp`) render as a coin-purse row of steppers
+  across the top, and every other field is an item row below — so currency
+  travels with the gear in one section. (The legacy standalone **currency** kind
+  still renders older sheets.) The **HP**
   widget also hosts **death saves** — they appear inside it (successes/failures
   pips, auto-roll, stable/dead) only while Current HP is 0, and clear on any
   healing or long rest.

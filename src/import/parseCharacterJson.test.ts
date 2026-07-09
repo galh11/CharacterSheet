@@ -104,8 +104,10 @@ describe('parseCharacterJson — real Amarthon export', () => {
         const saves = section('Saving Throws')
         expect(saves?.fields.find((f) => f.label === 'Wisdom')?.meta?.prof).toBe('proficient')
         expect(saves?.fields.find((f) => f.label === 'Strength')?.meta?.prof).toBe('none')
-        // Currency: 346 gp.
-        expect(section('Currency')?.fields.find((f) => f.label === 'GP')?.value).toBe('346')
+        // Currency now lives inside the unified Inventory section: 346 gp.
+        const gp = section('Inventory')?.fields.find((f) => f.label === 'GP')
+        expect(gp?.value).toBe('346')
+        expect(gp?.meta?.coin).toBe('gp')
     })
 
     it('computes AC to 16 (save-field labels do not clobber ability slugs)', () => {

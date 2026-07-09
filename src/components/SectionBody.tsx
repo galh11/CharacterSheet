@@ -1063,6 +1063,86 @@ function CurrencyWidget({ section, onUpdateField }: SectionBodyProps) {
     )
 }
 
+/** Standard coin denominations, low → high, for ordering the coin purse. */
+const COIN_ORDER = ['cp', 'sp', 'ep', 'gp', 'pp']
+
+/** A single, D&D-Beyond-style inventory: a coin purse (fields flagged
+ *  `meta.coin`) across the top, then the item list below. Everything lives in
+ *  one section so currency travels with the gear. */
+function InventoryWidget({ section, results, onUpdateField, contributions, effectTags }: SectionBodyProps) {
+    if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No items yet.</p>
+    const coins = section.fields
+        .filter((f) => f.meta?.coin)
+        .sort((a, b) => {
+            const ai = COIN_ORDER.indexOf((a.meta?.coin ?? '').toLowerCase())
+            const bi = COIN_ORDER.indexOf((b.meta?.coin ?? '').toLowerCase())
+            return (ai === -1 ? COIN_ORDER.length : ai) - (bi === -1 ? COIN_ORDER.length : bi)
+        })
+    const items = section.fields.filter((f) => !f.meta?.coin)
+    const stepCoin = (field: CharacterField, delta: number) =>
+        onUpdateField(field.id, { value: String(Math.max(0, toNum(field.value) + delta)) })
+    return (
+        <div className="flex flex-col gap-2">
+            {coins.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2">
+                    {coins.map((field) => (
+                        <div key={field.id} className="flex items-center gap-1 rounded-md bg-slate-900/60 px-1.5 py-1">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-300/80" title={field.label}>
+                                {(field.meta?.coin || field.label).toUpperCase()}
+                            </span>
+                            <button type="button" onClick={() => stepCoin(field, -1)} className="h-5 w-5 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700" aria-label={`Decrease ${field.label}`}>−</button>
+                            <input
+                                value={field.value}
+                                onChange={(e) => onUpdateField(field.id, { value: e.target.value.replace(/[^0-9]/g, '') })}
+                                inputMode="numeric"
+                                aria-label={field.label}
+                                className="w-14 rounded bg-slate-900/50 text-center font-mono text-sm text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                            />
+                            <button type="button" onClick={() => stepCoin(field, 1)} className="h-5 w-5 rounded bg-slate-800 text-xs text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
+                        </div>
+                    ))}
+                </div>
+            )}
+            {items.length > 0 && (
+                <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                    {items.map((field) => (
+                        <li key={field.id}>
+                            {field.type === 'counter' ? (
+                                <Counter field={field} onUpdateField={onUpdateField} />
+                            ) : field.type === 'resource' ? (
+                                <ResourcePips field={field} onUpdateField={onUpdateField} />
+                            ) : field.type === 'boolean' ? (
+                                <BoolToggle field={field} onUpdateField={onUpdateField} />
+                            ) : (
+                                <div className="flex items-center justify-between gap-3 text-sm">
+                                    <span className="flex items-center">
+                                        <FieldLabel field={field} />
+                                        <EffectTargetBadges slug={slugify(field.label)} contributions={contributions} tags={effectTags} />
+                                    </span>
+                                    {field.type === 'computed' ? (
+                                        <span className={clsx('font-mono', results.get(field.id)?.ok ? 'text-emerald-300' : 'text-rose-300')}>
+                                            {displayValue(field, results)}
+                                        </span>
+                                    ) : (
+                                        <input
+                                            value={field.value}
+                                            onChange={(e) => onUpdateField(field.id, { value: e.target.value })}
+                                            aria-label={`${field.label} quantity`}
+                                            placeholder="—"
+                                            className="w-24 shrink-0 rounded bg-transparent px-1 text-right font-mono text-slate-100 outline-none placeholder:text-slate-600 focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                                        />
+                                    )}
+                                </div>
+                            )}
+                            <FieldGrantChips field={field} />
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    )
+}
+
 function TimersWidget({ section, onUpdateField }: SectionBodyProps) {
     if (section.fields.length === 0)
         return <p className="text-xs italic text-slate-500">No active buffs. Add a field per effect; its value is rounds remaining.</p>
@@ -1132,6 +1212,8 @@ export function SectionBody(props: SectionBodyProps) {
             return <Initiative {...props} />
         case 'currency':
             return <CurrencyWidget {...props} />
+        case 'inventory':
+            return <InventoryWidget {...props} />
         case 'timers':
             return <TimersWidget {...props} />
         default:

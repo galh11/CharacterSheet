@@ -2,8 +2,8 @@
 
 A crammed, interactive D&D 5e player cheat sheet. The goal: a fully editable
 canvas where the player can create/edit sections and fields, drag things around,
-define calculations, write on-hover descriptions, and quick-start from a D&D
-Beyond screenshot or text dump.
+define calculations and relational effects, write on-hover descriptions, and
+quick-start by importing a D&D Beyond character JSON export.
 
 ## Vision / Requirements
 
@@ -14,8 +14,8 @@ Beyond screenshot or text dump.
   (e.g. ability modifiers, saving throws, spell save DC).
 - **On-hover descriptions**: every field/section can carry an editable tooltip,
   useful for rules reminders in and out of combat.
-- **Quick start**: paste text or upload a screenshot from the D&D Beyond
-  character sheet to auto-generate a starter cheat sheet.
+- **Quick start**: import a D&D Beyond character JSON export (paste it or load a
+  `.json` file) to auto-generate a starter cheat sheet.
 - **Persistence**: never lose work (localStorage) + JSON export/import.
 
 ## Status Legend
@@ -162,7 +162,31 @@ D&D extras
 - [x] **31** ✅ Rest log (history of rests and what recovered).
 - [ ] **32** ❌ Monster/NPC quick cards for the DM.
 
+### Phase P — Effects, importer depth & play-panel polish  [x]
+- [x] **Relational effect system**: any field can grant numeric (add/sub/set) or
+      typed (advantage/disadvantage/resist/immune/vulnerable/note) modifiers to a
+      target slug. `resolveSheet` folds numeric effects into the scope and returns
+      `contributions` + `tags` for bidirectional attribution; per-field effect
+      editor with an equip/active toggle (boolean fields follow their own value).
+- [x] **Richer D&D Beyond JSON import**: derive AC from equipped armour + DEX, all
+      18 skills with proficiency/expertise, saving throws, passive perception, and
+      currency (on top of abilities, HP, speed, initiative, inventory, languages).
+      Save fields use full ability-name labels so their slugs don't clobber the
+      ability scores.
+- [x] **Robust Quick start**: uncontrolled textarea (handles ~1 MB pastes), a
+      `.json` file-upload option, DDB-first detection, and clearer errors (e.g.
+      a private character returns no data); on-screen steps for fetching the JSON.
+- [x] **Roll log UX**: show only the latest roll with an expandable history,
+      always-visible Clear, and a resizable + persisted panel.
+- [x] **Layout & menus**: Tidy rewritten to pack cards into the nearest-corner
+      gap; Death Saves merged into the HP widget (shown at 0 HP); dropdown menus
+      clamp to the viewport and auto-shift to stay on-screen.
+- [x] Action-meta inputs get field type-to-search for `{expr}` interpolation.
+
 ## Notes
 
 - Keep changes scoped per phase; commit at each phase boundary.
 - Update this file as phases complete.
+- **Parallel work:** agents run concurrently, each in its own git worktree on its
+  own branch, and a task is done only once merged to `main`. See the
+  *Parallel agents — worktree workflow* section in [AGENTS.md](AGENTS.md).

@@ -8,39 +8,54 @@ one hover away.
 ## Features
 
 - **Free-form canvas** — drag and resize section cards anywhere; the layout is
-  saved automatically.
-- **Editable everything** — add/rename/delete sections and fields in edit mode.
-- **Typed fields** — `text`, `number`, `boolean`, and `computed`.
+  saved automatically. **Tidy** packs cards toward the top-left.
+- **Editable everything** — add/rename/delete sections and fields through a
+  per-section editor (the ✎ pencil on each card); there is no separate edit mode.
+- **Typed fields** — `text`, `number`, `boolean`, `computed`, `counter`, and
+  `resource` (pips).
 - **Calculations** — `computed` fields run a safe formula engine that can
   reference other fields by name (e.g. `floor((str - 10) / 2)`) and recompute
   live. Helpers: `floor`, `ceil`, `round`, `abs`, `sqrt`, `min`, `max`.
+- **Relational effects** — any field can grant a modifier to another (add / sub /
+  set, or typed tags like advantage / resistance). Bonuses are attributed both
+  ways (the source shows what it grants, the target shows where a bonus came
+  from) and can be toggled on/off like equipping an item.
+- **Play tools** — a dice engine with advantage/disadvantage, a roll log, rests,
+  hit-dice spending, HP/temp-HP, conditions, buff timers, and specialized
+  section widgets (abilities, skills, actions, spell slots, currency…).
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
-- **Quick start** — the most accurate path is to paste your **D&D Beyond
-  character JSON** (from the character-service API) for an exact import; you can
-  also paste text or upload screenshots (OCR'd in the browser). Detects ability
-  scores + modifiers, combat stats, skills, saving throws, attacks, inventory,
-  proficiencies, and features. You review what was detected before it replaces
-  your sheet.
+- **Quick start** — paste your **D&D Beyond character JSON** (from the
+  character-service API) or load it as a `.json` file for an exact import. It
+  derives ability scores + modifiers, AC, skills, saving throws, passive
+  perception, HP, inventory, currency, and languages, and you review what was
+  detected before it replaces your sheet.
 - **Persistence & portability** — autosaves to a versioned `localStorage` schema
-  (with migration); export/import the whole sheet as JSON. Installable as an
-  offline PWA.
+  (with migration) and keeps a **roster** of multiple characters; export/import
+  the whole sheet as JSON, or share it via a link. Installable as an offline PWA.
 - **Installable (PWA)** — a service worker precaches the app so it works offline
   and can be installed to a phone/tablet home screen for at-the-table use.
 
 ## Architecture
 
-- `src/model/characterSheet.ts` — zod schema: sheet → sections → fields + layout.
+- `src/model/characterSheet.ts` — zod schema: sheet → sections → fields (+
+  relational effects) + layout.
 - `src/model/formula.ts` — safe arithmetic evaluator (no `eval`).
-- `src/model/compute.ts` — resolves computed fields and lists references.
-- `src/state/` — `useSheet` operations, `persistence`, JSON `transfer`.
-- `src/import/` — `parseCharacter` (D&D Beyond text parser) + `ocr` (lazy
-  Tesseract.js from CDN).
-- `src/components/` — `SectionCard`, `CanvasItem`, `Tooltip`, `QuickStartModal`.
+- `src/model/compute.ts` — `resolveSheet` (computed fields + effect
+  contributions/tags) and `{expr}` interpolation.
+- `src/model/dice.ts` — d20 (advantage/disadvantage), damage, crits, formatting.
+- `src/model/layout.ts` — canvas geometry: Tidy packing, snap, align, distribute.
+- `src/state/` — `useSheet` (+ undo/redo), `persistence`, JSON `transfer`,
+  `roster`, `backups`, `presets`, `share`, `templates`.
+- `src/import/parseCharacterJson.ts` — exact D&D Beyond character-JSON importer.
+- `src/components/` — `SectionCard`, `SectionBody`, `SectionEditorModal`,
+  `CanvasItem`, `RollLog`, `Menu`, `HitDiceModal`, `QuickStartModal`, `Tooltip`.
+- `scripts/` — `gen-yad.mjs` / `gen-amarthon.mjs` regenerate the sample sheets.
 - `src/**/*.test.ts(x)` — unit/component tests (Vitest) next to the code.
 - `e2e/` — Playwright end-to-end + visual regression tests.
 - `samples/` — reference D&D character data used as import fixtures.
 
-See [PLAN.md](PLAN.md) for the delivery plan and phase status.
+See [AGENTS.md](AGENTS.md) for the contributor / AI-agent workflow (including the
+parallel git-worktree process) and [PLAN.md](PLAN.md) for delivery status.
 
 ## Scripts
 
@@ -67,10 +82,11 @@ npm run test:coverage  # run once and report how much code is exercised
 
 Test files live next to the code they cover and end in `.test.ts`/`.test.tsx`
 (for example `src/components/Tooltip.test.tsx`). Coverage spans the pure logic
-(`model/formula.ts`, `model/compute.ts`, `model/characterSheet.ts`), the state
-layer (`state/useSheet.ts`, `state/persistence.ts`, `state/transfer.ts`), the
-D&D Beyond text importer (`import/parseCharacter.ts`), and the `Tooltip`
-component.
+(`model/formula.ts`, `model/compute.ts`, `model/characterSheet.ts`,
+`model/dice.ts`, `model/layout.ts`), the state layer (`state/useSheet.ts`,
+`state/persistence.ts`, `state/transfer.ts`, `state/share.ts`), the D&D Beyond
+JSON importer (`import/parseCharacterJson.ts`), and components (`Tooltip`,
+`SectionBody`).
 
 ### End-to-end (E2E) tests
 
@@ -96,10 +112,12 @@ npm run test:e2e:update  # refresh baselines after an intentional UI change
 
 ## Sample data
 
-The [samples/](samples) folder holds reference D&D character data
-(`yad-armhand.md` and a standalone `yad-armhand.html` prototype). These are used
-as fixtures/examples for the D&D Beyond import feature and are not part of the
-app bundle.
+The [samples/](samples) folder holds reference D&D character data used as
+fixtures/examples for the import feature: real D&D Beyond character-JSON exports
+(`yad-armhand-ddb.json`, `amarthon-ddb.json`), the sheets they generate
+(`*-sheet.json`, rebuilt by the `scripts/gen-*.mjs` generators), and a
+standalone `yad-armhand.html` / `yad-armhand.md` reference. None of it is part of
+the app bundle.
 
 ## Deployment
 

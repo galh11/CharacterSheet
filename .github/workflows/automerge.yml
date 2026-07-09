@@ -1,0 +1,38 @@
+name: Auto-merge
+
+# CI-gated auto-merge: when the CI workflow finishes successfully on a pull
+# request, squash-merge that PR into main automatically — no manual approval
+# needed. Fork PRs (which don't get a write token) are ignored. Direct pushes to
+# main are best prevented with a branch-protection rule (see AGENTS.md).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    # Only for successful CI runs that were triggered by a same-repo PR.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Squash-merge the PR whose CI passed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          pr=$(gh pr list --repo "$REPO" --head "$HEAD_BRANCH" --state open \
+            --json number,autoMergeRequest --jq '.[0].number')
+          if [ -z "$pr" ] || [ "$pr" = "null" ]; then
+            echo "No open PR for branch '$HEAD_BRANCH' — nothing to merge."
+            exit 0
+          fi
+          echo "CI passed for PR #$pr ($HEAD_BRANCH) — squash-merging."
+          gh pr merge "$pr" --repo "$REPO" --squash --delete-branch

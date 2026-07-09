@@ -27,6 +27,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Docs freshness check
+        run: npm run check:docs
+
       - name: Type-check & build
         run: npm run build
 

@@ -26,14 +26,15 @@ npm run test:run       # unit/component tests once
 npm run test:coverage  # unit/component tests once, with coverage
 npm run test:e2e       # end-to-end + visual tests (Playwright, real browser)
 npm run test:e2e:update # refresh committed visual baselines after an intended UI change
+npm run check:docs     # verify every src file is listed in AGENTS.md (CI-enforced)
 node scripts/gen-yad.mjs       # regenerate samples/yad-armhand-sheet.json
 node scripts/gen-amarthon.mjs  # regenerate samples/amarthon-sheet.json
 ```
 
-Always run `npm run lint`, `npm run build`, and `npm run test:run` before
-considering a change done. When touching UI, also run `npm run test:e2e`.
-If Node/npm is unavailable in the environment, validate types via the editor's
-TypeScript diagnostics instead.
+Always run `npm run lint`, `npm run build`, `npm run test:run`, and
+`npm run check:docs` before considering a change done. When touching UI, also run
+`npm run test:e2e`. If Node/npm is unavailable in the environment, validate types
+via the editor's TypeScript diagnostics instead.
 
 **Environment note:** on the maintainer's machine Node isn't on the global PATH —
 run `conda activate nodejs` first in any new terminal, then `npm …` works.
@@ -83,9 +84,12 @@ e2e/                       # Playwright end-to-end + visual tests
 scripts/
   gen-yad.mjs              # regenerate samples/yad-armhand-sheet.json
   gen-amarthon.mjs         # regenerate samples/amarthon-sheet.json
+  check-docs.mjs           # CI guard: every src file must be listed in this file
 samples/                   # reference character data + import fixtures (yad, amarthon)
 public/                    # static assets (favicon, icons, PWA)
-.github/workflows/         # ci.yml (lint/build/test/e2e) + deploy.yml (GitHub Pages)
+.github/
+  workflows/               # ci.yml (lint/build/test/e2e), automerge.yml (CI-gated auto-merge), deploy.yml (Pages)
+  pull_request_template.md # PR checklist (tests + docs freshness)
 vite.config.ts             # Vite + Tailwind + PWA (app build)
 vitest.config.ts           # Vitest (unit/component) config — kept separate from vite.config.ts
 playwright.config.ts       # Playwright config (auto-starts the dev server)
@@ -144,8 +148,8 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 
 Multiple agents may work on this repo **at the same time**. To stay out of each
 other's way, every agent works in its **own git worktree on its own branch**, and
-a task is only **done when its change is merged into `main`** (lint/build/tests
-green). Follow this exactly.
+lands its change through a **CI-gated pull request that auto-merges** to `main`.
+A task is only **done once that PR is merged** (CI green). Follow this exactly.
 
 ### 1. Start — create an isolated worktree off the latest `main`
 
@@ -171,39 +175,59 @@ npm ci   # each worktree has its own node_modules
   Be especially careful editing hot shared files like `App.tsx`.
 - Commit at logical boundaries with Conventional Commit messages.
 - Run the full gate before finishing: `npm run lint`, `npm run build`,
-  `npm run test:run` (and `npm run test:e2e` when you touched UI).
+  `npm run test:run`, `npm run check:docs` (and `npm run test:e2e` when you
+  touched UI).
 
-### 3. Finish — rebase onto newest `main`, then merge
+### 3. Finish — open a PR; CI gates and auto-merges
 
-Rebase your branch onto the freshest `origin/main`, re-verify, then
-fast-forward `main` on the remote. This is lock-free and never checks out `main`
-in your worktree:
+Rebase onto the freshest `origin/main`, re-verify, push your branch, and open a
+pull request. **CI runs on the PR, and when it passes the change is squash-merged
+to `main` automatically — you do not approve it yourself.**
 
 ```powershell
 git fetch origin
 git rebase origin/main        # replay your work on top of others' merges
-# resolve any conflicts, then RE-RUN lint / build / test:run
-git push origin HEAD:main     # fast-forward main with your commits
+# resolve any conflicts, then RE-RUN lint / build / test:run / check:docs
+git push -u origin <type>/<slug>
+gh pr create --fill           # or open the PR via the GitHub PR tooling
+gh pr checks --watch          # optional: watch CI; it auto-merges when green
 ```
 
-- If the push is **rejected** (another agent merged first), repeat:
-  `git fetch origin` → `git rebase origin/main` → re-test → `git push origin HEAD:main`.
-- **Never** force-push `main` or rewrite already-pushed history.
+- The `.github/workflows/automerge.yml` workflow squash-merges the PR and deletes
+  the branch as soon as the `CI` workflow succeeds on it. No manual approval.
+- If CI **fails**, fix it on the same branch and `git push` again; CI re-runs and
+  auto-merges when green.
+- **Never** push straight to `main` or force-push it. Your task is done only when
+  the PR is merged.
 
-### 4. Clean up
+### 4. Clean up (after the PR merges)
 
 ```powershell
 cd ../CharacterSheet                                   # back to the primary worktree
 git worktree remove ../CharacterSheet-<slug>
-git branch -D <type>/<slug>
-git fetch origin; git merge --ff-only origin/main      # refresh the primary main
+git branch -D <type>/<slug>                            # remote branch auto-deleted on merge
+git fetch --prune origin; git merge --ff-only origin/main   # refresh the primary main
 ```
+
+### One-time repo setup (maintainer)
+
+So CI truly gates and nothing lands unreviewed-but-unchecked, protect `main`
+(GitHub → **Settings → Branches → Add branch protection rule** for `main`):
+
+- **Require a pull request before merging** — Required approvals: **0**.
+- **Require status checks to pass** — add the **`test`** check (the CI job).
+- Leave "Require branches up to date" **off** so parallel PRs auto-merge without
+  serialized re-runs.
+
+With 0 required approvals, no human approval is ever needed; the CI check is the
+only gate, and the auto-merge workflow does the merge. (No branch protection is
+strictly required for auto-merge to work, but it blocks accidental direct pushes.)
 
 ### Parallel-awareness checklist
 
-- Rebase on `origin/main` **before** you start and again **before** you merge.
-- Re-run lint/build/tests **after** every rebase — a clean auto-merge can still
-  break behavior.
+- Rebase on `origin/main` **before** you start and again **before** you open the PR.
+- Re-run lint/build/tests/check:docs **after** every rebase — a clean auto-merge
+  can still break behavior.
 - Keep branches short-lived; integrate often so you don't drift from `main`.
 - Only build on merged `main`; never depend on another agent's un-merged branch.
 - If your change is architectural, update `AGENTS.md` / `README.md` / `PLAN.md`
@@ -215,9 +239,11 @@ git fetch origin; git merge --ff-only origin/main      # refresh the primary mai
   request.
 - Preserve behavior unless a change explicitly requires altering it.
 - Add or update tests alongside behavior changes; keep the suites green.
-- Document meaningful architectural shifts in `README.md`; track delivery phases
-  in `PLAN.md`.
+- **Keep docs in lockstep.** `npm run check:docs` (CI-enforced) requires every
+  `src/` file to appear in AGENTS.md's project-structure map; update the
+  **Architecture notes** here plus **README.md** / **PLAN.md** whenever behavior
+  or architecture shifts. The PR template has this checklist.
 - Use Conventional Commit messages (e.g. `feat:`, `fix:`, `docs:`,
   `refactor:`, `test:`); commit at logical boundaries.
-- A task is **not done** until it is merged into `main` with lint/build/tests
-  green (see *Parallel agents — worktree workflow* above).
+- A task is **not done** until its **CI-gated PR is auto-merged into `main`**
+  (lint/build/tests/check:docs green — see *Parallel agents — worktree workflow*).

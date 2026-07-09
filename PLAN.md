@@ -190,3 +190,7 @@ D&D extras
 - **Parallel work:** agents run concurrently, each in its own git worktree on its
   own branch, and a task is done only once merged to `main`. See the
   *Parallel agents — worktree workflow* section in [AGENTS.md](AGENTS.md).
+- **CI-gated auto-merge:** PRs merge automatically once the `CI` workflow passes
+  (`.github/workflows/automerge.yml`) — no manual approval. CI also runs
+  `npm run check:docs`, which fails if a `src/` file is missing from AGENTS.md,
+  keeping the docs in sync.

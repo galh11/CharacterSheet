@@ -27,6 +27,8 @@ interface SectionCardProps {
     onTogglePin?: () => void
     /** Open the per-section editor modal. */
     onEdit?: () => void
+    /** Tuck this card into the drawer. */
+    onHide?: () => void
     onUpdateSection: (
         patch: Partial<Pick<CharacterSection, 'title' | 'description' | 'accent' | 'kind' | 'scale' | 'meta'>>,
     ) => void
@@ -55,6 +57,7 @@ export function SectionCard({
     pinned,
     onTogglePin,
     onEdit,
+    onHide,
     onUpdateSection,
     onAddField,
     onUpdateField,
@@ -97,6 +100,17 @@ export function SectionCard({
                         title="Edit fields, formulas and settings"
                     >
                         ✎
+                    </button>
+                )}
+                {onHide && (
+                    <button
+                        type="button"
+                        onClick={onHide}
+                        className="shrink-0 rounded px-1 text-slate-400 opacity-60 hover:bg-slate-800 hover:text-slate-200 hover:opacity-100"
+                        aria-label={`Move ${section.title} to drawer`}
+                        title="Move to drawer"
+                    >
+                        ⊟
                     </button>
                 )}
             </header>

@@ -30,6 +30,8 @@ interface CanvasItemProps {
     onSelect?: (additive: boolean) => void
     /** Open the per-section editor (rendered as a ✎ in the handle bar). */
     onEdit?: () => void
+    /** Tuck this card into the drawer (rendered as a ⊟ in the handle bar). */
+    onHide?: () => void
     handleRef?: React.Ref<CanvasItemHandle>
     children: ReactNode
 }
@@ -41,7 +43,7 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, handleRef, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
     const moved = useRef(false)
@@ -178,6 +180,9 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
                     <button type="button" onClick={fitWidth} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit width to content">↔</button>
                     {onEdit && (
                         <button type="button" onClick={onEdit} className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100" title="Edit fields, formulas and settings" aria-label="Edit section">✎</button>
+                    )}
+                    {onHide && (
+                        <button type="button" onClick={onHide} className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100" title="Move to drawer" aria-label="Move section to drawer">⊟</button>
                     )}
                 </div>
             </div>

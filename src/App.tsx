@@ -8,6 +8,7 @@ import {
 import { resolveSheet, listReferences } from './model/compute'
 import {
     compactLayouts,
+    tidyLayouts,
     alignEdge,
     matchDimension,
     distribute as distributeLayout,
@@ -47,6 +48,15 @@ function App() {
     const [stackView, setStackView] = useState(false)
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [pinned, setPinned] = useState<Set<string>>(new Set())
+    const [drawerOpen, setDrawerOpen] = useState(false)
+    const [containerWidth, setContainerWidth] = useState(0)
+    const [fitWidth, setFitWidth] = useState(() => {
+        try {
+            return localStorage.getItem('character-sheet:fit-width') === '1'
+        } catch {
+            return false
+        }
+    })
     const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>('normal')
     const [query, setQuery] = useState('')
     const [theme, setTheme] = useState<string>(() => {
@@ -67,6 +77,7 @@ function App() {
     const importRef = useRef<HTMLInputElement>(null)
     const captureRef = useRef<HTMLDivElement>(null)
     const canvasScrollRef = useRef<HTMLDivElement>(null)
+    const panRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; moved: boolean } | null>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
         sheet,
@@ -334,13 +345,14 @@ function App() {
     }
 
     const canvasSize = useMemo(() => {
+        const shown = sheet.sections.filter((section) => !section.hidden)
         const width = Math.max(
             960,
-            ...sheet.sections.map((section) => section.layout.x + section.layout.w + 48),
+            ...shown.map((section) => section.layout.x + section.layout.w + 48),
         )
         const height = Math.max(
             520,
-            ...sheet.sections.map((section) => section.layout.y + section.layout.h + 80),
+            ...shown.map((section) => section.layout.y + section.layout.h + 80),
         )
         return { width, height }
     }, [sheet.sections])
@@ -354,12 +366,14 @@ function App() {
     /** Measure every card's natural content size (width clamped so text cards don't
      *  blow out). Best run in play mode — edit mode renders bulky field editors. */
     const fittedItems = (): Placed[] =>
-        sheet.sections.map((s) => {
-            const handle = fitRefs.current.get(s.id)
-            const w = handle ? Math.min(340, handle.measureWidth()) : s.layout.w
-            const h = handle ? handle.measureHeight() : s.layout.h
-            return { id: s.id, layout: { ...s.layout, w, h } }
-        })
+        sheet.sections
+            .filter((s) => !s.hidden)
+            .map((s) => {
+                const handle = fitRefs.current.get(s.id)
+                const w = handle ? Math.min(340, handle.measureWidth()) : s.layout.w
+                const h = handle ? handle.measureHeight() : s.layout.h
+                return { id: s.id, layout: { ...s.layout, w, h } }
+            })
 
     const handleTidy = () => {
         // Fit each card to its content, then compact into clean columns based on
@@ -370,6 +384,60 @@ function App() {
     const handleFitAll = () => {
         // Resize each card to its content in place, keeping the current arrangement.
         setSectionLayouts(fittedItems())
+    }
+
+    const handleFillWidth = () => {
+        // Fit each card to its content, then skyline-pack across the available
+        // window width so tiles spread out to the edges instead of stacking narrow.
+        const width = containerWidth || canvasScrollRef.current?.clientWidth || canvasSize.width
+        setSectionLayouts(tidyLayouts(fittedItems(), width))
+    }
+
+    const hideSection = (id: string) => {
+        updateSection(id, { hidden: true })
+        setSelectedIds((prev) => {
+            if (!prev.has(id)) return prev
+            const next = new Set(prev)
+            next.delete(id)
+            return next
+        })
+    }
+
+    const showSection = (id: string) => updateSection(id, { hidden: false })
+
+    // Drag empty canvas background to pan (scroll) the viewport. A click that
+    // doesn't move clears the current selection.
+    const onCanvasPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (e.target !== e.currentTarget) return
+        const scroller = canvasScrollRef.current
+        if (!scroller) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        panRef.current = {
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            left: scroller.scrollLeft,
+            top: scroller.scrollTop,
+            moved: false,
+        }
+    }
+
+    const onCanvasPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        const pan = panRef.current
+        const scroller = canvasScrollRef.current
+        if (!pan || pan.pointerId !== e.pointerId || !scroller) return
+        const dx = e.clientX - pan.startX
+        const dy = e.clientY - pan.startY
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) pan.moved = true
+        scroller.scrollLeft = pan.left - dx
+        scroller.scrollTop = pan.top - dy
+    }
+
+    const onCanvasPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+        const pan = panRef.current
+        if (!pan || pan.pointerId !== e.pointerId) return
+        panRef.current = null
+        if (!pan.moved) setSelectedIds(new Set())
     }
 
     const handleSelect = (id: string, additive: boolean) => {
@@ -449,6 +517,27 @@ function App() {
         return () => window.removeEventListener('keydown', onKey)
     }, [undo, redo])
 
+    // Track the canvas viewport width so "Fill width" and the fit-to-width zoom
+    // can spread/scale tiles to the actual window (which already reflects the
+    // browser's page zoom, since clientWidth is measured in CSS pixels).
+    useEffect(() => {
+        const el = canvasScrollRef.current
+        if (!el) return
+        const measure = () => setContainerWidth(el.clientWidth)
+        measure()
+        const ro = new ResizeObserver(measure)
+        ro.observe(el)
+        return () => ro.disconnect()
+    }, [stackView])
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('character-sheet:fit-width', fitWidth ? '1' : '0')
+        } catch {
+            // ignore storage failures (private mode, quota)
+        }
+    }, [fitWidth])
+
     const toggleCollapse = (id: string) =>
         setCollapsed((prev) => {
             const next = new Set(prev)
@@ -468,7 +557,13 @@ function App() {
     const densityZoom = density === 'compact' ? 0.9 : density === 'comfortable' ? 1.12 : 1
     // The free canvas zooms with density in both modes; CanvasItem divides drag
     // deltas by this factor so moving/resizing still tracks the cursor 1:1.
-    const canvasZoom = densityZoom
+    // "Fit to width" instead scales the whole canvas so its content fills the
+    // current window width (up- or down-scaling with the window / page zoom).
+    const fitZoom =
+        fitWidth && containerWidth > 0 && canvasSize.width > 0
+            ? Math.min(2, Math.max(0.3, containerWidth / canvasSize.width))
+            : 1
+    const canvasZoom = fitWidth ? fitZoom : densityZoom
     const matchesQuery = (section: (typeof sheet.sections)[number]) => {
         const q = query.trim().toLowerCase()
         if (!q) return true
@@ -477,7 +572,8 @@ function App() {
             (f) => f.label.toLowerCase().includes(q) || (f.description ?? '').toLowerCase().includes(q),
         )
     }
-    const visibleSections = sheet.sections.filter(matchesQuery)
+    const visibleSections = sheet.sections.filter((s) => !s.hidden && matchesQuery(s))
+    const hiddenSections = sheet.sections.filter((s) => s.hidden)
     const stackSections = [...visibleSections].sort(
         (a, b) => (pinned.has(a.id) ? 0 : 1) - (pinned.has(b.id) ? 0 : 1),
     )
@@ -501,6 +597,7 @@ function App() {
             onToggleFlag={toggleField}
             onTempHp={applyTempHp}
             onEdit={collapsible ? () => setEditingSectionId(section.id) : undefined}
+            onHide={collapsible ? () => hideSection(section.id) : undefined}
             onUpdateSection={(patch) => updateSection(section.id, patch)}
             onAddField={(overrides) => addField(section.id, overrides)}
             onUpdateField={(fieldId, patch) => updateField(section.id, fieldId, patch)}
@@ -658,6 +755,20 @@ function App() {
                         >
                             {stackView ? 'Canvas view' : 'Stack view'}
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setDrawerOpen((v) => !v)}
+                            className={clsx(
+                                'rounded-md border px-3 py-2 text-sm',
+                                drawerOpen || hiddenSections.length > 0
+                                    ? 'border-amber-500/70 text-amber-200 hover:bg-slate-800'
+                                    : 'border-slate-600 text-slate-200 hover:bg-slate-800',
+                            )}
+                            title="Show the drawer of tucked-away sections"
+                            aria-pressed={drawerOpen}
+                        >
+                            Drawer{hiddenSections.length > 0 ? ` (${hiddenSections.length})` : ''}
+                        </button>
                         {!stackView && (
                             <>
                                 <button
@@ -668,11 +779,28 @@ function App() {
                                 >
                                     Tidy
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFitWidth((v) => !v)}
+                                    className={clsx(
+                                        'rounded-md border px-3 py-2 text-sm',
+                                        fitWidth
+                                            ? 'border-cyan-500 bg-cyan-500/20 text-cyan-200'
+                                            : 'border-slate-600 text-slate-200 hover:bg-slate-800',
+                                    )}
+                                    title="Scale the whole canvas so its content fills the window width (adapts as you resize or zoom)"
+                                    aria-pressed={fitWidth}
+                                >
+                                    Fit to width
+                                </button>
                                 <Menu label="Options ▾" title="Layout options" align="left">
                                     {(close) => (
                                         <>
                                             <MenuItem onClick={() => { handleFitAll(); close() }} title="Resize each card to its content, keeping its position">
                                                 Fit all to content
+                                            </MenuItem>
+                                            <MenuItem onClick={() => { handleFillWidth(); close() }} title="Fit cards to content and spread them across the full window width">
+                                                Spread across width
                                             </MenuItem>
                                             <MenuItem onClick={() => { savePreset(); close() }} title="Save the current arrangement as a named layout">
                                                 Save this layout…
@@ -815,6 +943,28 @@ function App() {
                     </div>
                 )}
 
+                {drawerOpen && (
+                    <div className="mb-3 rounded-md border border-amber-800/40 bg-slate-900/60 p-2">
+                        <div className="mb-1 flex items-center gap-2 text-xs font-medium text-amber-200">
+                            <span>Drawer</span>
+                            <span className="text-slate-500">— tucked-away sections; restore to put them back on the canvas</span>
+                            <button type="button" onClick={() => setDrawerOpen(false)} className="ml-auto rounded border border-slate-700 px-2 py-0.5 text-slate-400 hover:bg-slate-800">Close</button>
+                        </div>
+                        {hiddenSections.length === 0 ? (
+                            <p className="m-0 px-1 py-1 text-xs text-slate-500">Nothing here yet. Use the ⊟ button on a card to tuck it away.</p>
+                        ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                                {hiddenSections.map((section) => (
+                                    <div key={section.id} className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-950/60 px-2 py-1 text-xs" style={{ borderLeftColor: section.accent, borderLeftWidth: 3 }}>
+                                        <span className="text-slate-200">{section.title || 'Untitled'}</span>
+                                        <button type="button" onClick={() => showSection(section.id)} className="rounded border border-slate-600 px-1.5 py-0.5 text-slate-300 hover:bg-slate-800" title="Restore to the canvas">Restore</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {stackView ? (
                     <div ref={captureRef} className="columns-1 gap-4 md:columns-2 xl:columns-3" style={{ zoom: densityZoom }}>
                         {stackSections.map((section) => (
@@ -825,11 +975,12 @@ function App() {
                     <div ref={canvasScrollRef} className="overflow-auto">
                         <div
                             ref={captureRef}
-                            onPointerDown={(e) => {
-                                if (e.target === e.currentTarget) setSelectedIds(new Set())
-                            }}
+                            onPointerDown={onCanvasPointerDown}
+                            onPointerMove={onCanvasPointerMove}
+                            onPointerUp={onCanvasPointerUp}
+                            onPointerCancel={onCanvasPointerUp}
                             className={clsx(
-                                'relative rounded-lg',
+                                'relative cursor-grab touch-none rounded-lg active:cursor-grabbing',
                                 'bg-[radial-gradient(circle,_rgba(148,163,184,0.08)_1px,_transparent_1px)] [background-size:16px_16px]',
                             )}
                             style={{ width: canvasSize.width, height: canvasSize.height, zoom: canvasZoom }}
@@ -842,13 +993,14 @@ function App() {
                                     zoom={canvasZoom}
                                     selected={selectedIds.has(section.id)}
                                     siblings={sheet.sections
-                                        .filter((s) => s.id !== section.id)
+                                        .filter((s) => s.id !== section.id && !s.hidden)
                                         .map((s) => s.layout)}
                                     onLayoutCommit={(layout) => commitLayout(section.id, layout)}
                                     onScaleChange={(scale) => updateSection(section.id, { scale })}
                                     onGuidesChange={setGuides}
                                     onSelect={(additive) => handleSelect(section.id, additive)}
                                     onEdit={() => setEditingSectionId(section.id)}
+                                    onHide={() => hideSection(section.id)}
                                     handleRef={(h) => {
                                         if (h) fitRefs.current.set(section.id, h)
                                         else fitRefs.current.delete(section.id)

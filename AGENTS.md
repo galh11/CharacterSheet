@@ -134,6 +134,15 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   tolerant-text importers were removed.
 - **Tidy** (`layout.compactLayouts`) packs cards toward the top-left; other
   `layout.ts` helpers handle snapping, alignment, distribution, and overlap.
+- **Canvas control**: drag the empty canvas **background** to pan (scroll) the
+  viewport (a non-moving click clears the selection). **Fit to width** scales the
+  whole canvas so its content fills the current window width (adapts to window
+  resize / browser page zoom via the container's `clientWidth`). **Spread across
+  width** (`layout.tidyLayouts`) fits cards to content then skyline-packs them
+  across the measured window width. A section's `hidden` flag (zod schema, default
+  `false`) tucks it into the **drawer** (a toolbar panel) via the ⊟ button;
+  hidden cards leave the canvas but still feed their fields into computed
+  formulas, and **Restore** returns them.
 
 ## Testing
 

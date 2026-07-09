@@ -105,6 +105,13 @@ export const useSheet = () => {
 
     const renameSheet = useCallback((name: string) => commit((c) => ({ ...c, name }), 'Rename'), [commit])
 
+    /** Set or clear the character portrait (an image data URL). */
+    const setPortrait = useCallback(
+        (portrait: string | undefined) =>
+            commit((c) => ({ ...c, portrait: portrait || undefined }), portrait ? 'Set portrait' : 'Remove portrait'),
+        [commit],
+    )
+
     const mapSections = useCallback(
         (fn: (section: CharacterSection) => CharacterSection, label = 'Edit') =>
             commit((c) => ({ ...c, sections: c.sections.map(fn) }), label),
@@ -458,6 +465,7 @@ export const useSheet = () => {
         redo,
         replaceSheet,
         renameSheet,
+        setPortrait,
         updateSection,
         setSectionLayout,
         setSectionLayouts,

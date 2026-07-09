@@ -30,8 +30,18 @@ interface CanvasItemProps {
     onSelect?: (additive: boolean) => void
     /** Open the per-section editor (rendered as a ✎ in the handle bar). */
     onEdit?: () => void
-    /** Tuck this card into the drawer (rendered as a ⊟ in the handle bar). */
+    /** Tuck this card into the drawer (⊟), or restore it (⊞) in drawer mode. */
     onHide?: () => void
+    /** When true this card lives in the drawer scratch-pad, so the tuck button
+     *  becomes a “restore” button and drops are not routed back to the drawer. */
+    drawerMode?: boolean
+    /** Fired when a move-drag begins (used to reveal the drawer drop target). */
+    onDragStart?: () => void
+    /** Fired continuously during a move-drag with screen coordinates. */
+    onDragMove?: (x: number, y: number) => void
+    /** Fired when a move-drag ends. Returning true means the drop was consumed
+     *  elsewhere (e.g. tucked into the drawer), so the layout is not committed. */
+    onDragEnd?: (x: number, y: number, moved: boolean) => boolean
     handleRef?: React.Ref<CanvasItemHandle>
     children: ReactNode
 }
@@ -43,7 +53,7 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, handleRef, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, drawerMode, onDragStart, onDragMove, onDragEnd, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
     const moved = useRef(false)
@@ -59,6 +69,7 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         drag.current = { mode, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: layout }
         moved.current = false
         setLive(layout)
+        if (mode === 'move') onDragStart?.()
     }
 
     const onPointerMove = (event: React.PointerEvent) => {
@@ -69,6 +80,8 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         const dy = (event.clientY - state.startY) / zoom
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved.current = true
         const guides: SnapGuide[] = []
+
+        if (state.mode === 'move') onDragMove?.(event.clientX, event.clientY)
 
         if (state.mode === 'move') {
             const xCands = [0, ...siblings.flatMap((s) => [s.x, s.x + s.w / 2, s.x + s.w])]
@@ -95,7 +108,14 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         if (state.mode === 'idle' || state.pointerId !== event.pointerId) return
         const wasClick = state.mode === 'move' && !moved.current
         drag.current = { mode: 'idle' }
-        if (wasClick) {
+        const consumed =
+            state.mode === 'move'
+                ? (onDragEnd?.(event.clientX, event.clientY, moved.current) ?? false)
+                : false
+        if (consumed) {
+            // App handled the drop (e.g. tucked the card into the drawer); leave
+            // the layout where it was and skip selection.
+        } else if (wasClick) {
             onSelect?.(event.shiftKey || event.ctrlKey || event.metaKey)
         } else if (live) {
             onLayoutCommit(live)
@@ -182,7 +202,7 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
                         <button type="button" onClick={onEdit} className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100" title="Edit fields, formulas and settings" aria-label="Edit section">✎</button>
                     )}
                     {onHide && (
-                        <button type="button" onClick={onHide} className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100" title="Move to drawer" aria-label="Move section to drawer">⊟</button>
+                        <button type="button" onClick={onHide} className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100" title={drawerMode ? 'Restore to the sheet' : 'Move to drawer'} aria-label={drawerMode ? 'Restore section from drawer' : 'Move section to drawer'}>{drawerMode ? '⊞' : '⊟'}</button>
                     )}
                 </div>
             </div>

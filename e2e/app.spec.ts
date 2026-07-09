@@ -54,3 +54,23 @@ test('a newly added section survives a page reload (persistence)', async ({ page
     // The sheet is autosaved to localStorage, so the count persists.
     await expect(page.locator('article')).toHaveCount(4)
 })
+
+test('tucking a section into the drawer and restoring it', async ({ page }) => {
+    // Tuck the first card away using the ⊟ handle button.
+    await page.getByRole('button', { name: 'Move section to drawer' }).first().click()
+
+    // The drawer opens as a scratch-pad and its peeking tab appears.
+    await expect(page.getByText('Drawer · Canvas')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Close the drawer' })).toBeVisible()
+
+    // Closing the drawer leaves the tab peeking because it still holds a card.
+    await page.getByRole('button', { name: 'Close', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Open the drawer' })).toBeVisible()
+
+    // Reopen and restore the card back to the sheet with the ⊞ button.
+    await page.getByRole('button', { name: 'Open the drawer' }).click()
+    await page.getByRole('button', { name: 'Restore section from drawer' }).first().click()
+
+    // With the drawer empty the tab disappears entirely.
+    await expect(page.getByRole('button', { name: /the drawer/ })).toHaveCount(0)
+})

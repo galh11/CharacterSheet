@@ -196,4 +196,54 @@ describe('characterSheetSchema', () => {
             expect(toggle?.hitMode).toBe('add')
         }
     })
+
+    it('migrates the legacy shared `hidden` flag into both view drawers', () => {
+        const parsed = characterSheetSchema.safeParse({
+            id: 'sheet-1',
+            name: 'Legacy hidden',
+            sections: [
+                {
+                    id: 'section-1',
+                    title: 'Notes',
+                    hidden: true,
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [],
+                },
+                {
+                    id: 'section-2',
+                    title: 'Combat',
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [],
+                },
+            ],
+        })
+        expect(parsed.success).toBe(true)
+        if (parsed.success) {
+            expect(parsed.data.sections[0].drawer).toEqual({ canvas: true, stack: true })
+            expect((parsed.data.sections[0] as { hidden?: boolean }).hidden).toBeUndefined()
+            expect(parsed.data.sections[1].drawer).toBeUndefined()
+        }
+    })
+
+    it('accepts an independent per-view drawer membership and drawer layout', () => {
+        const parsed = characterSheetSchema.safeParse({
+            id: 'sheet-1',
+            name: 'Per-view drawer',
+            sections: [
+                {
+                    id: 'section-1',
+                    title: 'Stashed on canvas only',
+                    drawer: { canvas: true },
+                    drawerLayout: { x: 16, y: 16, w: 240, h: 120 },
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [],
+                },
+            ],
+        })
+        expect(parsed.success).toBe(true)
+        if (parsed.success) {
+            expect(parsed.data.sections[0].drawer).toEqual({ canvas: true })
+            expect(parsed.data.sections[0].drawerLayout).toEqual({ x: 16, y: 16, w: 240, h: 120 })
+        }
+    })
 })

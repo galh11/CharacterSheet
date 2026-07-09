@@ -149,9 +149,19 @@ export const sectionSchema = z.object({
     kind: sectionKindSchema.default('default'),
     /** Content zoom for the whole section (text + widgets). */
     scale: z.number().default(1),
-    /** When true the card is tucked away in the drawer instead of the canvas.
-     *  Hidden sections still contribute their fields to computed formulas. */
-    hidden: z.boolean().optional(),
+    /** Per-view drawer membership. When a view's flag is set the card is tucked
+     *  into that view's drawer scratch-pad instead of shown in the main layout;
+     *  the canvas and stack drawers are independent. Drawer sections still
+     *  contribute their fields to computed formulas. */
+    drawer: z
+        .object({
+            canvas: z.boolean().optional(),
+            stack: z.boolean().optional(),
+        })
+        .optional(),
+    /** Position and size of this card inside the drawer's free-canvas scratch
+     *  pad (independent of its main-canvas `layout`). */
+    drawerLayout: layoutSchema.optional(),
     /** Free-form structured extras used by specialized section renderers. */
     meta: z.record(z.string(), z.string()).optional(),
     fields: z.array(fieldSchema).default([]),
@@ -265,8 +275,27 @@ const foldLegacyActionExtras = (input: unknown): unknown => {
     return touched ? { ...sheet, sections } : input
 }
 
+/** Migrate the legacy single `hidden` flag (a drawer shared by every view) to
+ *  the per-view `drawer` shape, tucking the card into both the canvas and stack
+ *  drawers so older sheets keep their tucked-away sections. */
+const foldLegacyHidden = (input: unknown): unknown => {
+    if (!input || typeof input !== 'object') return input
+    const sheet = input as { sections?: unknown }
+    if (!Array.isArray(sheet.sections)) return input
+    if (!sheet.sections.some((s) => (s as { hidden?: unknown })?.hidden === true)) return input
+    const sections = sheet.sections.map((s) => {
+        const section = s as { hidden?: unknown }
+        if (section.hidden !== true) return s
+        const rest = { ...(s as object) } as Record<string, unknown>
+        delete rest.hidden
+        rest.drawer = { canvas: true, stack: true }
+        return rest
+    })
+    return { ...sheet, sections }
+}
+
 const foldLegacy = (input: unknown): unknown =>
-    foldLegacyActionExtras(foldLegacyDeathSaves(input))
+    foldLegacyActionExtras(foldLegacyDeathSaves(foldLegacyHidden(input)))
 
 const sheetObjectSchema = z.object({
     id: z.string().min(1),
@@ -313,7 +342,6 @@ export const createSection = (
     accent: accentForIndex(index),
     kind: 'default',
     scale: 1,
-    hidden: false,
     fields: [],
     layout: defaultLayout(index),
     ...overrides,

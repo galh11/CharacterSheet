@@ -1,7 +1,8 @@
 import { clsx } from 'clsx'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { FormulaResult } from '../model/formula'
 import type { FieldReference, Contribution, EffectTag } from '../model/compute'
+import { FormulaInput } from './FormulaInput'
 import {
     type CharacterField,
     type CharacterSection,
@@ -48,45 +49,6 @@ const SECTION_KINDS: { value: SectionKind; label: string }[] = [
     { value: 'inventory', label: 'Inventory' },
     { value: 'timers', label: 'Buff timers' },
 ]
-
-/** A compact "type to search" inserter for field references, so a formula editor
- *  isn't buried under a wall of every slug on the sheet. */
-function ReferenceInserter({ references, onInsert }: { references: FieldReference[]; onInsert: (slug: string) => void }) {
-    const [query, setQuery] = useState('')
-    const q = query.trim().toLowerCase()
-    const matches = q
-        ? references.filter((r) => r.slug.includes(q) || r.label.toLowerCase().includes(q)).slice(0, 10)
-        : []
-    return (
-        <div className="mt-2">
-            <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="+ insert a field… (type to search)"
-                aria-label="Insert field reference"
-                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
-            />
-            {matches.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                    {matches.map((ref) => (
-                        <button
-                            key={ref.slug}
-                            type="button"
-                            onClick={() => {
-                                onInsert(ref.slug)
-                                setQuery('')
-                            }}
-                            className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300 hover:bg-slate-700"
-                            title={`${ref.label} = ${ref.value}`}
-                        >
-                            {ref.slug}
-                        </button>
-                    ))}
-                </div>
-            )}
-        </div>
-    )
-}
 
 /** A focused, roomy editor for a single section: its settings plus a full field
  *  editor with a live result preview for computed fields. Replaces the old
@@ -168,9 +130,10 @@ function EffectsEditor({
                                 </option>
                             ))}
                         </select>
-                        <input
+                        <FormulaInput
                             value={effect.value}
-                            onChange={(event) => update(i, { value: event.target.value })}
+                            onChange={(next) => update(i, { value: next })}
+                            references={references}
                             placeholder={isNumericOp(effect.op) ? 'amount' : 'e.g. fire'}
                             className="w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
                             aria-label="Effect amount"
@@ -232,9 +195,11 @@ const TOGGLE_MODES: { value: ToggleMode; label: string }[] = [
  *  you like. */
 function ActionTogglesEditor({
     field,
+    references,
     onUpdateField,
 }: {
     field: CharacterField
+    references: FieldReference[]
     onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
 }) {
     const toggles = field.toggles ?? []
@@ -320,11 +285,13 @@ function ActionTogglesEditor({
                                             </option>
                                         ))}
                                     </select>
-                                    <input
+                                    <FormulaInput
                                         value={part.damage}
-                                        onChange={(event) => updatePart(i, pi, { damage: event.target.value })}
+                                        onChange={(next) => updatePart(i, pi, { damage: next })}
+                                        references={references}
                                         placeholder="1d8+{wis_mod}"
-                                        className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
+                                        wrapperClassName="min-w-0 flex-1"
+                                        className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
                                         aria-label="Toggle damage dice"
                                     />
                                     <input
@@ -366,11 +333,13 @@ function ActionTogglesEditor({
                                     </option>
                                 ))}
                             </select>
-                            <input
+                            <FormulaInput
                                 value={toggle.hit}
-                                onChange={(event) => update(i, { hit: event.target.value })}
+                                onChange={(next) => update(i, { hit: next })}
+                                references={references}
                                 placeholder="+{wis_mod + proficiency} (leave blank for none)"
-                                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
+                                wrapperClassName="min-w-0 flex-1"
+                                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
                                 aria-label="Toggle to-hit"
                             />
                         </div>
@@ -428,10 +397,6 @@ export function SectionEditorModal({
 
     const setMeta = (field: CharacterField, key: string, value: string) =>
         onUpdateField(field.id, { meta: { ...field.meta, [key]: value } })
-
-    // Remember the last-focused action-meta box so the reference inserter knows
-    // where to drop a {field} reference (search input steals focus on click).
-    const [focusedMeta, setFocusedMeta] = useState<{ fieldId: string; key: string } | null>(null)
 
     const handleDelete = () => {
         if (window.confirm(`Delete the “${section.title}” section and all its fields?`)) {
@@ -589,16 +554,28 @@ export function SectionEditorModal({
                                                 />
                                                 Enabled
                                             </label>
+                                        ) : field.type === 'computed' ? (
+                                            <FormulaInput
+                                                value={field.value}
+                                                onChange={(next) => onUpdateField(field.id, { value: next })}
+                                                references={references}
+                                                placeholder="formula e.g. floor((str-10)/2)"
+                                                wrapperClassName="min-w-0 flex-1"
+                                                className={clsx(
+                                                    'w-full rounded border bg-slate-900 px-2 py-1 text-xs font-mono',
+                                                    computedError ? 'border-rose-600 text-rose-200' : 'border-slate-600 text-slate-100',
+                                                )}
+                                                aria-label="Field value or formula"
+                                            />
                                         ) : (
                                             <input
                                                 value={field.value}
                                                 onChange={(event) => onUpdateField(field.id, { value: event.target.value })}
                                                 inputMode={field.type === 'number' ? 'decimal' : 'text'}
-                                                placeholder={field.type === 'computed' ? 'formula e.g. floor((str-10)/2)' : 'value'}
+                                                placeholder="value"
                                                 className={clsx(
                                                     'min-w-0 flex-1 rounded border bg-slate-900 px-2 py-1 text-xs',
-                                                    computedError ? 'border-rose-600 text-rose-200' : 'border-slate-600 text-slate-100',
-                                                    field.type === 'computed' && 'font-mono',
+                                                    'border-slate-600 text-slate-100',
                                                 )}
                                                 aria-label="Field value or formula"
                                             />
@@ -735,12 +712,12 @@ export function SectionEditorModal({
                                             {ACTION_META_FIELDS.map(({ key, label, placeholder }) => (
                                                 <label key={key} className="flex flex-col gap-0.5 text-[10px] text-slate-500">
                                                     {label}
-                                                    <input
+                                                    <FormulaInput
                                                         value={field.meta?.[key] ?? ''}
-                                                        onChange={(event) => setMeta(field, key, event.target.value)}
-                                                        onFocus={() => setFocusedMeta({ fieldId: field.id, key })}
+                                                        onChange={(next) => setMeta(field, key, next)}
+                                                        references={references}
                                                         placeholder={placeholder}
-                                                        className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                        className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
                                                         aria-label={`Action ${label}`}
                                                     />
                                                 </label>
@@ -749,21 +726,7 @@ export function SectionEditorModal({
                                     )}
 
                                     {section.kind === 'actions' && (
-                                        <ActionTogglesEditor field={field} onUpdateField={onUpdateField} />
-                                    )}
-
-                                    {section.kind === 'actions' && focusedMeta?.fieldId === field.id && references.length > 0 && (
-                                        <div className="mt-1">
-                                            <div className="text-[10px] text-slate-500">
-                                                Insert a field into <span className="font-mono text-slate-400">{focusedMeta.key}</span> (wrapped in {'{ }'} for a live value)
-                                            </div>
-                                            <ReferenceInserter
-                                                references={references}
-                                                onInsert={(slug) =>
-                                                    setMeta(field, focusedMeta.key, `${field.meta?.[focusedMeta.key] ?? ''}{${slug}}`)
-                                                }
-                                            />
-                                        </div>
+                                        <ActionTogglesEditor field={field} references={references} onUpdateField={onUpdateField} />
                                     )}
 
                                     <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
@@ -798,12 +761,6 @@ export function SectionEditorModal({
                                                     <span className="font-mono text-rose-300">{result?.error ?? 'enter a formula'}</span>
                                                 )}
                                             </div>
-                                            {references.length > 0 && (
-                                                <ReferenceInserter
-                                                    references={references}
-                                                    onInsert={(slug) => onUpdateField(field.id, { value: `${field.value}${slug}` })}
-                                                />
-                                            )}
                                         </div>
                                     )}
                                 </div>

@@ -38,7 +38,6 @@ const SECTION_KINDS: { value: SectionKind; label: string }[] = [
     { value: 'skills', label: 'Skills' },
     { value: 'actions', label: 'Actions' },
     { value: 'hitdice', label: 'Hit dice' },
-    { value: 'deathsaves', label: 'Death saves' },
     { value: 'conditions', label: 'Conditions' },
     { value: 'spellslots', label: 'Spell slots' },
     { value: 'initiative', label: 'Initiative' },

@@ -39,7 +39,6 @@ const place = (fields, kind) => {
     else if (kind === 'conditions') h = 120 + Math.ceil(n / 2) * 6
     else if (kind === 'hp') h = 230
     else if (kind === 'hitdice') h = 150
-    else if (kind === 'deathsaves') h = 170
     else if (kind === 'spellslots') h = 96 + n * 34
     else h = 96 + n * 30
     let c = 0
@@ -119,12 +118,6 @@ S('Hit Points', 'hp', [
     F('Vulnerabilities', 'text', '', { description: 'Comma-separated damage types doubled on the Damage button.' }),
     F('Hit Dice (d8)', 'resource', 8, { max: 8, meta: { die: 'd8', recharge: 'long' } }),
 ], '#10b981')
-
-// 4. Death saves.
-S('Death Saves', 'deathsaves', [
-    F('Successes', 'counter', 0, { max: 3 }),
-    F('Failures', 'counter', 0, { max: 3 }),
-])
 
 // 5. Saving throws (auto: ability mod + proficiency when proficient).
 S('Saving Throws', 'skills', [

@@ -102,7 +102,7 @@ Everything from the earlier suggestion rounds that we agreed to build:
       flags, multi-type damage, `{formula}` interpolation for auto to-hit/damage.
 - [x] Roll log panel: history (persisted), adv/dis toggle, situational modifier,
       Spend Luck button.
-- [x] Section kinds: abilities, hp, skills, actions, hitdice, deathsaves,
+- [x] Section kinds: abilities, hp, skills, actions, hitdice,
       conditions, spellslots, initiative, currency.
 - [x] Auto-calc: AC/init/passive/saves/skills/jumps/carry/grapple DC; attacks &
       fisticuffs derived from ability mods + proficiency.

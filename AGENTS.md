@@ -122,8 +122,11 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 - `{expr}` **interpolation** (`compute.interpolate`) lets action meta (to-hit,
   damage, temp HP…) embed live values, e.g. `+{str_mod + proficiency}`.
 - **Section kinds** drive specialized widgets in `SectionBody` (abilities, hp,
-  skills, actions, hitdice, deathsaves, conditions, spellslots, initiative,
-  currency, timers); the default kind is a plain label/value list.
+  skills, actions, hitdice, conditions, spellslots, initiative,
+  currency, timers); the default kind is a plain label/value list. The **HP**
+  widget also hosts **death saves** — they appear inside it (successes/failures
+  pips, auto-roll, stable/dead) only while Current HP is 0, and clear on any
+  healing or long rest.
 - Editing is **per-section** via the `SectionEditorModal` (opened by the ✎
   pencil) — there is **no global edit mode**.
 - Import is **JSON-only**: `parseCharacterJson` reads a D&D Beyond

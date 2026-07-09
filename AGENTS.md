@@ -123,15 +123,19 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   damage, temp HP…) embed live values, e.g. `+{str_mod + proficiency}`.
 - **Action toggles**: an action/weapon field can carry a list of `toggles`
   (`ActionToggle` in `characterSheet.ts`) — named on/off switches shown in the
-  action card. Each toggle can **add** or **replace** the action's damage
-  (`damageMode`) and to-hit (`hitMode`), set a damage `type`, and use `{expr}`
-  interpolation, so one weapon covers e.g. a Shillelagh (replace the die + ability)
-  or a Flame Tongue (add 2d6 fire). Add as many as you like in the section editor
-  (`ActionTogglesEditor`); `ActionCards` folds the active ones into attack/damage
-  rolls. The legacy single `meta.extra`/`extraWhen`/`extraLabel`/`extraType`
-  "extra damage" is migrated into an `add`-mode toggle on load
-  (`foldLegacyActionExtras`). Cross-field buffs still use field `effects`
-  (relational effects); toggles only reshape their own action's rolls.
+  action card. Each toggle carries a list of typed damage `parts` (each `add`s an
+  extra part or `replace`s the base weapon damage), can adjust the to-hit
+  (`hitMode`), and can recolour the whole attack to one damage type via `setType`
+  (e.g. True Strike → radiant). Values use `{expr}` interpolation, so one weapon
+  covers a Shillelagh (replace the die + ability), a Flame Tongue (add 2d6 fire
+  without changing the base type), or one bonus action that adds several typed
+  parts at once (booming blade + cold + radiant). Add as many toggles / parts as
+  you like in the section editor (`ActionTogglesEditor`); `ActionCards` folds the
+  active ones into attack/damage rolls. Legacy shapes migrate on load
+  (`foldLegacyActionExtras`): the old single `meta.extra`/`extraWhen` "extra
+  damage" and the earlier single-`damage` toggle both fold into `parts`.
+  Cross-field buffs still use field `effects` (relational effects); toggles only
+  reshape their own action's rolls.
 - **Section kinds** drive specialized widgets in `SectionBody` (abilities, hp,
   skills, actions, hitdice, conditions, spellslots, initiative,
   currency, inventory, timers); the default kind is a plain label/value list. The

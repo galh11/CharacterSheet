@@ -700,18 +700,24 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
         return mod
     }
 
-    /** Effective damage parts after applying active toggles: a `replace` toggle
-     *  swaps the base weapon damage; `add` toggles append extra typed parts. */
+    /** Effective damage parts after applying active toggles: a `replace` part
+     *  swaps the base weapon damage; `add` parts append extra typed parts. A
+     *  toggle's `setType` recolours the whole attack to one damage type. */
     const effectiveParts = (field: CharacterField): { expr: string; type?: string }[] => {
         const m = field.meta ?? {}
         let base = m.damage ? { expr: m.damage, type: m.type || '' } : null
         const added: { expr: string; type?: string }[] = []
+        let typeOverride = ''
         for (const t of activeToggles(field)) {
-            if (t.damage && t.damageMode === 'replace') base = { expr: t.damage, type: t.type || base?.type || '' }
-            else if (t.damage) added.push({ expr: t.damage, type: t.type || m.type || '' })
-            else if (t.type && base) base = { ...base, type: t.type }
+            for (const part of t.parts) {
+                if (!part.damage) continue
+                if (part.mode === 'replace') base = { expr: part.damage, type: part.type || base?.type || '' }
+                else added.push({ expr: part.damage, type: part.type || '' })
+            }
+            if (t.setType) typeOverride = t.setType
         }
-        return [...(base ? [base] : []), ...added]
+        const parts = [...(base ? [base] : []), ...added]
+        return typeOverride ? parts.map((p) => ({ ...p, type: typeOverride })) : parts
     }
 
     const sit = bonus ?? 0

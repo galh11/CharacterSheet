@@ -53,13 +53,29 @@ export type FieldEffect = z.infer<typeof effectSchema>
 export const toggleModeSchema = z.enum(['add', 'replace'])
 export type ToggleMode = z.infer<typeof toggleModeSchema>
 
+/** One typed damage entry a toggle contributes while active. `add` appends it as
+ *  an extra damage part; `replace` swaps the weapon's base damage. A toggle can
+ *  carry several of these, so a single "bonus action" can e.g. add both cold and
+ *  radiant damage at once. */
+export const toggleDamagePartSchema = z.object({
+    mode: toggleModeSchema.default('add'),
+    /** Dice/formula for this part, e.g. `2d6` or `1d8+{wis_mod}`. */
+    damage: z.string().default(''),
+    /** Damage type for this part, e.g. `fire`. */
+    type: z.string().default(''),
+})
+export type ToggleDamagePart = z.infer<typeof toggleDamagePartSchema>
+
 /**
  * An activatable modifier on an action field (a weapon/attack). Each toggle is a
  * named on/off switch shown in the action card; an action can have as many as you
  * like (e.g. a Flame Tongue that *adds* 2d6 fire, or a Shillelagh that *replaces*
  * the damage die and to-hit ability). While active it reshapes the action's
- * attack roll and damage. Values support `{expr}` interpolation like the action's
- * own meta, so they can reference ability mods, proficiency, etc.
+ * attack roll and damage: it can adjust the to-hit, contribute several typed
+ * damage `parts` (add or replace), and optionally recolour the whole attack to a
+ * single damage type via `setType` (e.g. True Strike making everything radiant).
+ * Values support `{expr}` interpolation like the action's own meta, so they can
+ * reference ability mods, proficiency, etc.
  */
 export const actionToggleSchema = z.object({
     id: z.string().min(1),
@@ -70,11 +86,10 @@ export const actionToggleSchema = z.object({
     /** To-hit change: `add` adds this to the attack modifier, `replace` overrides it. */
     hitMode: toggleModeSchema.default('add'),
     hit: z.string().default(''),
-    /** Damage change: `add` appends a new damage part, `replace` swaps the base damage. */
-    damageMode: toggleModeSchema.default('add'),
-    damage: z.string().default(''),
-    /** Damage type for this toggle's damage (or the new base type when replacing). */
-    type: z.string().default(''),
+    /** Typed damage entries this toggle contributes (add extra parts or replace the base). */
+    parts: z.array(toggleDamagePartSchema).default([]),
+    /** When set, overrides the damage type of the *entire* attack while active. */
+    setType: z.string().default(''),
     /** Optional on-hover explanation of what the toggle does. */
     description: z.string().default(''),
 })
@@ -178,17 +193,34 @@ const foldLegacyDeathSaves = (input: unknown): unknown => {    if (!input || typ
     return { ...sheet, sections }
 }
 
-/** Convert a legacy single "extra damage" attack (meta.extra / extraType /
- *  extraWhen / extraLabel) into a first-class action toggle, so every action's
- *  activatable modifiers live in one repeatable list. Old saved sheets keep
- *  working: the extra becomes an `add`-mode toggle (off by default, matching the
- *  old extraWhen gate) and the stale meta keys are dropped. */
+/** Normalize an action field's toggles: migrate the legacy single "extra damage"
+ *  attack (meta.extra / extraType / extraWhen / extraLabel) into a toggle, and
+ *  fold any older single-`damage` toggle shape into the `parts` list. Keeps old
+ *  saved sheets working while every activatable modifier lives in one repeatable
+ *  list of typed damage parts. */
 const foldLegacyActionExtras = (input: unknown): unknown => {
     if (!input || typeof input !== 'object') return input
     const sheet = input as { sections?: unknown }
     if (!Array.isArray(sheet.sections)) return input
     const humanize = (slug: string): string =>
         slug.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+    /** Upgrade a raw toggle from the single-damage shape to the `parts` shape. */
+    const migrateToggle = (raw: unknown): unknown => {
+        if (!raw || typeof raw !== 'object') return raw
+        const t = raw as Record<string, unknown>
+        if (Array.isArray(t.parts)) return raw
+        const parts: { mode: string; damage: string; type: string }[] = []
+        if (typeof t.damage === 'string' && t.damage) {
+            parts.push({ mode: t.damageMode === 'replace' ? 'replace' : 'add', damage: t.damage, type: typeof t.type === 'string' ? t.type : '' })
+        }
+        const setType = !t.damage && typeof t.type === 'string' ? t.type : ''
+        const next: Record<string, unknown> = { ...t, parts }
+        if (setType) next.setType = setType
+        delete next.damage
+        delete next.damageMode
+        delete next.type
+        return next
+    }
     let touched = false
     const sections = sheet.sections.map((s) => {
         const fields = (s as { fields?: unknown }).fields
@@ -197,27 +229,34 @@ const foldLegacyActionExtras = (input: unknown): unknown => {
         const nextFields = fields.map((f) => {
             const field = f as { meta?: Record<string, string>; toggles?: unknown[] }
             const meta = field.meta
-            if (!meta || typeof meta !== 'object' || !meta.extra) return f
-            if (Array.isArray(field.toggles) && field.toggles.length > 0) return f
+            const hasExtra = meta && typeof meta === 'object' && meta.extra && !(Array.isArray(field.toggles) && field.toggles.length > 0)
+            const hasLegacyToggle = Array.isArray(field.toggles) && field.toggles.some((t) => t && typeof t === 'object' && !Array.isArray((t as Record<string, unknown>).parts))
+            if (!hasExtra && !hasLegacyToggle) return f
             sectionTouched = true
-            const label = meta.extraLabel || (meta.extraWhen ? humanize(meta.extraWhen) : 'Extra damage')
-            const toggle = {
-                id: uid(),
-                label,
-                active: false,
-                hitMode: 'add' as const,
-                hit: '',
-                damageMode: 'add' as const,
-                damage: meta.extra,
-                type: meta.extraType ?? '',
-                description: '',
+            let toggles = Array.isArray(field.toggles) ? field.toggles.map(migrateToggle) : []
+            let restMeta = meta
+            if (hasExtra && meta) {
+                const label = meta.extraLabel || (meta.extraWhen ? humanize(meta.extraWhen) : 'Extra damage')
+                toggles = [
+                    ...toggles,
+                    {
+                        id: uid(),
+                        label,
+                        active: false,
+                        hitMode: 'add',
+                        hit: '',
+                        parts: [{ mode: 'add', damage: meta.extra, type: meta.extraType ?? '' }],
+                        setType: '',
+                        description: '',
+                    },
+                ]
+                restMeta = { ...meta }
+                delete restMeta.extra
+                delete restMeta.extraType
+                delete restMeta.extraWhen
+                delete restMeta.extraLabel
             }
-            const restMeta: Record<string, string> = { ...meta }
-            delete restMeta.extra
-            delete restMeta.extraType
-            delete restMeta.extraWhen
-            delete restMeta.extraLabel
-            return { ...(field as object), meta: restMeta, toggles: [toggle] }
+            return { ...(field as object), meta: restMeta, toggles }
         })
         if (!sectionTouched) return s
         touched = true

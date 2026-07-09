@@ -183,11 +183,13 @@ D&D extras
       gap; Death Saves merged into the HP widget (shown at 0 HP); dropdown menus
       clamp to the viewport and auto-shift to stay on-screen.
 - [x] Action-meta inputs get field type-to-search for `{expr}` interpolation.
-- [x] **Action toggles**: repeatable on/off modifiers per weapon that add or
-      replace damage dice / to-hit / damage type (e.g. Shillelagh replaces the
-      die and ability; Flame Tongue adds 2d6 fire). Replaces the single
-      `meta.extra` "extra damage" model (auto-migrated), with clearer labeled
-      action inputs in the section editor.
+- [x] **Action toggles**: repeatable on/off modifiers per weapon. Each toggle
+      holds a list of typed damage parts (add extra dice or replace the base),
+      can adjust the to-hit ability, and can recolour the whole attack to one
+      type (e.g. Shillelagh replaces die + ability; Flame Tongue adds 2d6 fire;
+      one bonus action adds cold + radiant at once; True Strike → radiant).
+      Replaces the single `meta.extra` "extra damage" model (auto-migrated), with
+      clearer labeled action inputs in the section editor.
 
 ## Notes
 

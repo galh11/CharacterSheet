@@ -117,17 +117,15 @@ describe('characterSheetSchema', () => {
             expect(field.toggles?.[0]).toMatchObject({
                 label: 'Flame Tongue',
                 active: false,
-                damageMode: 'add',
-                damage: '2d6',
-                type: 'fire',
             })
+            expect(field.toggles?.[0].parts).toEqual([{ mode: 'add', damage: '2d6', type: 'fire' }])
         }
     })
 
-    it('accepts action fields with explicit toggles', () => {
+    it('migrates a legacy single-damage toggle into the parts list', () => {
         const parsed = characterSheetSchema.safeParse({
             id: 'sheet-1',
-            name: 'Toggled',
+            name: 'Legacy toggle',
             sections: [
                 {
                     id: 'section-1',
@@ -151,7 +149,51 @@ describe('characterSheetSchema', () => {
         })
         expect(parsed.success).toBe(true)
         if (parsed.success) {
-            expect(parsed.data.sections[0].fields[0].toggles?.[0].damageMode).toBe('replace')
+            const toggle = parsed.data.sections[0].fields[0].toggles?.[0]
+            expect(toggle?.parts).toEqual([{ mode: 'replace', damage: '1d8+{wis_mod}', type: 'bludgeoning' }])
+        }
+    })
+
+    it('accepts action toggles with multiple typed damage parts and a setType', () => {
+        const parsed = characterSheetSchema.safeParse({
+            id: 'sheet-1',
+            name: 'Toggled',
+            sections: [
+                {
+                    id: 'section-1',
+                    title: 'Attacks',
+                    kind: 'actions',
+                    layout: { x: 0, y: 0, w: 200, h: 140 },
+                    fields: [
+                        {
+                            id: 'f1',
+                            label: 'Booming Blade Sword',
+                            type: 'text',
+                            value: '',
+                            meta: { damage: '1d8', type: 'slashing' },
+                            toggles: [
+                                {
+                                    id: 't1',
+                                    label: 'Empowered Strike',
+                                    active: false,
+                                    setType: 'radiant',
+                                    parts: [
+                                        { mode: 'add', damage: '1d8', type: 'thunder' },
+                                        { mode: 'add', damage: '1d6', type: 'cold' },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        })
+        expect(parsed.success).toBe(true)
+        if (parsed.success) {
+            const toggle = parsed.data.sections[0].fields[0].toggles?.[0]
+            expect(toggle?.parts).toHaveLength(2)
+            expect(toggle?.setType).toBe('radiant')
+            expect(toggle?.hitMode).toBe('add')
         }
     })
 })

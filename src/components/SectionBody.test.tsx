@@ -75,9 +75,8 @@ describe('ActionCards', () => {
                         active: true,
                         hitMode: 'replace',
                         hit: '+{wis_mod + proficiency}',
-                        damageMode: 'replace',
-                        damage: '1d8+{wis_mod}',
-                        type: 'bludgeoning',
+                        setType: '',
+                        parts: [{ mode: 'replace', damage: '1d8+{wis_mod}', type: 'bludgeoning' }],
                         description: '',
                     },
                 ],
@@ -104,13 +103,61 @@ describe('ActionCards', () => {
                 label: 'Handaxe',
                 meta: { damage: '1d6', type: 'slashing' },
                 toggles: [
-                    { id: 't', label: 'Flame Tongue', active: true, hitMode: 'add', hit: '', damageMode: 'add', damage: '2d6', type: 'fire', description: '' },
+                    { id: 't', label: 'Flame Tongue', active: true, hitMode: 'add', hit: '', setType: '', parts: [{ mode: 'add', damage: '2d6', type: 'fire' }], description: '' },
                 ],
             }),
         ])
         render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{}} onRoll={() => { }} />)
-        expect(screen.getByText(/1d6/)).toBeInTheDocument()
+        // Base slashing part stays and the fire part is added alongside it.
+        expect(screen.getByText(/1d6 slashing/)).toBeInTheDocument()
         expect(screen.getByText(/2d6 fire/)).toBeInTheDocument()
+    })
+
+    it('adds several typed damage parts from one toggle', () => {
+        const section = actionsSection([
+            field({
+                id: 'f',
+                label: 'Booming Blade Sword',
+                meta: { damage: '1d8', type: 'slashing' },
+                toggles: [
+                    {
+                        id: 't',
+                        label: 'Empowered Strike',
+                        active: true,
+                        hitMode: 'add',
+                        hit: '',
+                        setType: '',
+                        parts: [
+                            { mode: 'add', damage: '1d8', type: 'thunder' },
+                            { mode: 'add', damage: '1d6', type: 'cold' },
+                            { mode: 'add', damage: '1d6', type: 'radiant' },
+                        ],
+                        description: '',
+                    },
+                ],
+            }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{}} onRoll={() => { }} />)
+        expect(screen.getByText(/1d8 thunder/)).toBeInTheDocument()
+        expect(screen.getByText(/1d6 cold/)).toBeInTheDocument()
+        expect(screen.getByText(/1d6 radiant/)).toBeInTheDocument()
+    })
+
+    it('recolours the whole attack to one type via setType', () => {
+        const section = actionsSection([
+            field({
+                id: 'f',
+                label: 'True Strike Blade',
+                meta: { damage: '1d8', type: 'slashing' },
+                toggles: [
+                    { id: 't', label: 'True Strike', active: true, hitMode: 'add', hit: '', setType: 'radiant', parts: [], description: '' },
+                ],
+            }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{}} onRoll={() => { }} />)
+        // The base slashing damage is recoloured radiant while the toggle is on.
+        expect(screen.getByText(/1d8 radiant/)).toBeInTheDocument()
+        expect(screen.queryByText(/slashing/)).toBeNull()
     })
 
     it('flips a toggle active state via onUpdateField', () => {
@@ -121,7 +168,7 @@ describe('ActionCards', () => {
                 label: 'Handaxe',
                 meta: { damage: '1d6', type: 'slashing' },
                 toggles: [
-                    { id: 't', label: 'Flame Tongue', active: false, hitMode: 'add', hit: '', damageMode: 'add', damage: '2d6', type: 'fire', description: '' },
+                    { id: 't', label: 'Flame Tongue', active: false, hitMode: 'add', hit: '', setType: '', parts: [{ mode: 'add', damage: '2d6', type: 'fire' }], description: '' },
                 ],
             }),
         ])

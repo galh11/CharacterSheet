@@ -11,6 +11,7 @@ import {
     type EffectOp,
     type ActionToggle,
     type ToggleMode,
+    type ToggleDamagePart,
 } from '../model/characterSheet'
 
 interface SectionEditorModalProps {
@@ -250,21 +251,28 @@ function ActionTogglesEditor({
                 active: false,
                 hitMode: 'add',
                 hit: '',
-                damageMode: 'add',
-                damage: '',
-                type: '',
+                parts: [],
+                setType: '',
                 description: '',
             },
         ])
+    const updatePart = (toggleIndex: number, partIndex: number, patch: Partial<ToggleDamagePart>) =>
+        update(toggleIndex, {
+            parts: (toggles[toggleIndex].parts ?? []).map((p, i) => (i === partIndex ? { ...p, ...patch } : p)),
+        })
+    const addPart = (toggleIndex: number) =>
+        update(toggleIndex, { parts: [...(toggles[toggleIndex].parts ?? []), { mode: 'add', damage: '', type: '' }] })
+    const removePart = (toggleIndex: number, partIndex: number) =>
+        update(toggleIndex, { parts: (toggles[toggleIndex].parts ?? []).filter((_, i) => i !== partIndex) })
 
     return (
         <div className="mt-2 rounded border border-slate-800 bg-slate-950/60 p-2">
             <div className="text-[11px] font-semibold text-slate-300">Toggles (on/off modifiers)</div>
             {toggles.length === 0 && (
                 <p className="my-1 text-[10px] text-slate-500">
-                    e.g. a <span className="font-mono">Shillelagh</span> toggle that <em>replaces</em> damage with{' '}
-                    <span className="font-mono">1d8+{'{wis_mod}'}</span>, or a Flame Tongue that <em>adds</em>{' '}
-                    <span className="font-mono">2d6</span> fire.
+                    e.g. a <span className="font-mono">Shillelagh</span> that <em>replaces</em> damage with{' '}
+                    <span className="font-mono">1d8+{'{wis_mod}'}</span>, a Flame Tongue that <em>adds</em>{' '}
+                    <span className="font-mono">2d6</span> fire, or one activation that adds several typed parts at once.
                 </p>
             )}
             <div className="mt-1 flex flex-col gap-2">
@@ -295,34 +303,54 @@ function ActionTogglesEditor({
                                 ✕
                             </button>
                         </div>
-                        <div className="mt-1 flex items-center gap-1">
-                            <span className="w-14 text-[10px] text-slate-500">Damage</span>
-                            <select
-                                value={toggle.damageMode}
-                                onChange={(event) => update(i, { damageMode: event.target.value as ToggleMode })}
-                                className="rounded border border-slate-700 bg-slate-900 px-1 py-1 text-[11px] text-slate-200"
-                                aria-label="Toggle damage mode"
+                        {/* Damage parts — add as many typed parts as you like. */}
+                        <div className="mt-1 flex flex-col gap-1">
+                            {(toggle.parts ?? []).map((part, pi) => (
+                                <div key={pi} className="flex items-center gap-1">
+                                    <span className="w-14 text-[10px] text-slate-500">{pi === 0 ? 'Damage' : ''}</span>
+                                    <select
+                                        value={part.mode}
+                                        onChange={(event) => updatePart(i, pi, { mode: event.target.value as ToggleMode })}
+                                        className="rounded border border-slate-700 bg-slate-900 px-1 py-1 text-[11px] text-slate-200"
+                                        aria-label="Toggle damage mode"
+                                    >
+                                        {TOGGLE_MODES.map((o) => (
+                                            <option key={o.value} value={o.value}>
+                                                {o.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <input
+                                        value={part.damage}
+                                        onChange={(event) => updatePart(i, pi, { damage: event.target.value })}
+                                        placeholder="1d8+{wis_mod}"
+                                        className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
+                                        aria-label="Toggle damage dice"
+                                    />
+                                    <input
+                                        value={part.type}
+                                        onChange={(event) => updatePart(i, pi, { type: event.target.value })}
+                                        placeholder="type"
+                                        className="w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
+                                        aria-label="Toggle damage type"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removePart(i, pi)}
+                                        className="rounded px-1 text-slate-500 hover:bg-slate-800 hover:text-rose-300"
+                                        aria-label="Remove damage part"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => addPart(i)}
+                                className="self-start rounded border border-slate-700 px-2 py-0.5 text-[10px] text-slate-300 hover:bg-slate-800"
                             >
-                                {TOGGLE_MODES.map((o) => (
-                                    <option key={o.value} value={o.value}>
-                                        {o.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <input
-                                value={toggle.damage}
-                                onChange={(event) => update(i, { damage: event.target.value })}
-                                placeholder="1d8+{wis_mod}"
-                                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
-                                aria-label="Toggle damage dice"
-                            />
-                            <input
-                                value={toggle.type}
-                                onChange={(event) => update(i, { type: event.target.value })}
-                                placeholder="type"
-                                className="w-20 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
-                                aria-label="Toggle damage type"
-                            />
+                                + damage part
+                            </button>
                         </div>
                         <div className="mt-1 flex items-center gap-1">
                             <span className="w-14 text-[10px] text-slate-500">To-hit</span>
@@ -344,6 +372,16 @@ function ActionTogglesEditor({
                                 placeholder="+{wis_mod + proficiency} (leave blank for none)"
                                 className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
                                 aria-label="Toggle to-hit"
+                            />
+                        </div>
+                        <div className="mt-1 flex items-center gap-1">
+                            <span className="w-14 text-[10px] text-slate-500" title="Recolour the whole attack to one damage type while active (e.g. True Strike → radiant)">Set type</span>
+                            <input
+                                value={toggle.setType}
+                                onChange={(event) => update(i, { setType: event.target.value })}
+                                placeholder="override all damage types (e.g. radiant) — optional"
+                                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
+                                aria-label="Toggle set damage type"
                             />
                         </div>
                         <input

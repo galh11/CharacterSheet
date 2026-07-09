@@ -46,7 +46,10 @@ one hover away.
   (with migration) and keeps a **roster** of multiple characters; export/import
   the whole sheet as JSON, or share it via a link. Installable as an offline PWA.
 - **Installable (PWA)** — a service worker precaches the app so it works offline
-  and can be installed to a phone/tablet home screen for at-the-table use.
+  and can be installed to a phone/tablet home screen for at-the-table use. When a
+  new version deploys you get a **"new version available · Reload"** prompt, and
+  the ⋯ More menu has a **Check for updates** item to grab the latest build on
+  demand instead of waiting for the automatic check.
 
 ## Architecture
 

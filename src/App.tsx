@@ -21,9 +21,11 @@ import { SectionEditorModal } from './components/SectionEditorModal'
 import { QuickStartModal } from './components/QuickStartModal'
 import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { AboutModal } from './components/AboutModal'
+import { UpdateToast } from './components/UpdateToast'
 import { RollLog } from './components/RollLog'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
 import { APP_VERSION } from './version'
+import { useAppUpdate } from './state/useAppUpdate'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
 import { loadPresets, savePresets, type Presets } from './state/presets'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
@@ -70,6 +72,12 @@ function App() {
     const [showAbout, setShowAbout] = useState(false)
     const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
+    const appUpdate = useAppUpdate()
+    const handleCheckUpdate = async () => {
+        setNotice('Checking for updates…')
+        const found = await appUpdate.checkForUpdate()
+        if (!found) setNotice("You're on the latest version.")
+    }
     const [guides, setGuides] = useState<SnapGuide[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [presets, setPresets] = useState<Presets>(() => loadPresets())
@@ -975,6 +983,9 @@ function App() {
                                     </MenuItem>
                                     <MenuDivider />
                                     <MenuLabel>About</MenuLabel>
+                                    <MenuItem onClick={() => { void handleCheckUpdate(); close() }} title="Force a check for a newly deployed version and reload onto it">
+                                        Check for updates
+                                    </MenuItem>
                                     <MenuItem onClick={() => { setShowAbout(true); close() }} title="Show the app version and changelog">
                                         What's new · v{APP_VERSION}
                                     </MenuItem>
@@ -1171,6 +1182,12 @@ function App() {
                 onSpendLuck={spendLuck}
                 onRollDice={rollFreeDice}
                 onClear={() => setRollLog([])}
+            />
+
+            <UpdateToast
+                show={appUpdate.updateReady}
+                onReload={appUpdate.applyUpdate}
+                onDismiss={appUpdate.dismiss}
             />
         </main>
     )

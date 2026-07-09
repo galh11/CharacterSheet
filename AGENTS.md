@@ -62,6 +62,7 @@ src/
     presets.ts             # named saved canvas layouts
     share.ts               # shareable URL encode/decode
     templates.ts           # ready-made section templates
+    useAppUpdate.ts        # PWA service-worker update hook (needRefresh + force-check + reload)
   import/
     parseCharacterJson.ts  # exact D&D Beyond character-service JSON importer
                            # (abilities, AC, skills, saves, HP, initiative, inventory, currency, languages)
@@ -76,6 +77,7 @@ src/
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
     QuickStartModal.tsx    # D&D Beyond JSON import review + confirm (paste or file upload)
     Tooltip.tsx            # hover/focus description bubble
+    UpdateToast.tsx        # "new version available" reload prompt (fed by useAppUpdate)
   test/
     setup.ts               # Vitest setup: jest-dom matchers + in-memory localStorage mock
   **/*.test.ts(x)          # unit/component tests colocated with source
@@ -162,6 +164,16 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 - Import is **JSON-only**: `parseCharacterJson` reads a D&D Beyond
   character-service payload (with or without the `data` wrapper). The older OCR /
   tolerant-text importers were removed.
+- **PWA updates**: the app is a `vite-plugin-pwa` service worker with
+  `registerType: 'autoUpdate'`, so an open tab keeps serving the precached build
+  until a newer service worker is fetched and activated. `state/useAppUpdate.ts`
+  wraps `virtual:pwa-register/react`'s `useRegisterSW` to surface that: when a new
+  build is waiting it flips `updateReady`, which shows `UpdateToast` (a "new
+  version available · Reload" prompt). The ⋯ More menu's **Check for updates**
+  item calls `checkForUpdate` to force an immediate `registration.update()` so you
+  don't have to wait for the next automatic check; `applyUpdate` activates the
+  waiting worker and reloads onto the new build. (GitHub Pages CDN propagation
+  after a deploy is separate and can't be forced from the client.)
 - **App version & changelog**: `version.ts` is the single source of truth —
   `APP_VERSION` (the top `CHANGELOG` entry's version) plus a PR-linked release
   list and a Vite-injected `__APP_BUILD_TIME__`. The ⋯ More menu shows

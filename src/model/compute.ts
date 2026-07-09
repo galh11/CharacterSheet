@@ -180,6 +180,8 @@ export interface FieldReference {
     slug: string
     label: string
     value: number
+    /** Title of the section this field belongs to — used to group autocomplete. */
+    section: string
 }
 
 /**
@@ -208,7 +210,7 @@ export const listReferences = (
             }
             if (value === null) continue
             seen.add(slug)
-            refs.push({ slug, label: field.label, value })
+            refs.push({ slug, label: field.label, value, section: section.title })
         }
     }
     return refs.sort((a, b) => a.slug.localeCompare(b.slug))

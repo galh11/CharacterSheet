@@ -51,6 +51,7 @@ src/
     characterSheet.ts      # zod schema: sheet (+ optional portrait) > sections > fields (+ effects) + layout; slugify
     formula.ts             # safe arithmetic evaluator (no eval/Function): + - * / %, floor/ceil/round/abs/min/max/sqrt
     compute.ts             # resolveSheet: computed fields + relational effects -> results/scope/contributions/tags; interpolate {expr}
+    formulaSuggest.ts      # pure autocomplete helpers: token-at-caret, prefix filter, group-by-section (used by FormulaInput)
     dice.ts                # d20 (advantage/disadvantage), damage, crit flags, roll formatting
     layout.ts              # canvas geometry: compactLayouts (Tidy), snap/align/distribute, overlap resolution
   state/
@@ -70,6 +71,7 @@ src/
     SectionCard.tsx        # section frame: header, ✎ pencil, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened by the ✎ pencil
+    FormulaInput.tsx       # formula box with inline, section-grouped field autocomplete (completes the slug token at the caret)
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper + handle bar
     RollLog.tsx            # floating roll panel: latest roll + expandable history, adv/dis, resizable
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
@@ -156,7 +158,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   pips, auto-roll, stable/dead) only while Current HP is 0, and clear on any
   healing or long rest.
 - Editing is **per-section** via the `SectionEditorModal` (opened by the ✎
-  pencil) — there is **no global edit mode**.
+  pencil) — there is **no global edit mode**. Every formula box (computed field
+  value, effect amount, action to-hit/damage, toggle hit/damage) is a
+  `FormulaInput`: as you type an identifier it drops an inline autocomplete of
+  matching field slugs, grouped under each source section's bold name, and
+  completes the token at the caret — so it works mid-formula and inside `{expr}`
+  interpolation (`1d4 + con_mod + pr…`).
 - **Portrait**: the sheet carries an optional `portrait` (an image data URL) set
   via `useSheet.setPortrait`. The top bar shows it as a circular avatar next to
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled

@@ -15,7 +15,10 @@ one hover away.
   `resource` (pips).
 - **Calculations** — `computed` fields run a safe formula engine that can
   reference other fields by name (e.g. `floor((str - 10) / 2)`) and recompute
-  live. Helpers: `floor`, `ceil`, `round`, `abs`, `sqrt`, `min`, `max`.
+  live. Helpers: `floor`, `ceil`, `round`, `abs`, `sqrt`, `min`, `max`. Every
+  formula box has an **inline autocomplete**: start typing a field name and it
+  lists matching slugs grouped by their section, completing the one you pick
+  right where the caret is (works mid-formula, e.g. `1d4 + con_mod + pr…`).
 - **Relational effects** — any field can grant a modifier to another (add / sub /
   set, or typed tags like advantage / resistance, each with a freeform reason).
   Bonuses and tags are attributed both ways (the source shows what it grants and

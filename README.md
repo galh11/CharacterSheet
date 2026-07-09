@@ -37,11 +37,6 @@ one hover away.
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
 - **Character portrait** — add a D&D-Beyond-style circular avatar in the top bar;
   click to upload or replace an image (auto-downscaled), hover to remove it.
-- **Quick start** — paste your **D&D Beyond character JSON** (from the
-  character-service API) or load it as a `.json` file for an exact import. It
-  derives ability scores + modifiers, AC, skills, saving throws, passive
-  perception, HP, languages, and a single inventory card (coins + items), and you
-  review what was detected before it replaces your sheet.
 - **Persistence & portability** — autosaves to a versioned `localStorage` schema
   (with migration) and keeps a **roster** of multiple characters; export/import
   the whole sheet as JSON, or share it via a link. Installable as an offline PWA.
@@ -62,13 +57,12 @@ one hover away.
 - `src/model/layout.ts` — canvas geometry: Tidy packing, snap, align, distribute.
 - `src/state/` — `useSheet` (+ undo/redo), `persistence`, JSON `transfer`,
   `roster`, `backups`, `presets`, `share`, `templates`.
-- `src/import/parseCharacterJson.ts` — exact D&D Beyond character-JSON importer.
 - `src/components/` — `SectionCard`, `SectionBody`, `SectionEditorModal`,
-  `CanvasItem`, `RollLog`, `Menu`, `HitDiceModal`, `QuickStartModal`, `Tooltip`.
+  `CanvasItem`, `RollLog`, `Menu`, `HitDiceModal`, `AboutModal`, `Tooltip`.
 - `scripts/` — `gen-yad.mjs` / `gen-amarthon.mjs` regenerate the sample sheets.
 - `src/**/*.test.ts(x)` — unit/component tests (Vitest) next to the code.
 - `e2e/` — Playwright end-to-end + visual regression tests.
-- `samples/` — reference D&D character data used as import fixtures.
+- `samples/` — reference D&D character data and generated sample sheets.
 
 See [AGENTS.md](AGENTS.md) for the contributor / AI-agent workflow (including the
 parallel git-worktree process) and [PLAN.md](PLAN.md) for delivery status.
@@ -100,9 +94,8 @@ Test files live next to the code they cover and end in `.test.ts`/`.test.tsx`
 (for example `src/components/Tooltip.test.tsx`). Coverage spans the pure logic
 (`model/formula.ts`, `model/compute.ts`, `model/characterSheet.ts`,
 `model/dice.ts`, `model/layout.ts`), the state layer (`state/useSheet.ts`,
-`state/persistence.ts`, `state/transfer.ts`, `state/share.ts`), the D&D Beyond
-JSON importer (`import/parseCharacterJson.ts`), and components (`Tooltip`,
-`SectionBody`).
+`state/persistence.ts`, `state/transfer.ts`, `state/share.ts`), and components
+(`Tooltip`, `SectionBody`).
 
 ### End-to-end (E2E) tests
 
@@ -128,12 +121,12 @@ npm run test:e2e:update  # refresh baselines after an intentional UI change
 
 ## Sample data
 
-The [samples/](samples) folder holds reference D&D character data used as
-fixtures/examples for the import feature: real D&D Beyond character-JSON exports
-(`yad-armhand-ddb.json`, `amarthon-ddb.json`), the sheets they generate
-(`*-sheet.json`, rebuilt by the `scripts/gen-*.mjs` generators), and a
-standalone `yad-armhand.html` / `yad-armhand.md` reference. None of it is part of
-the app bundle.
+The [samples/](samples) folder holds reference D&D character data: source
+character JSON (`yad-armhand-ddb.json`, `amarthon-ddb.json`), the native sample
+sheets built from them (`*-sheet.json`, rebuilt by the `scripts/gen-*.mjs`
+generators), and a standalone `yad-armhand.html` / `yad-armhand.md` reference.
+The `*-sheet.json` files can be loaded with **Import JSON…**. None of it is part
+of the app bundle.
 
 ## Deployment
 

@@ -7,8 +7,8 @@ Guidance for AI coding agents working in this repository.
 CharacterSheet is a crammed, interactive D&D 5e player cheat sheet: a free-form,
 fully editable canvas where the player creates sections and fields, drags and
 resizes them, defines calculations and relational effects (one field granting
-bonuses to another), writes on-hover descriptions, and can quick-start by
-importing a D&D Beyond character JSON export.
+bonuses to another), writes on-hover descriptions, and can save or load a whole
+sheet as JSON.
 
 Stack: React 19 + Vite + TypeScript, Tailwind CSS v4 (via `@tailwindcss/vite`),
 zod for schema validation, clsx for class composition.
@@ -63,9 +63,6 @@ src/
     share.ts               # shareable URL encode/decode
     templates.ts           # ready-made section templates
     useAppUpdate.ts        # PWA service-worker update hook (needRefresh + force-check + reload)
-  import/
-    parseCharacterJson.ts  # exact D&D Beyond character-service JSON importer
-                           # (abilities, AC, skills, saves, HP, initiative, inventory, currency, languages)
   components/
     SectionCard.tsx        # section frame: header, ✎ pencil, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
@@ -75,7 +72,6 @@ src/
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
     HitDiceModal.tsx       # spend hit dice on a short rest
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
-    QuickStartModal.tsx    # D&D Beyond JSON import review + confirm (paste or file upload)
     Tooltip.tsx            # hover/focus description bubble
     UpdateToast.tsx        # "new version available" reload prompt (fed by useAppUpdate)
   test/
@@ -161,9 +157,10 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   via `useSheet.setPortrait`. The top bar shows it as a circular avatar next to
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled
   to 256px JPEG by `App.readImageAsDataUrl`), and a hover ✕ removes it.
-- Import is **JSON-only**: `parseCharacterJson` reads a D&D Beyond
-  character-service payload (with or without the `data` wrapper). The older OCR /
-  tolerant-text importers were removed.
+- **Save / load**: a sheet is portable as JSON via `state/transfer.ts`
+  (`exportSheetToFile` / `importSheetFromFile`, both zod-validated) — surfaced as
+  **Export JSON** / **Import JSON…** in the ⋯ More menu. There is no external
+  (D&D Beyond) importer; import only accepts a sheet this app exported.
 - **PWA updates**: the app is a `vite-plugin-pwa` service worker with
   `registerType: 'autoUpdate'`, so an open tab keeps serving the precached build
   until a newer service worker is fetched and activated. `state/useAppUpdate.ts`

@@ -1,15 +1,14 @@
 # Samples
 
-Reference D&D 5e character data used as fixtures and examples for the app's
-**Quick start** import feature (which imports a D&D Beyond character JSON export).
-These files are not part of the application bundle.
+Reference D&D 5e character data used to build and sanity-check the app-native
+sample sheets. These files are not part of the application bundle.
 
-- `yad-armhand-ddb.json` / `amarthon-ddb.json` — real D&D Beyond character JSON
-  exports (from the character-service API), used as fixtures for the JSON
-  importer test (`src/import/parseCharacterJson.test.ts`).
+- `yad-armhand-ddb.json` / `amarthon-ddb.json` — source D&D Beyond character JSON
+  exports, kept as the reference data the sample-sheet generators are built from.
 - `yad-armhand-sheet.json` / `amarthon-sheet.json` — the app-native sheets built
-  from those characters. Regenerate them with the generators in `scripts/`
-  (`node scripts/gen-yad.mjs`, `node scripts/gen-amarthon.mjs`).
+  from those characters (loadable via **Import JSON…**). Regenerate them with the
+  generators in `scripts/` (`node scripts/gen-yad.mjs`,
+  `node scripts/gen-amarthon.mjs`).
 - `yad-armhand.md` — authoritative character reference (Goliath Pugilist 8),
   written from the D&D Beyond character builder.
 - `yad-armhand.html` — a standalone, self-contained HTML character-sheet

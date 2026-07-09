@@ -18,7 +18,6 @@ import {
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { SectionEditorModal } from './components/SectionEditorModal'
-import { QuickStartModal } from './components/QuickStartModal'
 import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { AboutModal } from './components/AboutModal'
 import { UpdateToast } from './components/UpdateToast'
@@ -70,7 +69,6 @@ function App() {
     const [headerCollapsed, setHeaderCollapsed] = useState(false)
     const [showHitDice, setShowHitDice] = useState(false)
     const [showAbout, setShowAbout] = useState(false)
-    const [showQuickStart, setShowQuickStart] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
     const appUpdate = useAppUpdate()
     const handleCheckUpdate = async () => {
@@ -941,14 +939,6 @@ function App() {
                                 </option>
                             ))}
                         </select>
-                        <button
-                            type="button"
-                            onClick={() => setShowQuickStart(true)}
-                            className="rounded-md bg-violet-500 px-4 py-2 text-sm font-medium text-white hover:bg-violet-400"
-                        >
-                            Quick start
-                        </button>
-
                         <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
 
                         <Menu label="⋯ More" title="Import, export, and share" align="right">
@@ -1128,16 +1118,6 @@ function App() {
                     </div>
                 )}
             </section>
-
-            {showQuickStart && (
-                <QuickStartModal
-                    onClose={() => setShowQuickStart(false)}
-                    onConfirm={(imported) => {
-                        replaceSheet(imported)
-                        setShowQuickStart(false)
-                    }}
-                />
-            )}
 
             {showHitDice && (
                 <HitDiceModal

@@ -191,16 +191,20 @@ git fetch origin
 git rebase origin/main        # replay your work on top of others' merges
 # resolve any conflicts, then RE-RUN lint / build / test:run / check:docs
 git push -u origin <type>/<slug>
-gh pr create --fill           # or open the PR via the GitHub PR tooling
-gh pr checks --watch          # optional: watch CI; it auto-merges when green
+# Open the PR with the GitHub PR tooling, or `gh pr create --fill` (if gh installed).
+git fetch origin --prune      # after CI runs; the branch auto-deletes on merge
+git ls-remote --heads origin <type>/<slug>   # prints nothing once merged
 ```
 
 - The `.github/workflows/automerge.yml` workflow squash-merges the PR and deletes
   the branch as soon as the `CI` workflow succeeds on it. No manual approval.
+- **Confirm the merge landed** — don't stop at "PR opened". Poll after CI passes
+  until the remote branch is gone (`git ls-remote --heads origin <type>/<slug>`
+  prints nothing) or `gh pr view --json state --jq '.state'` returns `MERGED`.
 - If CI **fails**, fix it on the same branch and `git push` again; CI re-runs and
   auto-merges when green.
 - **Never** push straight to `main` or force-push it. Your task is done only when
-  the PR is merged.
+  the PR shows `MERGED`.
 
 ### 4. Clean up (after the PR merges)
 

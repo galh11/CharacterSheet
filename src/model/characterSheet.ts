@@ -99,6 +99,9 @@ export const sectionSchema = z.object({
     kind: sectionKindSchema.default('default'),
     /** Content zoom for the whole section (text + widgets). */
     scale: z.number().default(1),
+    /** When true the card is tucked away in the drawer instead of the canvas.
+     *  Hidden sections still contribute their fields to computed formulas. */
+    hidden: z.boolean().optional(),
     /** Free-form structured extras used by specialized section renderers. */
     meta: z.record(z.string(), z.string()).optional(),
     fields: z.array(fieldSchema).default([]),
@@ -184,6 +187,7 @@ export const createSection = (
     accent: accentForIndex(index),
     kind: 'default',
     scale: 1,
+    hidden: false,
     fields: [],
     layout: defaultLayout(index),
     ...overrides,

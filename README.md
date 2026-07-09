@@ -17,9 +17,11 @@ one hover away.
   reference other fields by name (e.g. `floor((str - 10) / 2)`) and recompute
   live. Helpers: `floor`, `ceil`, `round`, `abs`, `sqrt`, `min`, `max`.
 - **Relational effects** — any field can grant a modifier to another (add / sub /
-  set, or typed tags like advantage / resistance). Bonuses are attributed both
-  ways (the source shows what it grants, the target shows where a bonus came
-  from) and can be toggled on/off like equipping an item.
+  set, or typed tags like advantage / resistance, each with a freeform reason).
+  Bonuses and tags are attributed both ways (the source shows what it grants and
+  on what, the target shows where it came from) — so next to Athletics you can
+  see "ADV to end grappled · Grappler" — across skills, saves, abilities, actions,
+  and plain fields, and can be toggled on/off like equipping an item.
 - **Action toggles** — a weapon/attack can carry any number of on/off toggles
   that reshape its rolls while active: each toggle can contribute several typed
   damage parts (**add** extra dice or **replace** the base), adjust the to-hit

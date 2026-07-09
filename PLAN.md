@@ -84,6 +84,8 @@ quick-start by importing a D&D Beyond character JSON export.
 ### Phase K — Installable / offline (PWA)  [x]
 - [x] Web manifest + service worker for offline use and home-screen install
       (handy as an at-the-table play aid on a phone/tablet).
+- [x] Surface new deployed builds: a "new version available · Reload" prompt plus
+      a ⋯ More "Check for updates" item that force-checks the service worker.
 
 ### Phase L — Data durability  [x]
 - [x] Versioned `localStorage` schema + migration path for `character-sheet:vN`.

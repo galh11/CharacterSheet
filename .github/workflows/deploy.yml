@@ -1,8 +1,16 @@
 name: Deploy to GitHub Pages
 
 on:
+  # Direct pushes to main by a human (the maintainer) deploy straight away.
   push:
     branches: [main]
+  # PR auto-merges push to main using GITHUB_TOKEN, which — by GitHub's recursion
+  # guard — does NOT fire the `push` trigger above. So also deploy after the
+  # Auto-merge workflow finishes (it squash-merges the PR into main first, then
+  # completes), which reliably ships every merged PR.
+  workflow_run:
+    workflows: [Auto-merge]
+    types: [completed]
   # Allow manual deploys from the Actions tab.
   workflow_dispatch:
 
@@ -19,9 +27,18 @@ concurrency:
 
 jobs:
   build:
+    # Skip the auto-merge path when it didn't actually merge (e.g. CI failed, or
+    # there was no open PR); push and manual dispatch always build.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        # workflow_run reports the triggering run's SHA; always build the latest
+        # main (which now includes the just-merged PR).
+        with:
+          ref: main
 
       - uses: actions/setup-node@v5
         with:

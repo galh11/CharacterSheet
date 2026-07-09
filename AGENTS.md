@@ -90,7 +90,7 @@ scripts/
 samples/                   # reference character data + import fixtures (yad, amarthon)
 public/                    # static assets (favicon, icons, PWA)
 .github/
-  workflows/               # ci.yml (lint/build/test/e2e), automerge.yml (CI-gated auto-merge), deploy.yml (Pages)
+  workflows/               # ci.yml (lint/build/test/e2e), automerge.yml (CI-gated auto-merge), deploy.yml (Pages; runs after Auto-merge)
   copilot-instructions.md  # always-on agent rules (worktree + PR + docs); points here
   prompts/task.prompt.md   # invokable /task: bootstrap a worktree task end-to-end
   pull_request_template.md # PR checklist (tests + docs freshness)
@@ -246,6 +246,10 @@ git ls-remote --heads origin <type>/<slug>   # prints nothing once merged
 
 - The `.github/workflows/automerge.yml` workflow squash-merges the PR and deletes
   the branch as soon as the `CI` workflow succeeds on it. No manual approval.
+  Because that merge is pushed with `GITHUB_TOKEN`, it does **not** fire
+  `deploy.yml`'s `push` trigger (GitHub's recursion guard), so `deploy.yml` also
+  runs `on: workflow_run` after **Auto-merge** completes — that's what actually
+  ships each merged PR to GitHub Pages.
 - **Confirm the merge landed** — don't stop at "PR opened". Poll after CI passes
   until the remote branch is gone (`git ls-remote --heads origin <type>/<slug>`
   prints nothing) or `gh pr view --json state --jq '.state'` returns `MERGED`.

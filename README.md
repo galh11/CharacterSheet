@@ -22,13 +22,14 @@ one hover away.
   from) and can be toggled on/off like equipping an item.
 - **Play tools** — a dice engine with advantage/disadvantage, a roll log, rests,
   hit-dice spending, HP/temp-HP, conditions, buff timers, and specialized
-  section widgets (abilities, skills, actions, spell slots, currency…).
+  section widgets (abilities, skills, actions, spell slots, and a D&D-Beyond-style
+  inventory whose coin purse and items share one card…).
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
 - **Quick start** — paste your **D&D Beyond character JSON** (from the
   character-service API) or load it as a `.json` file for an exact import. It
   derives ability scores + modifiers, AC, skills, saving throws, passive
-  perception, HP, inventory, currency, and languages, and you review what was
-  detected before it replaces your sheet.
+  perception, HP, languages, and a single inventory card (coins + items), and you
+  review what was detected before it replaces your sheet.
 - **Persistence & portability** — autosaves to a versioned `localStorage` schema
   (with migration) and keeps a **roster** of multiple characters; export/import
   the whole sheet as JSON, or share it via a link. Installable as an offline PWA.

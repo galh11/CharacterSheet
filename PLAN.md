@@ -103,7 +103,8 @@ Everything from the earlier suggestion rounds that we agreed to build:
 - [x] Roll log panel: history (persisted), adv/dis toggle, situational modifier,
       Spend Luck button.
 - [x] Section kinds: abilities, hp, skills, actions, hitdice,
-      conditions, spellslots, initiative, currency.
+      conditions, spellslots, initiative, currency, inventory (unified coin
+      purse + item list, D&D-Beyond style).
 - [x] Auto-calc: AC/init/passive/saves/skills/jumps/carry/grapple DC; attacks &
       fisticuffs derived from ability mods + proficiency.
 - [x] Rests (short/long), hit-dice spend+heal, direct HP edit, damage reduction.

@@ -51,14 +51,15 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
         fields: [],
     },
     {
-        id: 'currency',
-        label: 'Currency',
-        title: 'Currency',
-        kind: 'currency',
+        id: 'inventory',
+        label: 'Inventory',
+        title: 'Inventory',
+        kind: 'inventory',
         fields: [
-            { label: 'CP', type: 'number', value: '0', description: 'Copper pieces.' },
-            { label: 'SP', type: 'number', value: '0', description: 'Silver pieces.' },
-            { label: 'GP', type: 'number', value: '0', description: 'Gold pieces.' },
+            { label: 'CP', type: 'number', value: '0', description: 'Copper pieces.', meta: { coin: 'cp' } },
+            { label: 'SP', type: 'number', value: '0', description: 'Silver pieces.', meta: { coin: 'sp' } },
+            { label: 'GP', type: 'number', value: '0', description: 'Gold pieces.', meta: { coin: 'gp' } },
+            { label: 'Backpack', type: 'text', value: '', description: 'A mundane item — set its value to a quantity or worn/carried status.' },
         ],
     },
     {

@@ -89,6 +89,8 @@ samples/                   # reference character data + import fixtures (yad, am
 public/                    # static assets (favicon, icons, PWA)
 .github/
   workflows/               # ci.yml (lint/build/test/e2e), automerge.yml (CI-gated auto-merge), deploy.yml (Pages)
+  copilot-instructions.md  # always-on agent rules (worktree + PR + docs); points here
+  prompts/task.prompt.md   # invokable /task: bootstrap a worktree task end-to-end
   pull_request_template.md # PR checklist (tests + docs freshness)
 vite.config.ts             # Vite + Tailwind + PWA (app build)
 vitest.config.ts           # Vitest (unit/component) config — kept separate from vite.config.ts

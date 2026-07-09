@@ -117,8 +117,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 - **Computed fields** reference other fields by slugified label. `compute.ts`
   `resolveSheet` folds them over a numeric scope across multiple passes and also
   applies **relational effects**: a field's `effects` (add/sub/set, or typed tags
-  like advantage/resist) contribute to a target slug, returning `contributions`
-  and `tags` for bidirectional attribution in the UI.
+  like advantage/resist plus a freeform reason in `value`) contribute to a target
+  slug, returning `contributions` and `tags` for bidirectional attribution in the
+  UI. `EffectTargetBadges` renders those tags — abbreviation, reason, and granting
+  source inline — next to the target across **default lists, abilities, skills,
+  saves, and actions** (e.g. "ADV to end grappled · Grappler" beside Athletics),
+  while `FieldGrantChips` shows the reverse (what the source grants, and on what).
 - `{expr}` **interpolation** (`compute.interpolate`) lets action meta (to-hit,
   damage, temp HP…) embed live values, e.g. `+{str_mod + proficiency}`.
 - **Action toggles**: an action/weapon field can carry a list of `toggles`

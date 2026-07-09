@@ -284,3 +284,51 @@ describe('InventoryWidget', () => {
         expect(onUpdateField).toHaveBeenCalledWith('rope', { value: '×2' })
     })
 })
+
+describe('relational effect badges', () => {
+    const skillsSection = (fields: CharacterField[]): CharacterSection => ({
+        id: 'sk',
+        title: 'Skills',
+        description: '',
+        accent: '#000',
+        kind: 'skills',
+        scale: 1,
+        fields,
+        layout: { x: 0, y: 0, w: 1, h: 1 },
+    })
+
+    it('shows an advantage tag with its reason and source next to a skill', () => {
+        const section = skillsSection([field({ id: 'ath', label: 'Athletics', value: '+5' })])
+        render(
+            <SectionBody
+                section={section}
+                results={new Map()}
+                onUpdateField={() => { }}
+                onRoll={() => { }}
+                effectTags={new Map([
+                    ['athletics', [{ sourceId: 'grappler', sourceLabel: 'Grappler', op: 'advantage', value: 'to end grappled' }]],
+                ])}
+            />,
+        )
+        expect(screen.getByText('ADV')).toBeInTheDocument()
+        expect(screen.getByText('to end grappled')).toBeInTheDocument()
+        expect(screen.getByText('· Grappler')).toBeInTheDocument()
+    })
+
+    it('shows a tag next to an action', () => {
+        const section = actionsSection([field({ id: 'gr', label: 'Grapple' })])
+        render(
+            <SectionBody
+                section={section}
+                results={new Map()}
+                onUpdateField={() => { }}
+                onRoll={() => { }}
+                effectTags={new Map([
+                    ['grapple', [{ sourceId: 'feat', sourceLabel: 'Tavern Brawler', op: 'advantage', value: '' }]],
+                ])}
+            />,
+        )
+        expect(screen.getByText('ADV')).toBeInTheDocument()
+        expect(screen.getByText('· Tavern Brawler')).toBeInTheDocument()
+    })
+})

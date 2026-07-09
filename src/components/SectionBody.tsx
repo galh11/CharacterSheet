@@ -279,10 +279,12 @@ function EffectTargetBadges({ slug, contributions, tags }: {
                 return (
                     <span
                         key={`${t.sourceId}-${i}`}
-                        className={clsx('rounded px-1 text-[10px] font-semibold uppercase ring-1', meta.cls)}
+                        className={clsx('inline-flex items-center gap-1 rounded px-1 text-[10px] font-semibold ring-1', meta.cls)}
                         title={`${meta.title}${t.value ? ` (${t.value})` : ''} — from ${t.sourceLabel}`}
                     >
-                        {meta.abbr}
+                        <span className="uppercase">{meta.abbr}</span>
+                        {t.value && <span className="font-normal normal-case opacity-90">{t.value}</span>}
+                        <span className="font-normal normal-case opacity-70">· {t.sourceLabel}</span>
                     </span>
                 )
             })}
@@ -301,7 +303,7 @@ function FieldGrantChips({ field }: { field: CharacterField }) {
                 const numeric = e.op === 'add' || e.op === 'sub' || e.op === 'set'
                 const label = numeric
                     ? `${OP_LABEL[e.op]}${e.value || '0'} ${e.target}`
-                    : `${OP_LABEL[e.op]} ${e.value || e.target}`.trim()
+                    : `${OP_LABEL[e.op]} ${e.target}${e.value ? `: ${e.value}` : ''}`.trim()
                 return (
                     <span
                         key={i}
@@ -621,7 +623,7 @@ const profDot = (state?: string): { cls: string; title: string } => {
     return { cls: 'bg-transparent ring-1 ring-slate-600', title: 'Not proficient' }
 }
 
-function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }: SectionBodyProps) {
+function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, contributions, effectTags }: SectionBodyProps) {
     /** Resolve a skill's modifier: auto from ability + proficiency, or manual value. */
     const skillMod = (field: CharacterField): number => {
         const m = field.meta ?? {}
@@ -658,7 +660,7 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }
                 const adv = field.meta?.adv
                 const mod = skillMod(field)
                 return (
-                    <li key={field.id} className="flex items-center gap-2 border-b border-slate-800/70 py-1 last:border-0 text-sm">
+                    <li key={field.id} className="flex flex-wrap items-center gap-2 border-b border-slate-800/70 py-1 last:border-0 text-sm">
                         <span className={clsx('h-2.5 w-2.5 shrink-0 rounded-full', dot.cls)} title={dot.title} />
                         <button type="button" onClick={() => roll(field)} className="text-left text-slate-200 hover:text-cyan-300" title={`Roll ${field.label}`}>
                             {field.label}
@@ -669,6 +671,7 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }
                                 <span className="grid h-4 w-4 cursor-help place-items-center rounded-full bg-emerald-500/20 text-[10px] font-bold text-emerald-300 ring-1 ring-emerald-500/40">A</span>
                             </Tooltip>
                         )}
+                        <EffectTargetBadges slug={slugify(field.label)} contributions={contributions} tags={effectTags} />
                         <button type="button" onClick={() => roll(field)} className="ml-auto font-mono text-slate-100 hover:text-cyan-300" title={`Roll ${field.label}`}>
                             {signed(mod)}
                         </button>
@@ -679,7 +682,7 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll }
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onTempHp }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onTempHp, contributions, effectTags }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     const activeToggles = (field: CharacterField): ActionToggle[] => (field.toggles ?? []).filter((t) => t.active)
@@ -789,6 +792,7 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
                     <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="font-medium text-slate-100">{field.label}</span>
+                            <EffectTargetBadges slug={slugify(field.label)} contributions={contributions} tags={effectTags} />
                             {hitMod !== null && <span className="rounded-md bg-slate-700/70 px-1.5 py-0.5 font-mono text-xs text-slate-100 ring-1 ring-slate-600">{signed(hitMod)}</span>}
                             {parts.map((p, i) => (
                                 <span key={i} className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(p.type))}>

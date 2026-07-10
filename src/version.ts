@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.8.2',
+        date: '2026-07-10',
+        summary: 'Choose how many columns the canvas grid uses (6, 8 or 12) under View ▾ → Grid columns, and see faint column guides while dragging a card so you can tell where it will snap.',
+    },
+    {
         version: '1.8.1',
         date: '2026-07-10',
         summary: 'Renamed the View menu’s “Density” to “Zoom”, showing each preset’s percentage (80% / 100% / 120%) so it’s clear it scales the whole sheet; the choice now sticks between sessions and is greyed out while “Fit to width” overrides it.',

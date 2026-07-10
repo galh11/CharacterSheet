@@ -77,8 +77,8 @@ const inDrawer = (
 /** Width of the sliding drawer panel (never wider than the viewport). */
 const DRAWER_W = 'min(440px, 92vw)'
 
-/** The canvas column grid cards snap to (dashboard-style). */
-const CANVAS_GRID = gridMetrics()
+/** Column-count presets for the dashboard grid (chosen in the View menu). */
+const GRID_COL_OPTIONS = [6, 8, 12] as const
 
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
@@ -128,6 +128,14 @@ function App() {
             return saved === 'compact' || saved === 'comfortable' ? saved : 'normal'
         } catch {
             return 'normal'
+        }
+    })
+    const [gridCols, setGridCols] = useState<number>(() => {
+        try {
+            const n = Number(localStorage.getItem('character-sheet:grid-cols'))
+            return (GRID_COL_OPTIONS as readonly number[]).includes(n) ? n : 12
+        } catch {
+            return 12
         }
     })
     const [query, setQuery] = useState('')
@@ -442,10 +450,14 @@ function App() {
         }
     }
 
+    // The canvas column grid cards snap to (dashboard-style); the column count is a
+    // persisted per-user preference chosen in the View menu.
+    const grid = useMemo(() => gridMetrics(gridCols), [gridCols])
+
     const canvasSize = useMemo(() => {
         const shown = sheet.sections.filter((section) => !inDrawer(section, 'canvas'))
         const width = Math.max(
-            gridWidth(CANVAS_GRID),
+            gridWidth(grid),
             ...shown.map((section) => section.layout.x + section.layout.w + 48),
         )
         const height = Math.max(
@@ -457,7 +469,7 @@ function App() {
         const minX = shown.length ? Math.min(...shown.map((s) => s.layout.x)) : 0
         const maxX = shown.length ? Math.max(...shown.map((s) => s.layout.x + s.layout.w)) : width
         return { width, height, minX, maxX }
-    }, [sheet.sections])
+    }, [sheet.sections, grid])
 
     const commitLayout = (id: string, layout: SectionLayout) => {
         // Dashboard grid: pin the released card at its dropped cell and reflow the
@@ -466,7 +478,7 @@ function App() {
         const items = sheet.sections
             .filter((s) => !inDrawer(s, 'canvas'))
             .map((s) => ({ id: s.id, layout: s.id === id ? layout : s.layout }))
-        setSectionLayouts(placeInGrid(items, id, toCell(layout, CANVAS_GRID), CANVAS_GRID))
+        setSectionLayouts(placeInGrid(items, id, toCell(layout, grid), grid))
     }
 
     // Reflow the other canvas cards live as this one is dragged over the grid.
@@ -478,7 +490,7 @@ function App() {
         const items = sheet.sections
             .filter((s) => !inDrawer(s, 'canvas'))
             .map((s) => ({ id: s.id, layout: s.id === id ? layout : s.layout }))
-        const reflowed = placeInGrid(items, id, toCell(layout, CANVAS_GRID), CANVAS_GRID)
+        const reflowed = placeInGrid(items, id, toCell(layout, grid), grid)
         setGridPreview(new Map(reflowed.map((p) => [p.id, p.layout])))
     }
 
@@ -502,7 +514,17 @@ function App() {
         // Keep each card's width, fit its height, then snap + compact onto the
         // column grid — closing gaps and aligning columns without reflowing a card
         // out of its column.
-        setSectionLayouts(compactGrid(fittedItems(true), CANVAS_GRID))
+        setSectionLayouts(compactGrid(fittedItems(true), grid))
+    }
+
+    // Change the grid's column count (persisted) and re-pack the canvas onto it.
+    const changeGridCols = (n: number) => {
+        setGridCols(n)
+        try { localStorage.setItem('character-sheet:grid-cols', String(n)) } catch { /* ignore */ }
+        const items = sheet.sections
+            .filter((s) => !inDrawer(s, 'canvas'))
+            .map((s) => ({ id: s.id, layout: s.layout }))
+        setSectionLayouts(compactGrid(items, gridMetrics(n)))
     }
 
     const handleFitAll = () => {
@@ -1197,6 +1219,15 @@ function App() {
                                                 Spread across width
                                             </MenuItem>
                                             <MenuDivider />
+                                            <MenuLabel>Grid columns</MenuLabel>
+                                            {GRID_COL_OPTIONS.map((n) => (
+                                                <MenuItem key={n} onClick={() => { changeGridCols(n); close() }} title={`Snap cards to a ${n}-column grid`}>
+                                                    <span className="flex items-center gap-2">
+                                                        <span className="w-3 text-cyan-300">{gridCols === n ? '✓' : ''}</span>{n} columns
+                                                    </span>
+                                                </MenuItem>
+                                            ))}
+                                            <MenuDivider />
                                             <MenuItem onClick={() => { savePreset(); close() }} title="Save the current arrangement as a named layout">
                                                 Save this layout…
                                             </MenuItem>
@@ -1343,6 +1374,18 @@ function App() {
                                 ...(fitWidth ? { marginLeft: -canvasSize.minX } : null),
                             }}
                         >
+                            {/* Column guides: show the grid the cards snap to while dragging. */}
+                            {draggingId && Array.from({ length: grid.cols }, (_, i) => (
+                                <div
+                                    key={`col-${i}`}
+                                    className="pointer-events-none absolute top-0 z-0 rounded bg-cyan-400/[0.04] ring-1 ring-inset ring-cyan-400/10"
+                                    style={{
+                                        left: grid.pad + i * (grid.colWidth + grid.margin),
+                                        width: grid.colWidth,
+                                        height: canvasSize.height,
+                                    }}
+                                />
+                            ))}
                             {canvasSections.map((section) => (
                                 <CanvasItem
                                     key={section.id}
@@ -1351,7 +1394,7 @@ function App() {
                                         : section.layout}
                                     scale={section.scale}
                                     zoom={canvasZoom}
-                                    grid={CANVAS_GRID}
+                                    grid={grid}
                                     selected={selectedIds.has(section.id)}
                                     siblings={sheet.sections
                                         .filter((s) => s.id !== section.id && !inDrawer(s, 'canvas'))

@@ -189,8 +189,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `layout.ts` helpers handle snapping, alignment, distribution, and overlap.
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the
   viewport (a non-moving click clears the selection). **Fit to width** scales the
-  whole canvas so its content fills the current window width (adapts to window
-  resize / browser page zoom via the container's `clientWidth`). **Spread across
+  whole canvas so its content fills the current window width edge-to-edge: it
+  zooms by `containerWidth / (maxX − minX)` — the cards' **real** left-to-right
+  extent, not the padded scroll area — and shifts the canvas left by the leftmost
+  card (`marginLeft: −minX`) so both edges are flush with no trailing gap. It can
+  up-scale narrow sheets too (clamped 0.3–3×) and adapts to window resize /
+  browser page zoom via the container's `clientWidth`. **Spread across
   width** (`layout.tidyLayouts`) fits cards to content then skyline-packs them
   across the measured window width. A section's per-view `drawer` flags (zod
   schema: `{ canvas?, stack? }`) tuck it into that view's **drawer** — an

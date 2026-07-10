@@ -430,7 +430,11 @@ function App() {
             520,
             ...shown.map((section) => section.layout.y + section.layout.h + 80),
         )
-        return { width, height }
+        // Real left/right extent of the actual cards (no scroll padding / floor),
+        // used by "Fit to width" so content fills the window edge-to-edge.
+        const minX = shown.length ? Math.min(...shown.map((s) => s.layout.x)) : 0
+        const maxX = shown.length ? Math.max(...shown.map((s) => s.layout.x + s.layout.w)) : width
+        return { width, height, minX, maxX }
     }, [sheet.sections])
 
     const commitLayout = (id: string, layout: SectionLayout) => {
@@ -751,11 +755,15 @@ function App() {
     const densityZoom = density === 'compact' ? 0.9 : density === 'comfortable' ? 1.12 : 1
     // The free canvas zooms with density in both modes; CanvasItem divides drag
     // deltas by this factor so moving/resizing still tracks the cursor 1:1.
-    // "Fit to width" instead scales the whole canvas so its content fills the
-    // current window width (up- or down-scaling with the window / page zoom).
+    // "Fit to width" instead scales the whole canvas so its actual content — the
+    // real left-to-right extent of the cards, not the padded scroll area — fills
+    // the current window width edge-to-edge (up- or down-scaling with the window /
+    // page zoom). The canvas is shifted left by the leftmost card so the content
+    // touches both edges with no trailing gap.
+    const fitContentWidth = Math.max(1, canvasSize.maxX - canvasSize.minX)
     const fitZoom =
-        fitWidth && containerWidth > 0 && canvasSize.width > 0
-            ? Math.min(2, Math.max(0.3, containerWidth / canvasSize.width))
+        fitWidth && containerWidth > 0
+            ? Math.min(3, Math.max(0.3, containerWidth / fitContentWidth))
             : 1
     const canvasZoom = fitWidth ? fitZoom : densityZoom
     const matchesQuery = (section: (typeof sheet.sections)[number]) => {
@@ -1209,7 +1217,7 @@ function App() {
                         ))}
                     </div>
                 ) : (
-                    <div ref={canvasScrollRef} className="overflow-auto">
+                    <div ref={canvasScrollRef} className={clsx(fitWidth ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto')}>
                         <div
                             ref={captureRef}
                             onPointerDown={onCanvasPointerDown}
@@ -1220,7 +1228,12 @@ function App() {
                                 'relative cursor-grab touch-none rounded-lg active:cursor-grabbing',
                                 'bg-[radial-gradient(circle,_rgba(148,163,184,0.08)_1px,_transparent_1px)] [background-size:16px_16px]',
                             )}
-                            style={{ width: canvasSize.width, height: canvasSize.height, zoom: canvasZoom }}
+                            style={{
+                                width: fitWidth ? canvasSize.maxX : canvasSize.width,
+                                height: canvasSize.height,
+                                zoom: canvasZoom,
+                                ...(fitWidth ? { marginLeft: -canvasSize.minX } : null),
+                            }}
                         >
                             {canvasSections.map((section) => (
                                 <CanvasItem

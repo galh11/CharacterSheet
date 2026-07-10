@@ -1003,7 +1003,8 @@ function App() {
                     </div>
                 </div>
                 {!headerCollapsed && (
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {/* Character group: switch between saved characters + manage them. */}
                         <select
                             value={activeId}
                             onChange={(event) => switchCharacter(event.target.value)}
@@ -1040,115 +1041,143 @@ function App() {
                             )}
                         </Menu>
 
-                        <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
 
-                        <button
-                            type="button"
-                            onClick={undo}
-                            disabled={!canUndo}
-                            className={clsx(
-                                'rounded-md border border-slate-600 px-3 py-2 text-sm',
-                                canUndo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
-                            )}
-                            title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'}
-                            aria-label="Undo"
-                        >
-                            ↶
-                        </button>
-                        <button
-                            type="button"
-                            onClick={redo}
-                            disabled={!canRedo}
-                            className={clsx(
-                                'rounded-md border border-slate-600 px-3 py-2 text-sm',
-                                canRedo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
-                            )}
-                            title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)'}
-                            aria-label="Redo"
-                        >
-                            ↷
-                        </button>
-                        <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+                        {/* History group: undo / redo. */}
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={undo}
+                                disabled={!canUndo}
+                                className={clsx(
+                                    'rounded-md border border-slate-600 px-3 py-2 text-sm',
+                                    canUndo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
+                                )}
+                                title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'}
+                                aria-label="Undo"
+                            >
+                                ↶
+                            </button>
+                            <button
+                                type="button"
+                                onClick={redo}
+                                disabled={!canRedo}
+                                className={clsx(
+                                    'rounded-md border border-slate-600 px-3 py-2 text-sm',
+                                    canRedo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
+                                )}
+                                title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)'}
+                                aria-label="Redo"
+                            >
+                                ↷
+                            </button>
+                        </div>
 
-                        <input
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search sections / fields…"
-                            aria-label="Search"
-                            className="w-40 rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
-                        />
-                        {query && (
-                            <button type="button" onClick={() => setQuery('')} className="rounded-md border border-slate-600 px-2 py-2 text-sm text-slate-400 hover:bg-slate-800" title="Clear search">✕</button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => setDensity((d) => (d === 'compact' ? 'normal' : d === 'normal' ? 'comfortable' : 'compact'))}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm capitalize text-slate-200 hover:bg-slate-800"
-                            title="Cycle display density — Compact / Normal / Comfortable"
-                        >
-                            {density}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setStackView((v) => !v)}
-                            className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                            title="Toggle between the free canvas and a responsive stacked layout"
-                        >
-                            {stackView ? 'Canvas view' : 'Stack view'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setDrawerOpen((v) => !v)}
-                            className={clsx(
-                                'rounded-md border px-3 py-2 text-sm',
-                                drawerOpen || drawerSections.length > 0
-                                    ? 'border-amber-500/70 text-amber-200 hover:bg-slate-800'
-                                    : 'border-slate-600 text-slate-200 hover:bg-slate-800',
-                            )}
-                            title={`Open the ${view} drawer of tucked-away sections`}
-                            aria-pressed={drawerOpen}
-                        >
-                            Drawer{drawerSections.length > 0 ? ` (${drawerSections.length})` : ''}
-                        </button>
-                        {!stackView && (
-                            <>
+                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+
+                        {/* Search: filters visible sections and fields. */}
+                        <div className="relative">
+                            <svg
+                                viewBox="0 0 24 24"
+                                className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                aria-hidden="true"
+                            >
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m21 21-4.3-4.3" strokeLinecap="round" />
+                            </svg>
+                            <input
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Search…"
+                                aria-label="Search"
+                                className="w-44 rounded-md border border-slate-600 bg-slate-900 py-2 pl-8 pr-7 text-sm text-slate-200"
+                            />
+                            {query && (
                                 <button
                                     type="button"
-                                    onClick={handleTidy}
-                                    className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:bg-slate-800"
-                                    title="Fit every card to its content and pack them into tidy columns"
+                                    onClick={() => setQuery('')}
+                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-200"
+                                    title="Clear search"
+                                    aria-label="Clear search"
                                 >
-                                    Tidy
+                                    ✕
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setFitWidth((v) => !v)}
-                                    className={clsx(
-                                        'rounded-md border px-3 py-2 text-sm',
-                                        fitWidth
-                                            ? 'border-cyan-500 bg-cyan-500/20 text-cyan-200'
-                                            : 'border-slate-600 text-slate-200 hover:bg-slate-800',
-                                    )}
-                                    title="Scale the whole canvas so its content fills the window width (adapts as you resize or zoom)"
-                                    aria-pressed={fitWidth}
-                                >
-                                    Fit to width
-                                </button>
-                                <Menu label="Options ▾" title="Layout options" align="left">
-                                    {(close) => (
+                            )}
+                        </div>
+
+                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+
+                        {/* Add group: a new blank section or one from a template. */}
+                        <button
+                            type="button"
+                            onClick={addSection}
+                            className="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
+                        >
+                            + Section
+                        </button>
+                        <Menu label="+ Template ▾" title="Add a section from a ready-made template" align="left">
+                            {(close) => (
+                                <>
+                                    {SECTION_TEMPLATES.map((t) => (
+                                        <MenuItem key={t.id} onClick={() => { addTemplateSection(t); close() }}>
+                                            {t.label}
+                                        </MenuItem>
+                                    ))}
+                                </>
+                            )}
+                        </Menu>
+
+                        {/* View group: display mode, density, canvas layout tools, and the drawer. */}
+                        <Menu label="View ▾" title="Display mode and layout options" align="left">
+                            {(close) => (
+                                <>
+                                    <MenuLabel>Layout</MenuLabel>
+                                    <MenuItem onClick={() => { setStackView(false); close() }} title="Free-form draggable canvas">
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-3 text-cyan-300">{!stackView ? '✓' : ''}</span>Canvas view
+                                        </span>
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { setStackView(true); close() }} title="Responsive stacked columns">
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-3 text-cyan-300">{stackView ? '✓' : ''}</span>Stack view
+                                        </span>
+                                    </MenuItem>
+                                    <MenuDivider />
+                                    <MenuLabel>Density</MenuLabel>
+                                    {(['compact', 'normal', 'comfortable'] as const).map((d) => (
+                                        <MenuItem key={d} onClick={() => { setDensity(d); close() }}>
+                                            <span className="flex items-center gap-2 capitalize">
+                                                <span className="w-3 text-cyan-300">{density === d ? '✓' : ''}</span>{d}
+                                            </span>
+                                        </MenuItem>
+                                    ))}
+                                    {!stackView && (
                                         <>
+                                            <MenuDivider />
+                                            <MenuLabel>Canvas</MenuLabel>
+                                            <MenuItem onClick={() => { handleTidy(); close() }} title="Fit every card to its content and pack them into tidy columns">
+                                                Tidy up
+                                            </MenuItem>
+                                            <MenuItem onClick={() => { setFitWidth((v) => !v); close() }} title="Scale the whole canvas so its content fills the window width">
+                                                <span className="flex items-center gap-2">
+                                                    <span className="w-3 text-cyan-300">{fitWidth ? '✓' : ''}</span>Fit to width
+                                                </span>
+                                            </MenuItem>
                                             <MenuItem onClick={() => { handleFitAll(); close() }} title="Resize each card to its content, keeping its position">
                                                 Fit all to content
                                             </MenuItem>
                                             <MenuItem onClick={() => { handleFillWidth(); close() }} title="Fit cards to content and spread them across the full window width">
                                                 Spread across width
                                             </MenuItem>
+                                            <MenuDivider />
                                             <MenuItem onClick={() => { savePreset(); close() }} title="Save the current arrangement as a named layout">
                                                 Save this layout…
                                             </MenuItem>
                                             {Object.keys(presets).length > 0 && (
                                                 <>
-                                                    <MenuDivider />
                                                     <MenuLabel>Apply saved layout</MenuLabel>
                                                     {Object.keys(presets).map((name) => (
                                                         <MenuItem key={name} onClick={() => { applyPreset(name); close() }}>
@@ -1159,34 +1188,15 @@ function App() {
                                             )}
                                         </>
                                     )}
-                                </Menu>
-                            </>
-                        )}
-                        <button
-                            type="button"
-                            onClick={addSection}
-                            className="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
-                        >
-                            + Section
-                        </button>
-                        <select
-                            aria-label="Add section from template"
-                            value=""
-                            onChange={(e) => {
-                                const tpl = SECTION_TEMPLATES.find((t) => t.id === e.target.value)
-                                if (tpl) addTemplateSection(tpl)
-                                e.target.value = ''
-                            }}
-                            className="rounded-md border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-slate-200 hover:bg-slate-700"
-                        >
-                            <option value="">+ Template…</option>
-                            {SECTION_TEMPLATES.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.label}
-                                </option>
-                            ))}
-                        </select>
-                        <span className="mx-1 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+                                    <MenuDivider />
+                                    <MenuItem onClick={() => { setDrawerOpen((v) => !v); close() }} title={`Open the ${view} drawer of tucked-away sections`}>
+                                        {drawerOpen ? 'Close drawer' : 'Open drawer'}{drawerSections.length > 0 ? ` (${drawerSections.length})` : ''}
+                                    </MenuItem>
+                                </>
+                            )}
+                        </Menu>
+
+                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
 
                         <Menu label="⋯ More" title="Import, export, and share" align="right">
                             {(close) => (

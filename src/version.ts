@@ -27,10 +27,15 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
-        version: '1.6.5',
+        version: '1.7.1',
         date: '2026-07-10',
         pr: 27,
         summary: 'Close an auto-opened empty drawer again when you drop the card back on the canvas instead of tucking it.',
+    },
+    {
+        version: '1.7.0',
+        date: '2026-07-10',
+        summary: 'Canvas is now a dashboard-style column grid: cards snap to columns and the sheet auto-compacts upward on every drop, so it stays tidy with no overlaps or gaps.',
     },
     {
         version: '1.6.4',

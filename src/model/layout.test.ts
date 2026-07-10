@@ -9,6 +9,12 @@ import {
     alignEdge,
     matchDimension,
     distribute,
+    gridMetrics,
+    toCell,
+    fromCell,
+    snapToGrid,
+    compactGrid,
+    gridWidth,
     type Placed,
 } from './layout'
 
@@ -130,6 +136,81 @@ describe('compactLayouts', () => {
         expect(byId.c).toMatchObject({ x: 232, y: 16 }) // a right (216) + gap (16)
         expect(byId.d).toMatchObject({ x: 232, y: 132 }) // c bottom (116) + gap (16)
         // c did NOT rise into the space beside a — the column arrangement is kept.
+    })
+})
+
+describe('grid math', () => {
+    const m = gridMetrics(12) // colWidth 88, rowHeight 8, margin 16, pad 16
+
+    it('round-trips a cell through fromCell/toCell', () => {
+        const px = fromCell({ cx: 2, cy: 3, cw: 3, ch: 5 }, m)
+        // x = 16 + 2*(88+16) = 224 ; w = 3*88 + 2*16 = 296
+        expect(px).toMatchObject({ x: 224, w: 296 })
+        expect(toCell(px, m)).toEqual({ cx: 2, cy: 3, cw: 3, ch: 5 })
+    })
+
+    it('snapToGrid is idempotent', () => {
+        const once = snapToGrid({ x: 231, y: 40, w: 300, h: 197 }, m)
+        const twice = snapToGrid(once, m)
+        expect(twice).toEqual(once)
+    })
+
+    it('clamps a card so its column span stays inside the grid', () => {
+        const cell = toCell({ x: 5000, y: 0, w: 300, h: 100 }, m)
+        expect(cell.cx + cell.cw).toBeLessThanOrEqual(12)
+    })
+
+    it('gridWidth spans padding + columns + gaps', () => {
+        // 16*2 + 12*88 + 11*16 = 32 + 1056 + 176 = 1264
+        expect(gridWidth(m)).toBe(1264)
+    })
+})
+
+describe('compactGrid', () => {
+    const m = gridMetrics(12)
+    const cellOf = (l: { x: number; y: number; w: number; h: number }) => toCell(l, m)
+
+    it('compacts cards in the same column upward, leaving no gap', () => {
+        const a = fromCell({ cx: 0, cy: 0, cw: 3, ch: 4 }, m)
+        const b = fromCell({ cx: 0, cy: 20, cw: 3, ch: 4 }, m) // far below, same column
+        const out = compactGrid([{ id: 'a', layout: a }, { id: 'b', layout: b }], m)
+        const byId = Object.fromEntries(out.map((o) => [o.id, cellOf(o.layout)]))
+        expect(byId.a).toMatchObject({ cx: 0, cy: 0 })
+        expect(byId.b).toMatchObject({ cx: 0, cy: 4 }) // directly under a, no gap
+    })
+
+    it('never overlaps and keeps side-by-side columns in place', () => {
+        const a = fromCell({ cx: 0, cy: 0, cw: 3, ch: 6 }, m)
+        const b = fromCell({ cx: 3, cy: 0, cw: 3, ch: 3 }, m)
+        const c = fromCell({ cx: 3, cy: 8, cw: 3, ch: 3 }, m)
+        const out = compactGrid(
+            [{ id: 'a', layout: a }, { id: 'b', layout: b }, { id: 'c', layout: c }],
+            m,
+        )
+        const cells = out.map((o) => cellOf(o.layout))
+        // No two cells overlap.
+        for (let i = 0; i < cells.length; i++)
+            for (let j = i + 1; j < cells.length; j++) {
+                const x = cells[i]
+                const y = cells[j]
+                const overlap = x.cx < y.cx + y.cw && x.cx + x.cw > y.cx && x.cy < y.cy + y.ch && x.cy + x.ch > y.cy
+                expect(overlap).toBe(false)
+            }
+        const byId = Object.fromEntries(out.map((o) => [o.id, cellOf(o.layout)]))
+        // Column 1 (cx 3) stays column 1; c rises to sit under b (cy 3), not beside a.
+        expect(byId.b).toMatchObject({ cx: 3, cy: 0 })
+        expect(byId.c).toMatchObject({ cx: 3, cy: 3 })
+    })
+
+    it('is idempotent', () => {
+        const items = [
+            { id: 'a', layout: fromCell({ cx: 0, cy: 0, cw: 4, ch: 5 }, m) },
+            { id: 'b', layout: fromCell({ cx: 4, cy: 2, cw: 4, ch: 3 }, m) },
+            { id: 'c', layout: fromCell({ cx: 0, cy: 9, cw: 4, ch: 4 }, m) },
+        ]
+        const once = compactGrid(items, m)
+        const twice = compactGrid(once, m)
+        expect(twice.map((o) => o.layout)).toEqual(once.map((o) => o.layout))
     })
 })
 

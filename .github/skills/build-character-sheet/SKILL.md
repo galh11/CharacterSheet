@@ -30,10 +30,10 @@ Do **not** use this for editing an already-saved sheet, or for generic coding.
   [scripts/gen-amarthon.mjs](../../../scripts/gen-amarthon.mjs) — they are canonical
   examples of a finished sheet's **structure and patterns** (section kinds,
   computed fields, the layout helper). Copy their *shape*, never their *content*:
-  their abilities, items, and effects belong to those characters, and `gen-yad`
-  even carries a couple of illustrative demo items that are **not** in its DDB
-  export. Build every value of your character from its own digest — never by
-  cloning a similar existing generator.
+  their abilities, items, effects, and numbers belong to those characters. Build
+  every value of your character from its own digest — never by cloning a similar
+  existing generator (a copied generator silently imports the other character's
+  gear and inflates stats).
 - If this sheet will be committed to the repo, do the whole thing inside a git
   worktree and land it via the auto-merging PR flow (see the "Parallel agents"
   section of AGENTS.md). For a **private / one-off** character the user just wants

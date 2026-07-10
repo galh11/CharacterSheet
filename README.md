@@ -7,8 +7,10 @@ one hover away.
 
 ## Features
 
-- **Free-form canvas** — drag and resize section cards anywhere; the layout is
-  saved automatically. **Tidy** packs cards toward the top-left.
+- **Dashboard-grid canvas** — drag and resize section cards on a column grid;
+  cards snap to columns and the sheet auto-compacts upward on every drop, so it
+  stays tidy with no overlaps or gaps. The layout is saved automatically, and
+  **Tidy** fits each card's height and re-packs the grid.
 - **Per-view drawer** — drag a card toward the drawer tab on the left edge and
   the drawer opens so you can drop it straight in (the card straddles the edge as
   you cross), or use the ⊟ button; drag a card back out onto the canvas to restore
@@ -67,7 +69,7 @@ one hover away.
 - `src/model/compute.ts` — `resolveSheet` (computed fields + effect
   contributions/tags) and `{expr}` interpolation.
 - `src/model/dice.ts` — d20 (advantage/disadvantage), damage, crits, formatting.
-- `src/model/layout.ts` — canvas geometry: Tidy packing, snap, align, distribute.
+- `src/model/layout.ts` — canvas geometry: dashboard grid (snap/compact), align, distribute.
 - `src/state/` — `useSheet` (+ undo/redo), `persistence`, JSON `transfer`,
   `roster`, `backups`, `presets`, `share`, `templates`.
 - `src/components/` — `SectionCard`, `SectionBody`, `SectionEditorModal`,

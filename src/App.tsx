@@ -7,11 +7,13 @@ import {
 } from './model/characterSheet'
 import { resolveSheet, listReferences, listResourceReferences } from './model/compute'
 import {
-    compactLayouts,
     tidyLayouts,
     alignEdge,
     matchDimension,
     distribute as distributeLayout,
+    gridMetrics,
+    gridWidth,
+    compactGrid,
     type Placed,
     type AlignEdge,
 } from './model/layout'
@@ -72,6 +74,9 @@ const inDrawer = (
 
 /** Width of the sliding drawer panel (never wider than the viewport). */
 const DRAWER_W = 'min(440px, 92vw)'
+
+/** The canvas column grid cards snap to (dashboard-style). */
+const CANVAS_GRID = gridMetrics()
 
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
@@ -427,7 +432,7 @@ function App() {
     const canvasSize = useMemo(() => {
         const shown = sheet.sections.filter((section) => !inDrawer(section, 'canvas'))
         const width = Math.max(
-            960,
+            gridWidth(CANVAS_GRID),
             ...shown.map((section) => section.layout.x + section.layout.w + 48),
         )
         const height = Math.max(
@@ -442,9 +447,13 @@ function App() {
     }, [sheet.sections])
 
     const commitLayout = (id: string, layout: SectionLayout) => {
-        // Free placement — allow overlap. Dragging a tile onto another no longer
-        // shoves it away to an off-screen spot; Tidy compacts things on demand.
-        setSectionLayout(id, layout)
+        // Dashboard grid: snap the moved/resized card to the column grid, then
+        // compact every canvas card upward so the sheet stays tidy — no overlaps,
+        // no gaps — by construction (like Grafana / Notion / react-grid-layout).
+        const items = sheet.sections
+            .filter((s) => !inDrawer(s, 'canvas'))
+            .map((s) => ({ id: s.id, layout: s.id === id ? layout : s.layout }))
+        setSectionLayouts(compactGrid(items, CANVAS_GRID))
     }
 
     /** Measure every card's natural content size (width clamped so text cards don't
@@ -464,11 +473,10 @@ function App() {
             })
 
     const handleTidy = () => {
-        // Keep each card's width, fit its height, then compact into the columns you
-        // arranged them in — closing the gaps within and between columns without
-        // reflowing cards across columns. Neatens a manual layout instead of
-        // collapsing it into the corner.
-        setSectionLayouts(compactLayouts(fittedItems(true)))
+        // Keep each card's width, fit its height, then snap + compact onto the
+        // column grid — closing gaps and aligning columns without reflowing a card
+        // out of its column.
+        setSectionLayouts(compactGrid(fittedItems(true), CANVAS_GRID))
     }
 
     const handleFitAll = () => {
@@ -1283,6 +1291,7 @@ function App() {
                                     layout={section.layout}
                                     scale={section.scale}
                                     zoom={canvasZoom}
+                                    grid={CANVAS_GRID}
                                     selected={selectedIds.has(section.id)}
                                     siblings={sheet.sections
                                         .filter((s) => s.id !== section.id && !inDrawer(s, 'canvas'))

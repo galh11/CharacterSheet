@@ -5,7 +5,9 @@ The Stage-2 sweep subagent reads the raw source character
 `samples/<slug>-digest.md`. The digest is the *only* thing the Stage-3 build
 agent reads, so it must contain everything needed to build a faithful sheet — and
 nothing else. Drop all the raw export noise (internal IDs, timestamps, definition
-blobs, UI state, per-modifier bookkeeping, unused options).
+blobs, UI state, per-modifier bookkeeping, unused options) — but **not** the
+player's own custom item names and notes in `characterValues`, which are real,
+sheet-relevant data (see the rule below and "What to leave out").
 
 ## Rules for the sweep
 
@@ -21,6 +23,14 @@ blobs, UI state, per-modifier bookkeeping, unused options).
   character actually has at its current level; note limited uses and recharge.
 - **One line per feature/item**: name + the mechanical effect that matters for
   play (a bonus, a resource, an on-hit rider). Skip pure flavor text.
+- **Mine `characterValues` for custom item names & notes.** D&D Beyond stores a
+  player's overrides there, *not* on the item `definition`, so they are trivially
+  missed: `typeId 8` is a custom **name** (e.g. a plain Studded Leather renamed
+  "Reinforced Studded Leather"), `typeId 9` is a custom **note** that frequently
+  carries homebrew mechanics ("Reduce all damage taken by 3" = Damage Reduction 3;
+  "Darkvision 15 ft" = a sense). Match each by its item's inventory id (`valueId`)
+  and fold the rename + note into that item's line. These are real bonuses — never
+  drop them as bookkeeping.
 - Keep it tight — a couple of pages of markdown, not the raw megabyte.
 
 ## Digest template
@@ -67,6 +77,8 @@ blobs, UI state, per-modifier bookkeeping, unused options).
 ## Inventory & coins
 - Coins: CP/SP/EP/GP/PP amounts
 - Notable magic gear (name — worn/equipped/carried — effect)
+- Apply custom item names + notes from `characterValues` (a rename, or a note that
+  grants a bonus / DR / sense) to the relevant item's line.
 - Mundane gear (can be grouped onto a few lines)
 
 ## Conditions / misc
@@ -80,3 +92,9 @@ theme URLs, campaign/social blobs, the full spell/item **definition** objects,
 per-modifier `componentId`/`componentTypeId` bookkeeping, and any option the
 character did not take. If in doubt, ask: "does this change a number, a resource,
 or an on-play reminder on the sheet?" If not, drop it.
+
+**Do keep** the `characterValues` array's custom item **names** (`typeId 8`) and
+**notes** (`typeId 9`). Despite looking like bookkeeping, they are player-authored
+renames and homebrew effects (damage reduction, senses, extra riders) that belong
+on the sheet — the single easiest real bonus to overlook when sweeping a DDB
+export.

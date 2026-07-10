@@ -319,6 +319,11 @@ S('Languages', 'default', [
 S('Inventory', 'inventory', [
     F('Bone Marks', 'number', 108, { description: 'Homebrew currency.', meta: { coin: 'bones' } }),
     F('GP', 'number', 0, { meta: { coin: 'gp' } }),
+    // NB: the next two items are ILLUSTRATIVE DEMOS of relational `effects`
+    // (field-to-field buffs) — they are NOT in Yad's D&D Beyond export. When
+    // building a new character, do not copy them; take gear only from that
+    // character's own digest. (Everything else in this section IS from the export,
+    // incl. the custom-named "Reinforced Studded Leather" + its DR-3 note.)
     F('Ring of Protection (Bone-Carved)', 'text', 'worn', {
         description: '+1 to AC while worn (a relational effect — toggle it off in the editor to unequip).',
         effects: [{ target: 'ac', op: 'add', value: '1' }],

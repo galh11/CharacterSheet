@@ -19,6 +19,8 @@ interface SectionEditorModalProps {
     section: CharacterSection
     results: Map<string, FormulaResult>
     references: FieldReference[]
+    /** Spendable resource/counter slugs, for the "resource to spend/refill" inputs. */
+    resourceReferences?: FieldReference[]
     contributions?: Map<string, Contribution[]>
     effectTags?: Map<string, EffectTag[]>
     onClose: () => void
@@ -170,18 +172,20 @@ function EffectsEditor({
 }
 
 /** Labeled inputs for an action field's core meta (to-hit, damage, resource
- *  cost…), so the editor shows friendly names instead of cryptic slugs. */
-const ACTION_META_FIELDS: { key: string; label: string; placeholder: string }[] = [
+ *  cost…), so the editor shows friendly names instead of cryptic slugs. The
+ *  `resource` flag marks inputs that point at a resource slug (not a formula), so
+ *  they autocomplete spendable resources instead of formula fields. */
+const ACTION_META_FIELDS: { key: string; label: string; placeholder: string; resource?: boolean }[] = [
     { key: 'hit', label: 'To-hit', placeholder: '+{str_mod + proficiency}' },
     { key: 'damage', label: 'Damage dice', placeholder: '1d8+{str_mod}' },
     { key: 'type', label: 'Damage type', placeholder: 'slashing' },
     { key: 'range', label: 'Range', placeholder: '5 ft' },
     { key: 'temp', label: 'Temp HP formula', placeholder: '{pugilist} + {con_mod}' },
     { key: 'cost', label: 'Resource cost (amount)', placeholder: '1' },
-    { key: 'costField', label: 'Resource to spend (slug)', placeholder: 'moxie_points' },
+    { key: 'costField', label: 'Resource to spend (slug)', placeholder: 'moxie_points', resource: true },
     { key: 'costLabel', label: 'Resource label', placeholder: 'Moxie' },
-    { key: 'refill', label: 'Refill resource (slug)', placeholder: 'ki_points' },
-    { key: 'refillCost', label: 'Refill cost resource (slug)', placeholder: '' },
+    { key: 'refill', label: 'Refill resource (slug)', placeholder: 'ki_points', resource: true },
+    { key: 'refillCost', label: 'Refill cost resource (slug)', placeholder: '', resource: true },
 ]
 
 const TOGGLE_MODES: { value: ToggleMode; label: string }[] = [
@@ -378,6 +382,7 @@ export function SectionEditorModal({
     section,
     results,
     references,
+    resourceReferences = [],
     onClose,
     onUpdateSection,
     onDeleteSection,
@@ -387,6 +392,9 @@ export function SectionEditorModal({
     onDeleteField,
     onMoveField,
 }: SectionEditorModalProps) {
+    // Booleans (conditions) are technically 0/1 but rarely belong in a formula,
+    // so keep them out of the autocomplete noise; users can still type a slug.
+    const formulaReferences = references.filter((r) => r.kind !== 'boolean')
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') onClose()
@@ -558,7 +566,7 @@ export function SectionEditorModal({
                                             <FormulaInput
                                                 value={field.value}
                                                 onChange={(next) => onUpdateField(field.id, { value: next })}
-                                                references={references}
+                                                references={formulaReferences}
                                                 placeholder="formula e.g. floor((str-10)/2)"
                                                 wrapperClassName="min-w-0 flex-1"
                                                 className={clsx(
@@ -709,13 +717,13 @@ export function SectionEditorModal({
 
                                     {section.kind === 'actions' && (
                                         <div className="mt-2 grid grid-cols-2 gap-1.5">
-                                            {ACTION_META_FIELDS.map(({ key, label, placeholder }) => (
+                                            {ACTION_META_FIELDS.map(({ key, label, placeholder, resource }) => (
                                                 <label key={key} className="flex flex-col gap-0.5 text-[10px] text-slate-500">
                                                     {label}
                                                     <FormulaInput
                                                         value={field.meta?.[key] ?? ''}
                                                         onChange={(next) => setMeta(field, key, next)}
-                                                        references={references}
+                                                        references={resource ? resourceReferences : formulaReferences}
                                                         placeholder={placeholder}
                                                         className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
                                                         aria-label={`Action ${label}`}
@@ -726,7 +734,7 @@ export function SectionEditorModal({
                                     )}
 
                                     {section.kind === 'actions' && (
-                                        <ActionTogglesEditor field={field} references={references} onUpdateField={onUpdateField} />
+                                        <ActionTogglesEditor field={field} references={formulaReferences} onUpdateField={onUpdateField} />
                                     )}
 
                                     <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
@@ -749,7 +757,7 @@ export function SectionEditorModal({
                                         )}
                                     </label>
 
-                                    <EffectsEditor field={field} references={references} onUpdateField={onUpdateField} />
+                                    <EffectsEditor field={field} references={formulaReferences} onUpdateField={onUpdateField} />
 
                                     {field.type === 'computed' && (
                                         <div className="mt-2 rounded border border-slate-800 bg-slate-950/60 p-2">

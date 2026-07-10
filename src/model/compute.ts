@@ -182,6 +182,9 @@ export interface FieldReference {
     value: number
     /** Title of the section this field belongs to — used to group autocomplete. */
     section: string
+    /** Field type behind this reference, so the UI can filter (e.g. hide
+     *  booleans from formula autocomplete, show only resources for a cost slug). */
+    kind?: 'number' | 'boolean' | 'computed' | 'resource' | 'counter'
 }
 
 /**
@@ -210,7 +213,40 @@ export const listReferences = (
             }
             if (value === null) continue
             seen.add(slug)
-            refs.push({ slug, label: field.label, value, section: section.title })
+            refs.push({
+                slug,
+                label: field.label,
+                value,
+                section: section.title,
+                kind: field.type as FieldReference['kind'],
+            })
+        }
+    }
+    return refs.sort((a, b) => a.slug.localeCompare(b.slug))
+}
+
+/**
+ * List the spendable resource/counter fields by slug, with their current count.
+ * Used to autocomplete the "resource to spend / refill" slug inputs, which point
+ * at a resource rather than take a formula.
+ */
+export const listResourceReferences = (sheet: CharacterSheet): FieldReference[] => {
+    const refs: FieldReference[] = []
+    const seen = new Set<string>()
+    for (const section of sheet.sections) {
+        for (const field of section.fields) {
+            if (field.type !== 'resource' && field.type !== 'counter') continue
+            const slug = slugify(field.label)
+            if (!slug || seen.has(slug)) continue
+            const n = Number(field.value)
+            seen.add(slug)
+            refs.push({
+                slug,
+                label: field.label,
+                value: Number.isNaN(n) ? 0 : n,
+                section: section.title,
+                kind: field.type,
+            })
         }
     }
     return refs.sort((a, b) => a.slug.localeCompare(b.slug))

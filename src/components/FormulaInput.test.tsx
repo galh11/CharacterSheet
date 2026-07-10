@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { FormulaInput } from './FormulaInput'
@@ -100,5 +100,17 @@ describe('<FormulaInput>', () => {
         fireEvent.keyDown(input, { key: 'ArrowDown' })
         fireEvent.keyDown(input, { key: 'Enter' })
         expect(input.value).toBe('con_score')
+    })
+
+    it('scrolls the active option into view on arrow navigation', () => {
+        const scrollIntoView = vi.fn()
+        // jsdom does not implement scrollIntoView, so stub it to observe the call.
+        Element.prototype.scrollIntoView = scrollIntoView
+        render(<Harness />)
+        const input = screen.getByLabelText('formula') as HTMLInputElement
+        fireEvent.change(input, { target: { value: 'con' } })
+        scrollIntoView.mockClear()
+        fireEvent.keyDown(input, { key: 'ArrowDown' })
+        expect(scrollIntoView).toHaveBeenCalled()
     })
 })

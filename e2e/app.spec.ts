@@ -74,3 +74,21 @@ test('tucking a section into the drawer and restoring it', async ({ page }) => {
     // With the drawer empty the tab disappears entirely.
     await expect(page.getByRole('button', { name: /the drawer/ })).toHaveCount(0)
 })
+
+test('dragging a card onto the drawer tab tucks it seamlessly', async ({ page }) => {
+    const handle = page.getByTitle('Drag to move').first()
+    const box = await handle.boundingBox()
+    expect(box).not.toBeNull()
+
+    // Grab a canvas card and drag it toward the left-edge drawer tab; the drawer
+    // auto-opens as the pointer approaches, and releasing over it tucks the card.
+    await handle.hover()
+    await page.mouse.down()
+    await page.mouse.move(box!.x - 60, box!.y, { steps: 6 })
+    await page.mouse.move(20, 360, { steps: 12 })
+    await page.mouse.up()
+
+    // The drawer is open and now holds the tucked card (restorable with ⊞).
+    await expect(page.getByText('Drawer · Canvas')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Restore section from drawer' })).toHaveCount(1)
+})

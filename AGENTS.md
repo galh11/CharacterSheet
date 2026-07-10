@@ -197,12 +197,16 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   independent, free-canvas scratch-pad — so tucking a card in the canvas doesn't
   affect the stack, and vice-versa (the legacy shared `hidden` boolean migrates
   into `{ canvas: true, stack: true }`). Tuck a card via the ⊟ handle button, or
-  on the canvas by **dragging** it onto the peeking half-circle drawer tab that
-  appears on the right edge while you drag; the tab also persists whenever the
-  current view's drawer holds ≥1 card (and hides when empty). Opening the drawer
-  reveals a scrollable scratch-pad where tucked cards get their own
-  `drawerLayout` and can be dragged/resized freely; ⊞ restores a card to the
-  sheet. Drawer cards still feed their fields into computed formulas.
+  by **dragging** it: the prominent violet **drawer tab** on the left edge
+  auto-opens the panel as you drag a card near it, and releasing over the panel
+  tucks the card **at the drop point** (`App.onCardDragMove` / `onCardDragEnd`
+  map the pointer into the target container via `pointToLayout`). The reverse is
+  just as seamless — drag a card out of the drawer and drop it on the canvas to
+  restore it there (the scratch-pad switches to `overflow-visible` mid-drag so the
+  card can straddle both). The tab persists whenever the current view's drawer
+  holds ≥1 card (and hides when empty). Inside the drawer each tucked card gets
+  its own `drawerLayout` and can be dragged/resized freely; ⊞ restores a card to
+  the sheet. Drawer cards still feed their fields into computed formulas.
 
 ## Testing
 

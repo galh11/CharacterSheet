@@ -229,13 +229,17 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `gridPreview` and re-renders the *other* cards at their reflowed spots (they
   slide out of the way via a short CSS transition; the dragged card tracks the
   cursor). **Tidy** (`App.handleTidy`) fits each card's height then
-  `compactGrid`s (full upward compaction). The module-scope
-  `CANVAS_GRID = gridMetrics()` is the single grid; the canvas div is at least
-  `gridWidth(CANVAS_GRID)` wide so all columns are reachable. (Existing pixel
-  sheets keep their stored positions until the first drag/Tidy snaps them onto
-  the grid.) Other `layout.ts` helpers handle alignment/distribution;
-  `compactLayouts`/`tidyLayouts` remain for **Spread across width**
-  (`layout.tidyLayouts`, the reflow-everything skyline pack).
+  `compactGrid`s (full upward compaction). The **column count** is a persisted
+  per-user preference (`character-sheet:grid-cols`, one of **6 / 8 / 12**, chosen
+  under **View ▾ → Grid columns**); `App` builds `grid = gridMetrics(gridCols)`
+  and `App.changeGridCols` re-packs the canvas (`compactGrid`) onto the new grid.
+  While a card is being dragged, faint **column guides** (one strip per column,
+  from `grid`) render behind the cards so you can see where they'll snap. The
+  canvas div is at least `gridWidth(grid)` wide so all columns are reachable.
+  (Existing pixel sheets keep their stored positions until the first drag/Tidy
+  snaps them onto the grid.) Other `layout.ts` helpers handle
+  alignment/distribution; `compactLayouts`/`tidyLayouts` remain for **Spread
+  across width** (`layout.tidyLayouts`, the reflow-everything skyline pack).
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the
   viewport (a non-moving click clears the selection). **Fit to width** scales the
   whole canvas so its content fills the current window width edge-to-edge: it

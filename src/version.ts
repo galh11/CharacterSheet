@@ -27,6 +27,12 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.6.2',
+        date: '2026-07-10',
+        pr: 24,
+        summary: 'Fix drawer drop placement when the canvas is zoomed (density or fit-to-width): cards now land exactly where released.',
+    },
+    {
         version: '1.6.1',
         date: '2026-07-10',
         summary: 'Fit to width now spans the full browser window on wide screens, not just the centred 1280px column.',

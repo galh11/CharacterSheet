@@ -134,35 +134,60 @@ export const tidyLayouts = (items: Placed[], maxWidth: number, gap = GAP): Place
     })
 }
 
-/** Compact tiles toward the top-left corner. Tiles are processed in order of
- *  their distance (L2 norm) to the top-left corner — closest first — and each is
- *  pushed as far up, then left, as it can go without overlapping tiles already
- *  settled. This squeezes out empty space while keeping the tile nearest the
- *  corner nearest the corner. Sizes are untouched (fit them first if you want). */
+/** Column-aware compaction that preserves a hand-built arrangement. Cards are
+ *  grouped into columns by horizontal overlap in their current positions (cards
+ *  stacked over one another share a column), each column is stacked top-to-bottom
+ *  with vertical gaps removed, and the columns are packed left-to-right with
+ *  horizontal gaps removed. So a manually laid-out masonry just tightens up — its
+ *  columns and their order are kept — instead of reflowing every card into the
+ *  top-left corner. Sizes are untouched (fit them first if you want). */
 export const compactLayouts = (items: Placed[], gap = GAP): Placed[] => {
     if (items.length === 0) return items
-    const order = [...items].sort(
-        (a, b) => a.layout.x ** 2 + a.layout.y ** 2 - (b.layout.x ** 2 + b.layout.y ** 2),
+    interface Column {
+        minX: number
+        maxX: number
+        items: Placed[]
+    }
+    // Process left-to-right (then top-to-bottom) so columns form in reading order.
+    const sorted = [...items].sort(
+        (a, b) => a.layout.x - b.layout.x || a.layout.y - b.layout.y,
     )
-    const settled: SectionLayout[] = []
-    const out: Placed[] = []
-    for (const { id, layout } of order) {
-        const { w, h } = layout
-        let x = layout.x
-        let y = layout.y
-        // Alternate "slide up" and "slide left" until neither moves — this lets a
-        // tile that unblocked by moving left then rise further, and vice versa.
-        for (let i = 0; i < 8; i++) {
-            let top = gap
-            for (const o of settled) if (x < o.x + o.w && x + w > o.x) top = Math.max(top, o.y + o.h + gap)
-            let left = gap
-            for (const o of settled) if (top < o.y + o.h && top + h > o.y) left = Math.max(left, o.x + o.w + gap)
-            if (top === y && left === x) break
-            y = top
-            x = left
+    const columns: Column[] = []
+    for (const p of sorted) {
+        const x0 = p.layout.x
+        const x1 = p.layout.x + p.layout.w
+        // Join the existing column this card overlaps most — but only if at least
+        // half of the card sits over it, so a wider card starts its own column
+        // rather than merging two neighbouring ones.
+        let best: Column | null = null
+        let bestOverlap = 0
+        for (const c of columns) {
+            const overlap = Math.min(x1, c.maxX) - Math.max(x0, c.minX)
+            if (overlap > bestOverlap) {
+                bestOverlap = overlap
+                best = c
+            }
         }
-        settled.push({ x, y, w, h })
-        out.push({ id, layout: { ...layout, x, y } })
+        if (best && bestOverlap >= (x1 - x0) * 0.5) {
+            best.items.push(p)
+            best.minX = Math.min(best.minX, x0)
+            best.maxX = Math.max(best.maxX, x1)
+        } else {
+            columns.push({ minX: x0, maxX: x1, items: [p] })
+        }
+    }
+    // Pack columns left-to-right (by their leftmost edge), cards top-to-bottom.
+    columns.sort((a, b) => a.minX - b.minX)
+    const out: Placed[] = []
+    let colX = gap
+    for (const c of columns) {
+        const width = Math.max(...c.items.map((p) => p.layout.w))
+        let y = gap
+        for (const p of [...c.items].sort((a, b) => a.layout.y - b.layout.y)) {
+            out.push({ id: p.id, layout: { ...p.layout, x: colX, y } })
+            y += p.layout.h + gap
+        }
+        colX += width + gap
     }
     return out
 }

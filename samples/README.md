@@ -17,3 +17,13 @@ sample sheets. These files are not part of the application bundle.
   reference.
 - `screenshots/` — reference screenshots grouped by tab/view; see
   [screenshots/README.md](screenshots/README.md). The PNGs are git-ignored.
+
+## Building a new sheet
+
+The `/build-character-sheet` skill
+([.github/skills/build-character-sheet](../.github/skills/build-character-sheet/SKILL.md))
+turns a source character into a native sheet. It writes `<slug>-source.<ext>`
+(the raw character, saved here verbatim) and `<slug>-digest.md` (a compact
+digest a subagent distils from it), then a generator `scripts/gen-<slug>.mjs`
+emits `<slug>-sheet.json`.
+

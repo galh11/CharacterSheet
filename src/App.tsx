@@ -5,7 +5,7 @@ import {
     slugify,
     type SectionLayout,
 } from './model/characterSheet'
-import { resolveSheet, listReferences } from './model/compute'
+import { resolveSheet, listReferences, listResourceReferences } from './model/compute'
 import {
     compactLayouts,
     tidyLayouts,
@@ -176,6 +176,7 @@ function App() {
     const contributions = resolved.contributions
     const effectTags = resolved.tags
     const references = useMemo(() => listReferences(sheet, computed), [sheet, computed])
+    const resourceReferences = useMemo(() => listResourceReferences(sheet), [sheet])
     const scope = useMemo(() => {
         const s = Object.fromEntries(references.map((r) => [r.slug, r.value]))
         // Overlay resource/counter counts (e.g. moxie_points, luck_points) so
@@ -1358,6 +1359,7 @@ function App() {
                     section={editingSection}
                     results={computed}
                     references={references}
+                    resourceReferences={resourceReferences}
                     contributions={contributions}
                     effectTags={effectTags}
                     onClose={() => setEditingSectionId(null)}

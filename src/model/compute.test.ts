@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeSheet, resolveSheet, interpolate } from './compute'
+import { computeSheet, resolveSheet, interpolate, listReferences, listResourceReferences } from './compute'
 import { createField, createSection, type CharacterSheet } from './characterSheet'
 
 // Builds a minimal sheet: one number field and one computed field that
@@ -139,6 +139,51 @@ describe('interpolate', () => {
     it('leaves plain strings and unresolved expressions untouched', () => {
         expect(interpolate('1d8+3', scope)).toBe('1d8+3')
         expect(interpolate('{nope + }', scope)).toBe('{nope + }')
+    })
+})
+
+describe('listReferences', () => {
+    it('tags each reference with its field kind and section', () => {
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [
+                createSection(0, {
+                    title: 'Abilities',
+                    fields: [createField({ label: 'CON Score', type: 'number', value: '14' })],
+                }),
+                createSection(1, {
+                    title: 'Conditions',
+                    fields: [createField({ label: 'Bloodied', type: 'boolean', value: 'false' })],
+                }),
+            ],
+        }
+        const refs = listReferences(sheet, computeSheet(sheet))
+        expect(refs.find((r) => r.slug === 'con_score')).toMatchObject({ kind: 'number', section: 'Abilities' })
+        expect(refs.find((r) => r.slug === 'bloodied')).toMatchObject({ kind: 'boolean', section: 'Conditions' })
+    })
+})
+
+describe('listResourceReferences', () => {
+    it('lists only resource/counter fields with their current count', () => {
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [
+                createSection(0, {
+                    title: 'Combat',
+                    fields: [
+                        createField({ label: 'AC', type: 'number', value: '15' }),
+                        createField({ label: 'Moxie Points', type: 'resource', value: '3', max: 5 }),
+                        createField({ label: 'Rage Uses', type: 'counter', value: '2' }),
+                    ],
+                }),
+            ],
+        }
+        const refs = listResourceReferences(sheet)
+        expect(refs.map((r) => r.slug)).toEqual(['moxie_points', 'rage_uses'])
+        expect(refs.find((r) => r.slug === 'moxie_points')).toMatchObject({ value: 3, kind: 'resource' })
+        expect(refs.some((r) => r.slug === 'ac')).toBe(false)
     })
 })
 

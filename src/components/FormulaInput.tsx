@@ -1,5 +1,5 @@
 import { clsx } from 'clsx'
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { FieldReference } from '../model/compute'
 import {
     type FormulaSuggestion,
@@ -35,6 +35,8 @@ export function FormulaInput({ value, onChange, references, className, wrapperCl
     const [active, setActive] = useState(0)
     // Caret to restore after a programmatic insert (state update is async).
     const pendingCaret = useRef<number | null>(null)
+    // The currently-highlighted option, so keyboard nav can scroll it into view.
+    const activeItemRef = useRef<HTMLButtonElement>(null)
 
     const { token, start } = useMemo(() => tokenAtCursor(value, cursor), [value, cursor])
     const groups = useMemo(() => {
@@ -61,6 +63,11 @@ export function FormulaInput({ value, onChange, references, className, wrapperCl
             setCursor(pos)
         }
     }, [value])
+
+    // Keep the arrow-key selection visible when it moves past the scroll edge.
+    useEffect(() => {
+        if (showList) activeItemRef.current?.scrollIntoView?.({ block: 'nearest' })
+    }, [active, showList])
 
     const syncCursor = () => setCursor(inputRef.current?.selectionStart ?? value.length)
 
@@ -141,6 +148,7 @@ export function FormulaInput({ value, onChange, references, className, wrapperCl
                                             <button
                                                 type="button"
                                                 role="option"
+                                                ref={isActive ? activeItemRef : undefined}
                                                 aria-selected={isActive}
                                                 // Keep focus on the input so blur doesn't close first.
                                                 onMouseDown={(event) => {

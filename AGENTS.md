@@ -160,7 +160,11 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `FormulaInput`: as you type an identifier it drops an inline autocomplete of
   matching field slugs, grouped under each source section's bold name, and
   completes the token at the caret — so it works mid-formula and inside `{expr}`
-  interpolation (`1d4 + con_mod + pr…`).
+  interpolation (`1d4 + con_mod + pr…`). Arrow keys keep the highlighted option
+  scrolled into view. Boolean fields are kept out of that formula autocomplete
+  (they're 0/1 noise); the "resource to spend / refill" slug inputs instead
+  autocomplete spendable resource/counter slugs (`compute.listResourceReferences`),
+  while `listReferences` tags each reference with its field `kind` for that split.
 - **Portrait**: the sheet carries an optional `portrait` (an image data URL) set
   via `useSheet.setPortrait`. The top bar shows it as a circular avatar next to
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled

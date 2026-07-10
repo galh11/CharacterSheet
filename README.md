@@ -47,7 +47,8 @@ one hover away.
   the same activation together and stay in sync.
 - **Play tools** — a dice engine with advantage/disadvantage, a roll log, rests,
   hit-dice spending, HP/temp-HP, conditions, buff timers, and specialized
-  section widgets (abilities, skills, actions, spell slots, and a D&D-Beyond-style
+  section widgets (abilities, skills, actions, spell slots, spell cards with a
+  Cast-and-spend-a-slot button, and a D&D-Beyond-style
   inventory whose coin purse and items share one card…).
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
 - **Character portrait** — add a D&D-Beyond-style circular avatar in the top bar;

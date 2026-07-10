@@ -153,8 +153,15 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   Cross-field buffs still use field `effects` (relational effects); toggles only
   reshape their own action's rolls.
 - **Section kinds** drive specialized widgets in `SectionBody` (abilities, hp,
-  skills, actions, hitdice, conditions, spellslots, initiative,
+  skills, actions, hitdice, conditions, spellslots, spellcards, initiative,
   currency, inventory, timers); the default kind is a plain label/value list. The
+  **spellcards** kind renders each field as a spell card (name + level/school/
+  range/save/damage badges): a **Cast** button spends the linked spell-slot
+  resource (`meta.slot`, `meta.cost`) via `onSpend` and logs the cast, and a
+  **Damage** button rolls `meta.damage` (with a Crit variant). Level `0`/blank
+  shows as *Cantrip* and casts without spending. Save/damage accept `{expr}`
+  interpolation (e.g. `DC {spell_save_dc} DEX`). It complements the **spellslots**
+  tracker (which holds the slot resources the cards spend). The
   **inventory** kind is a D&D-Beyond-style single card: fields flagged
   `meta.coin` (a coin code like `gp`) render as a coin-purse row of steppers
   across the top, and every other field is an item row below — so currency

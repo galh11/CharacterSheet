@@ -141,6 +141,7 @@ export const sectionKindSchema = z.enum([
     'hitdice',
     'conditions',
     'spellslots',
+    'spellcards',
     'initiative',
     'currency',
     'inventory',

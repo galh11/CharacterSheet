@@ -69,7 +69,7 @@ export function Menu({ label, title, align = 'left', className, children }: Menu
                     role="menu"
                     style={shift ? { transform: `translateX(${shift}px)` } : undefined}
                     className={clsx(
-                        'absolute z-30 mt-1 max-h-[70vh] min-w-[11rem] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-md border border-slate-700 bg-slate-900 p-1 shadow-xl',
+                        'absolute z-30 mt-1 max-h-[70vh] min-w-[11rem] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-lg border border-slate-700 bg-slate-900/95 p-1 shadow-2xl ring-1 ring-black/20 backdrop-blur',
                         align === 'right' ? 'right-0' : 'left-0',
                     )}
                 >

@@ -210,8 +210,10 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   by **dragging** it: the prominent violet **drawer tab** on the left edge
   auto-opens the panel as you drag a card near it, and releasing over the panel
   tucks the card **at the drop point** (`App.onCardDragMove` / `onCardDragEnd`
-  map the pointer into the target container via `pointToLayout`, offset by the
-  grab point so a card lands exactly where you release it). While a card is
+  map the pointer into the target container via `pointToLayout`, subtracting the
+  screen-px grab offset before dividing by the *target* container's zoom so a card
+  lands exactly where you release it even when the canvas and drawer zooms
+  differ). While a card is
   dragged over the drawer it's hidden in place and a **floating preview**
   (`dragPoint` + `dragGrab`) straddles the panel edge; the reverse is just as
   seamless — drag a card out of the drawer and drop it on the canvas to restore it

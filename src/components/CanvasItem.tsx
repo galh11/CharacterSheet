@@ -38,7 +38,8 @@ interface CanvasItemProps {
     /** Hides the card in place (a floating drag preview stands in for it). */
     dimmed?: boolean
     /** Fired when a move-drag begins, with the pointer's offset from the card's
-     *  top-left in card-local pixels (so a preview can grab it at the same spot). */
+     *  top-left in screen pixels (so a preview / drop can keep the grabbed point
+     *  under the cursor regardless of each container's zoom). */
     onDragStart?: (offsetX: number, offsetY: number) => void
     /** Fired continuously during a move-drag with screen coordinates. */
     onDragMove?: (x: number, y: number) => void
@@ -74,7 +75,7 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         setLive(layout)
         if (mode === 'move') {
             const r = rootRef.current?.getBoundingClientRect()
-            onDragStart?.(r ? (event.clientX - r.left) / zoom : 0, r ? (event.clientY - r.top) / zoom : 0)
+            onDragStart?.(r ? event.clientX - r.left : 0, r ? event.clientY - r.top : 0)
         }
     }
 

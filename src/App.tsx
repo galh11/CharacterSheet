@@ -526,7 +526,9 @@ function App() {
 
     // Map a screen point to a layout inside a positioned container (canvas or the
     // drawer's scratch-pad), keeping the grabbed point under the cursor so the card
-    // lands where you release it. `zoom` undoes any CSS zoom on the container.
+    // lands where you release it. `dragGrab` is the grab offset in screen pixels,
+    // subtracted before dividing by the target container's zoom (canvas and drawer
+    // can have different zooms, so the offset must be applied at the target scale).
     const pointToLayout = (
         el: HTMLElement | null,
         x: number,
@@ -538,8 +540,8 @@ function App() {
         if (!el) return null
         const r = el.getBoundingClientRect()
         return {
-            x: Math.max(0, Math.round((x - r.left) / zoom - dragGrab.x)),
-            y: Math.max(0, Math.round((y - r.top) / zoom - dragGrab.y)),
+            x: Math.max(0, Math.round((x - dragGrab.x - r.left) / zoom)),
+            y: Math.max(0, Math.round((y - dragGrab.y - r.top) / zoom)),
             w,
             h,
         }
@@ -1403,8 +1405,8 @@ function App() {
                     <div
                         className="pointer-events-none fixed z-50 rounded-lg opacity-90 shadow-2xl ring-2 ring-violet-400 print:hidden"
                         style={{
-                            left: dragPoint.x - grab.x * canvasZoom,
-                            top: dragPoint.y - grab.y * canvasZoom,
+                            left: dragPoint.x - grab.x,
+                            top: dragPoint.y - grab.y,
                             width: dragging.layout.w,
                             height: dragging.layout.h,
                             transform: `scale(${canvasZoom})`,

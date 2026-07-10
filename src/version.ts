@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.6.4',
+        date: '2026-07-10',
+        summary: 'Drag the roll log by its header to move it anywhere, resize it from a bigger bottom-right grip, and its history now scrolls inside a viewport-capped card instead of spilling off-screen.',
+    },
+    {
         version: '1.6.3',
         date: '2026-07-10',
         summary: 'Tidy now preserves your hand-built columns — it keeps each card in its column and closes the gaps instead of collapsing everything into the top-left corner.',

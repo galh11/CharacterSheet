@@ -67,4 +67,10 @@ describe('RollLog', () => {
         expect(screen.getByText('Stealth')).toBeInTheDocument()
         expect(screen.getByText('17')).toBeInTheDocument()
     })
+
+    it('offers handles to move and resize the panel', () => {
+        render(<RollLog {...baseProps} entries={[entry()]} />)
+        expect(screen.getByTitle(/drag to move/i)).toBeInTheDocument()
+        expect(screen.getByTitle(/drag to resize/i)).toBeInTheDocument()
+    })
 })

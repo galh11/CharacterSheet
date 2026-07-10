@@ -35,8 +35,11 @@ interface CanvasItemProps {
     /** When true this card lives in the drawer scratch-pad, so the tuck button
      *  becomes a “restore” button and drops are not routed back to the drawer. */
     drawerMode?: boolean
-    /** Fired when a move-drag begins (used to reveal the drawer drop target). */
-    onDragStart?: () => void
+    /** Hides the card in place (a floating drag preview stands in for it). */
+    dimmed?: boolean
+    /** Fired when a move-drag begins, with the pointer's offset from the card's
+     *  top-left in card-local pixels (so a preview can grab it at the same spot). */
+    onDragStart?: (offsetX: number, offsetY: number) => void
     /** Fired continuously during a move-drag with screen coordinates. */
     onDragMove?: (x: number, y: number) => void
     /** Fired when a move-drag ends. Returning true means the drop was consumed
@@ -53,7 +56,7 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, drawerMode, onDragStart, onDragMove, onDragEnd, handleRef, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, drawerMode, dimmed, onDragStart, onDragMove, onDragEnd, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
     const moved = useRef(false)
@@ -69,7 +72,10 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         drag.current = { mode, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, origin: layout }
         moved.current = false
         setLive(layout)
-        if (mode === 'move') onDragStart?.()
+        if (mode === 'move') {
+            const r = rootRef.current?.getBoundingClientRect()
+            onDragStart?.(r ? (event.clientX - r.left) / zoom : 0, r ? (event.clientY - r.top) / zoom : 0)
+        }
     }
 
     const onPointerMove = (event: React.PointerEvent) => {
@@ -179,7 +185,7 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
     return (
         <div
             ref={rootRef}
-            className={clsx('group absolute rounded-lg', live && 'z-20 select-none', selected && 'z-10 ring-2 ring-cyan-400')}
+            className={clsx('group absolute rounded-lg', live && 'z-20 select-none', selected && 'z-10 ring-2 ring-cyan-400', dimmed && 'opacity-0')}
             style={{ left: current.x, top: current.y, width: current.w, height: current.h }}
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}

@@ -27,6 +27,12 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.5.0',
+        date: '2026-07-10',
+        pr: 20,
+        summary: 'Drawer cards straddle in/out as you drag, land where you drop them, and the drawer auto-closes when empty.',
+    },
+    {
         version: '1.4.2',
         date: '2026-07-10',
         summary: 'Polish the roll log: colour-coded rows with a flash on each new roll, a collapsed latest-roll summary, and a clearer empty state.',

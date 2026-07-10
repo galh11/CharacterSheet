@@ -71,7 +71,8 @@ test('tucking a section into the drawer and restoring it', async ({ page }) => {
     await page.getByRole('button', { name: 'Open the drawer' }).click()
     await page.getByRole('button', { name: 'Restore section from drawer' }).first().click()
 
-    // With the drawer empty the tab disappears entirely.
+    // Emptying the drawer auto-closes the panel and removes the tab entirely.
+    await expect(page.getByText('Drawer · Canvas')).toHaveCount(0)
     await expect(page.getByRole('button', { name: /the drawer/ })).toHaveCount(0)
 })
 

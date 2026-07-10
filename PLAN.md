@@ -212,6 +212,11 @@ D&D extras
       card out onto the canvas restores it (the scratch-pad un-clips mid-drag so a
       card can straddle both). The tab moved to the left edge and got a bolder,
       higher-contrast style.
+- [x] **Straddle preview + polish**: a floating preview stands in for a card being
+      dragged into the drawer so it visually straddles the panel edge; drops keep
+      the grabbed point under the cursor so cards land exactly where released; the
+      drawer auto-closes once emptied; and the fixed panel docks below the header's
+      live bottom so it no longer overlaps the top bar.
 - [ ] **Follow-up**: drag-to-reorder tiles in the stack view (separate PR).
 
 ## Notes

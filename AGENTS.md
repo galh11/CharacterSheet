@@ -187,7 +187,9 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   **+ Section** button + a **+ Template ▾** menu), a single **View ▾** menu, then
   **⋯ More** and the theme-colour swatch. **View ▾** consolidates what used to be
   a row of standalone buttons: the Canvas/Stack view mode (with a ✓ on the active
-  one), Density (compact/normal/comfortable, ✓-marked), the canvas-only layout
+  one), **Zoom** (Compact 80% / Normal 100% / Comfortable 120%, ✓-marked — a
+  persisted whole-sheet CSS-`zoom` preset; disabled in canvas view while **Fit to
+  width** overrides it), the canvas-only layout
   tools (Tidy up, Fit to width, Fit all to content, Spread across width, Save
   this layout…, Apply saved layout), and Open/Close drawer (with its tucked-card
   count). Keep the `Character name` input's aria-label and the **+ Section**

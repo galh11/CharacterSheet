@@ -586,10 +586,16 @@ function App() {
         setDraggingId(null)
         setDropHot(false)
         setDragPoint(null)
-        if (!moved) return false
         const section = sheet.sections.find((s) => s.id === id)
         if (!section) return false
-        if (inDrawer(section, view)) {
+        const fromDrawer = inDrawer(section, view)
+        if (!moved) {
+            // A no-op click: if dragging a canvas card past the tab auto-opened an
+            // empty drawer, don't leave it hanging open.
+            if (!fromDrawer) closeDrawerIfEmpty(id)
+            return false
+        }
+        if (fromDrawer) {
             // Drag out: restore to the canvas at the drop point (unless dropped back
             // inside the panel, which just rearranges the scratch-pad).
             if (isOverPanel(x, y)) return false
@@ -622,6 +628,9 @@ function App() {
             hideSection(id)
             return true
         }
+        // Dropped back on the canvas without tucking: close the drawer if dragging
+        // past its tab auto-opened it while empty.
+        closeDrawerIfEmpty(id)
         return false
     }
 

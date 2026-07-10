@@ -70,7 +70,7 @@ src/
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened by the ✎ pencil
     FormulaInput.tsx       # formula box with inline, section-grouped field autocomplete (completes the slug token at the caret)
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper + handle bar
-    RollLog.tsx            # floating roll panel: colour-coded rows, flash on new roll, collapsed latest-roll summary, expandable history, adv/dis, resizable
+    RollLog.tsx            # floating roll panel: colour-coded rows, flash on new roll, collapsed latest-roll summary, expandable history, adv/dis, drag-to-move + resizable, viewport-capped scroll
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
     HitDiceModal.tsx       # spend hit dice on a short rest
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
@@ -142,9 +142,10 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   field** via `toggle.field` (a slug): when set, its on/off state *is* that
   field's live value (read from `scope`), and clicking it flips the shared
   boolean through `onToggleFlag`/`useSheet.toggleField` instead of a local flag.
-  So a Flame Tongue can be flipped from the weapon's toggle, a separate
-  bonus-action card, and a Conditions chip — all bound to the same `flame_tongue`
-  field and always in sync. The editor's **Linked** input autocompletes existing
+  The shared boolean can live in any section, so a Flame Tongue can be flipped
+  from the weapon's toggle and a dedicated **Ignite bonus-action card** — both
+  bound to the same `flame_tongue` field and always in sync (it's a weapon
+  buff/state, not a status condition). The editor's **Linked** input autocompletes existing
   boolean field slugs (`booleanReferences`). Legacy shapes migrate on load
   (`foldLegacyActionExtras`): the old single `meta.extra`/`extraWhen` "extra
   damage" folds into `parts` with `extraWhen` preserved as the toggle's linked

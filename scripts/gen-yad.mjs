@@ -169,11 +169,12 @@ S('Attacks', 'actions', [
                 id: randomUUID(),
                 label: 'Flame Tongue',
                 active: false,
+                field: 'flame_tongue',
                 hitMode: 'add',
                 hit: '',
                 parts: [{ mode: 'add', damage: '2d6', type: 'fire' }],
                 setType: '',
-                description: 'Ignite as a Bonus Action: +2d6 fire on hits; sheds Bright Light 40 ft.',
+                description: 'Ignite as a Bonus Action: +2d6 fire on hits; sheds Bright Light 40 ft. Linked to the flame_tongue state, so the Ignite bonus action flips it too.',
             },
         ],
     }),
@@ -189,6 +190,22 @@ S('Attacks', 'actions', [
 
 // 10. Bonus actions.
 S('Bonus Actions', 'actions', [
+    F('Ignite Flame Tongue', 'text', '', {
+        description: 'Bonus Action: ignite or quench the Flame Tongue Handaxe. Bound to the same flame_tongue state as the 🔥 toggle on the Handaxe attack, so flipping it in either place updates the other (and the +2d6 fire).',
+        toggles: [
+            {
+                id: randomUUID(),
+                label: 'Lit',
+                active: false,
+                field: 'flame_tongue',
+                hitMode: 'add',
+                hit: '',
+                parts: [],
+                setType: '',
+                description: 'Ignite / quench the Flame Tongue (shared with the Handaxe toggle).',
+            },
+        ],
+    }),
     F('Bonus Unarmed Strike', 'text', '', {
         description: 'You can make an Unarmed Strike as a Bonus Action.',
         meta: { hit: '+{str_mod + proficiency}', damage: '1d10+{str_mod + down_but_not_out * (con_mod + exhaustion)}', type: 'bludgeoning', range: '5 ft' },
@@ -262,13 +279,18 @@ S('Resources', 'default', [
     F('Exhaustion', 'counter', 0, { max: 6 }),
 ], '#ec4899')
 
-// 14. Conditions & states.
-S('Conditions', 'conditions', [
-    F('Flame Tongue', 'boolean', 'false', { description: 'Handaxe ignited (Bonus Action): sheds Bright Light 40 ft. Its +2d6 fire is the 🔥 Flame Tongue toggle on the Handaxe attack.' }),
+// 14. Buffs & states — self-managed on/off toggles (weapon states, class buffs);
+// NOT status conditions. Flame Tongue is bound to the Handaxe + Ignite toggles.
+S('Buffs & States', 'conditions', [
+    F('Flame Tongue', 'boolean', 'false', { description: 'Handaxe ignited (Bonus Action): sheds Bright Light 40 ft and its attack adds +2d6 fire. Toggle it here, from the 🔥 button on the Handaxe attack, or the Ignite Flame Tongue bonus action — all stay in sync.' }),
     F('Down But Not Out', 'boolean', 'false', { description: 'While active, your Unarmed/Pugilist-weapon damage gains +CON mod + exhaustion levels (auto-added to attack damage).' }),
     F('Large Form', 'boolean', 'false', { description: 'Large: advantage on STR checks, +10 ft Speed.' }),
     F('Dig Deep', 'boolean', 'false', { description: 'Resistance to B/P/S; ignore exhaustion < 6. Add b/p/s to HP Resistances while active.' }),
     F('Grappling', 'boolean', 'false', { description: 'Compression Lock hits grappled foes each turn.' }),
+], '#f97316')
+
+// 15. Conditions & states.
+S('Conditions', 'conditions', [
     F('Bloodied', 'boolean', 'false', { description: 'At or below half HP (38). Auto-set by the HP tracker.' }),
     F('Prone', 'boolean', 'false'),
     F('Grappled', 'boolean', 'false'),
@@ -297,6 +319,11 @@ S('Languages', 'default', [
 S('Inventory', 'inventory', [
     F('Bone Marks', 'number', 108, { description: 'Homebrew currency.', meta: { coin: 'bones' } }),
     F('GP', 'number', 0, { meta: { coin: 'gp' } }),
+    // NB: the next two items are ILLUSTRATIVE DEMOS of relational `effects`
+    // (field-to-field buffs) — they are NOT in Yad's D&D Beyond export. When
+    // building a new character, do not copy them; take gear only from that
+    // character's own digest. (Everything else in this section IS from the export,
+    // incl. the custom-named "Reinforced Studded Leather" + its DR-3 note.)
     F('Ring of Protection (Bone-Carved)', 'text', 'worn', {
         description: '+1 to AC while worn (a relational effect — toggle it off in the editor to unequip).',
         effects: [{ target: 'ac', op: 'add', value: '1' }],
@@ -332,7 +359,7 @@ const ORDER = [
     'Saving Throws', 'Skills', 'Senses',
     'Combat', 'Hit Points', 'Death Saves',
     'Attacks', 'Bonus Actions', 'Reactions',
-    'Resources', 'Conditions', 'Features & Traits',
+    'Resources', 'Buffs & States', 'Conditions', 'Features & Traits',
     'Movement & Physique', 'Languages', 'Inventory',
 ]
 sections.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title))

@@ -27,8 +27,13 @@ Do **not** use this for editing an already-saved sheet, or for generic coding.
 - Node via conda: run `conda activate nodejs` first in a new terminal (Windows).
 - Read the app's architecture notes in [AGENTS.md](../../../AGENTS.md) and the two
   reference generators [scripts/gen-yad.mjs](../../../scripts/gen-yad.mjs) and
-  [scripts/gen-amarthon.mjs](../../../scripts/gen-amarthon.mjs) — they are the
-  canonical, working examples of a finished sheet.
+  [scripts/gen-amarthon.mjs](../../../scripts/gen-amarthon.mjs) — they are canonical
+  examples of a finished sheet's **structure and patterns** (section kinds,
+  computed fields, the layout helper). Copy their *shape*, never their *content*:
+  their abilities, items, and effects belong to those characters, and `gen-yad`
+  even carries a couple of illustrative demo items that are **not** in its DDB
+  export. Build every value of your character from its own digest — never by
+  cloning a similar existing generator.
 - If this sheet will be committed to the repo, do the whole thing inside a git
   worktree and land it via the auto-merging PR flow (see the "Parallel agents"
   section of AGENTS.md). For a **private / one-off** character the user just wants
@@ -65,8 +70,14 @@ context.
 Give the subagent:
 - the path to `samples/<slug>-source.*`,
 - the digest contract in [references/character-digest.md](./references/character-digest.md),
+- an explicit reminder that for a DDB JSON it **must** mine `characterValues` for
+  custom item names (`typeId 8`) and notes (`typeId 9`) — that is where player
+  renames and homebrew effects (e.g. a "Reduce all damage taken by 3" note) live,
+  and they are the easiest real bonus to miss,
 - an instruction to **write** the result to `samples/<slug>-digest.md` and return
-  only a one-paragraph summary + the digest path.
+  a one-paragraph summary + the digest path, ending with a short **"not in the
+  source"** reconciliation note if the character resembles an existing sample —
+  flagging anything that sample has but this character's JSON does not support.
 
 The digest is a small, human-readable markdown file with **only what matters** to
 build the sheet (abilities and how they're derived, HP/AC/speed/init/proficiency,
@@ -80,6 +91,13 @@ Working from **only** `samples/<slug>-digest.md` (not the raw source), author a
 self-contained `scripts/gen-<slug>.mjs` modeled on the reference generators, then
 run it to emit `samples/<slug>-sheet.json`.
 
+> **Never clone an existing similar sheet.** Even if the character resembles a
+> committed sample (e.g. another build of the same character), do not start from
+> that generator — build from *this* character's digest and reconcile every item,
+> effect, and number against it. Copied generators silently import the other
+> character's content (and any demo items), which is exactly how fabricated gear
+> and inflated stats sneak in.
+
 Follow the authoring conventions in
 [references/sheet-authoring.md](./references/sheet-authoring.md): field/section
 kinds, computed fields + `{expr}` interpolation, relational effects, action
@@ -90,6 +108,8 @@ toggles, the column-packing layout helper, and the `ORDER` re-pack. Key rules:
 - Ability modifiers are explicit computed fields (`str_mod = floor((str-10)/2)`).
 - Cross-field buffs use relational **effects**; per-weapon variants use **toggles**.
 - Give fields on-hover `description`s for rules reminders.
+- Include only items, effects, and numbers the digest supports — never carry over
+  demo or example content from the reference generators.
 
 Then validate and (optionally) load:
 

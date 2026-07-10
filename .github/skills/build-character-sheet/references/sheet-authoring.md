@@ -7,6 +7,15 @@ canonical examples — read them alongside this file:
 - [scripts/gen-amarthon.mjs](../../../../scripts/gen-amarthon.mjs) (Druid 8, spellcaster)
 - [scripts/gen-yad.mjs](../../../../scripts/gen-yad.mjs) (Pugilist 8, martial + toggles)
 
+> **Faithfulness — read this first.** These generators are references for
+> *structure and patterns*, not content. Build every field from the character's
+> own digest; do not copy their items, effects, or numbers, and never clone a
+> near-identical existing generator (reconcile each item/effect against the
+> digest). `gen-yad.mjs` deliberately includes a couple of illustrative demo
+> items ("Ring of Protection (Bone-Carved)", "Knuckle-Wraps of Might") to show
+> relational `effects` — those are **not** in Yad's export, so copying the file
+> wholesale silently adds fake gear and inflates AC / STR.
+
 The zod schema in [src/model/characterSheet.ts](../../../../src/model/characterSheet.ts)
 is the source of truth for shapes; the architecture notes in
 [AGENTS.md](../../../../AGENTS.md) explain each section kind's widget.

@@ -36,6 +36,7 @@ const kindStyle: Record<RollLogEntry['kind'], { text: string; accent: string; ba
 }
 
 const SIZE_KEY = 'character-sheet:rolllog-size'
+const POS_KEY = 'character-sheet:rolllog-pos'
 const MIN_W = 240
 const MAX_W = 640
 const MIN_H = 60
@@ -57,6 +58,27 @@ const loadSize = (): { w: number; h: number } => {
     }
     return DEFAULT_SIZE
 }
+
+/** Saved top-left position (in viewport pixels), or null to keep the default
+ *  bottom-right anchor. */
+const loadPos = (): { x: number; y: number } | null => {
+    try {
+        const raw = localStorage.getItem(POS_KEY)
+        if (raw) {
+            const p = JSON.parse(raw) as { x?: number; y?: number }
+            if (typeof p.x === 'number' && typeof p.y === 'number') return { x: p.x, y: p.y }
+        }
+    } catch {
+        /* ignore */
+    }
+    return null
+}
+
+/** Keep a top-left position fully within the viewport for a panel of size w×h. */
+const clampPos = (x: number, y: number, w: number, h: number) => ({
+    x: Math.min(Math.max(0, x), Math.max(0, window.innerWidth - w)),
+    y: Math.min(Math.max(0, y), Math.max(0, window.innerHeight - h)),
+})
 
 /** A single roll row: a kind-coloured accent bar, the title (with a crit/miss
  *  pill), the dice breakdown, and the total badge. `flash` briefly rings the row
@@ -92,14 +114,19 @@ function RollRow({ e, flash }: { e: RollLogEntry; flash?: boolean }) {
 
 /** Floating panel showing recent dice rolls plus the advantage/disadvantage toggle.
  *  Shows only the latest roll (with a flash on each fresh result) until the history
- *  is expanded; when collapsed it still shows a compact latest-roll summary, and it
- *  can be resized (width + history height, persisted). */
+ *  is expanded; when collapsed it still shows a compact latest-roll summary. Drag
+ *  the header to move it anywhere (double-click the header to reset), resize from the
+ *  bottom-right grip, and the roll list scrolls within a viewport-capped card so a
+ *  long history never spills off-screen. Position and size are persisted. */
 export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusChange, bonusDie, onBonusDieChange, repeat, onRepeatChange, luck, onSpendLuck, onRollDice, onClear }: RollLogProps) {
     const [open, setOpen] = useState(true)
     const [historyOpen, setHistoryOpen] = useState(false)
     const [dice, setDice] = useState('')
     const [size, setSize] = useState(loadSize)
+    const [pos, setPos] = useState<{ x: number; y: number } | null>(loadPos)
+    const rootRef = useRef<HTMLDivElement | null>(null)
     const drag = useRef<{ x: number; y: number; w: number; h: number } | null>(null)
+    const move = useRef<{ px: number; py: number; x: number; y: number; w: number; h: number } | null>(null)
 
     useEffect(() => {
         try {
@@ -109,8 +136,29 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
         }
     }, [size])
 
-    // Resize from the top-left corner (the panel is anchored bottom-right, so
-    // dragging up/left grows it). Width and history height both adjust.
+    useEffect(() => {
+        try {
+            if (pos) localStorage.setItem(POS_KEY, JSON.stringify(pos))
+            else localStorage.removeItem(POS_KEY)
+        } catch {
+            /* ignore quota */
+        }
+    }, [pos])
+
+    // Keep a moved panel on-screen when the window is resized smaller.
+    useEffect(() => {
+        if (!pos) return
+        const onResize = () => {
+            const rect = rootRef.current?.getBoundingClientRect()
+            if (!rect) return
+            setPos((p) => (p ? clampPos(p.x, p.y, rect.width, rect.height) : p))
+        }
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+    }, [pos])
+
+    // Resize from the bottom-right corner: dragging down/right grows the panel
+    // width and the roll-list height (both persisted).
     const onResizePointerDown = (event: React.PointerEvent) => {
         event.preventDefault()
         drag.current = { x: event.clientX, y: event.clientY, w: size.w, h: size.h }
@@ -121,12 +169,34 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
         const dx = event.clientX - drag.current.x
         const dy = event.clientY - drag.current.y
         setSize({
-            w: Math.min(MAX_W, Math.max(MIN_W, drag.current.w - dx)),
-            h: Math.min(MAX_H, Math.max(MIN_H, drag.current.h - dy)),
+            w: Math.min(MAX_W, Math.max(MIN_W, drag.current.w + dx)),
+            h: Math.min(MAX_H, Math.max(MIN_H, drag.current.h + dy)),
         })
     }
     const onResizePointerUp = (event: React.PointerEvent) => {
         drag.current = null
+        event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+
+    // Drag the header to move the whole panel. Ignore drags that start on an
+    // interactive control so the buttons still work.
+    const onMovePointerDown = (event: React.PointerEvent) => {
+        if ((event.target as HTMLElement).closest('button, input, [role="radiogroup"]')) return
+        const rect = rootRef.current?.getBoundingClientRect()
+        if (!rect) return
+        event.preventDefault()
+        move.current = { px: event.clientX, py: event.clientY, x: rect.left, y: rect.top, w: rect.width, h: rect.height }
+        event.currentTarget.setPointerCapture(event.pointerId)
+    }
+    const onMovePointerMove = (event: React.PointerEvent) => {
+        if (!move.current) return
+        const dx = event.clientX - move.current.px
+        const dy = event.clientY - move.current.py
+        setPos(clampPos(move.current.x + dx, move.current.y + dy, move.current.w, move.current.h))
+    }
+    const onMovePointerUp = (event: React.PointerEvent) => {
+        if (!move.current) return
+        move.current = null
         event.currentTarget.releasePointerCapture(event.pointerId)
     }
 
@@ -135,22 +205,19 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
 
     return (
         <div
-            className="fixed bottom-4 right-4 z-40 rounded-xl border border-slate-700 bg-slate-950/95 shadow-xl backdrop-blur print:hidden"
-            style={{ width: size.w }}
+            ref={rootRef}
+            className={clsx('fixed z-40 print:hidden', !pos && 'bottom-4 right-4')}
+            style={pos ? { left: pos.x, top: pos.y, width: size.w } : { width: size.w }}
         >
-            {open && (
-                <div
-                    onPointerDown={onResizePointerDown}
-                    onPointerMove={onResizePointerMove}
-                    onPointerUp={onResizePointerUp}
-                    className="absolute -left-1 -top-1 z-10 grid h-4 w-4 cursor-nwse-resize place-items-center rounded-full border border-slate-600 bg-slate-800 text-[10px] leading-none text-slate-400 hover:bg-slate-700"
-                    title="Drag to resize"
-                    aria-label="Resize roll log"
-                >
-                    <span className="pointer-events-none">⤡</span>
-                </div>
-            )}
-            <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-2">
+            <div className="relative flex max-h-[calc(100vh-1rem)] flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-950/95 shadow-xl backdrop-blur">
+            <div
+                onPointerDown={onMovePointerDown}
+                onPointerMove={onMovePointerMove}
+                onPointerUp={onMovePointerUp}
+                onDoubleClick={() => setPos(null)}
+                className="flex shrink-0 cursor-move touch-none select-none items-center gap-2 border-b border-slate-800 px-3 py-2"
+                title="Drag to move · double-click to reset position"
+            >
                 <span className="text-sm font-semibold text-slate-200">🎲 Rolls</span>
                 {open ? (
                     <>
@@ -212,8 +279,8 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                 </button>
             </div>
             {open && (
-                <>
-                    <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-1.5 text-xs">
+                <div className="flex min-h-0 flex-1 flex-col">
+                    <div className="flex shrink-0 items-center gap-2 border-b border-slate-800 px-3 py-1.5 text-xs">
                         <label className="flex items-center gap-1 text-slate-400">
                             Situational
                             <input
@@ -245,7 +312,7 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                             </button>
                         )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-1 border-b border-slate-800 px-3 py-1.5 text-[11px]">
+                    <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-slate-800 px-3 py-1.5 text-[11px]">
                         <button type="button" onClick={() => onBonusChange(bonus - 2)} className="rounded border border-slate-700 px-1.5 py-0.5 text-slate-300 hover:bg-slate-800" title="Half cover">Cover −2</button>
                         <button type="button" onClick={() => onBonusChange(bonus - 5)} className="rounded border border-slate-700 px-1.5 py-0.5 text-slate-300 hover:bg-slate-800" title="Three-quarters cover">Heavy −5</button>
                         <button
@@ -269,7 +336,7 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                         </label>
                     </div>
                     <form
-                        className="flex items-center gap-1 border-b border-slate-800 px-3 py-1.5"
+                        className="flex shrink-0 items-center gap-1 border-b border-slate-800 px-3 py-1.5"
                         onSubmit={(e) => {
                             e.preventDefault()
                             onRollDice(dice)
@@ -285,7 +352,7 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                         />
                         <button type="submit" className="rounded bg-slate-700 px-2 py-0.5 text-[11px] font-medium text-slate-100 hover:bg-slate-600">Roll</button>
                     </form>
-                    <div className="px-3 py-2">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2" style={{ maxHeight: size.h }}>
                         {!latest ? (
                             <div className="flex flex-col items-center gap-1 py-3 text-center">
                                 <span className="text-2xl opacity-40" aria-hidden="true">🎲</span>
@@ -307,10 +374,7 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                                             {historyOpen ? '▾ Hide history' : `▸ History (${rest.length})`}
                                         </button>
                                         {historyOpen && (
-                                            <ul
-                                                className="m-0 mt-2 flex list-none flex-col gap-1.5 overflow-auto p-0"
-                                                style={{ maxHeight: size.h }}
-                                            >
+                                            <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0">
                                                 {rest.map((e) => (
                                                     <RollRow key={e.id} e={e} />
                                                 ))}
@@ -321,7 +385,20 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                             </>
                         )}
                     </div>
-                </>
+                </div>
+            )}
+            </div>
+            {open && (
+                <div
+                    onPointerDown={onResizePointerDown}
+                    onPointerMove={onResizePointerMove}
+                    onPointerUp={onResizePointerUp}
+                    className="absolute -bottom-1 -right-1 z-10 grid h-5 w-5 cursor-nwse-resize place-items-center rounded-full border border-slate-600 bg-slate-800 text-[11px] leading-none text-slate-400 hover:bg-slate-700"
+                    title="Drag to resize"
+                    aria-label="Resize roll log"
+                >
+                    <span className="pointer-events-none">⤡</span>
+                </div>
             )}
         </div>
     )

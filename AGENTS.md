@@ -93,7 +93,7 @@ public/                    # static assets (favicon, icons, PWA)
   workflows/               # ci.yml (lint/build/test/e2e), automerge.yml (CI-gated auto-merge), deploy.yml (Pages; runs after Auto-merge)
   copilot-instructions.md  # always-on agent rules (worktree + PR + docs); points here
   prompts/task.prompt.md   # invokable /task: bootstrap a worktree task end-to-end
-  skills/build-character-sheet/  # /build-character-sheet: save source → sweep to a digest (subagent) → generate + validate a sheet
+  skills/build-character-sheet/  # /build-character-sheet: obtain source (fetch public DDB JSON by character id/URL) → sweep to a digest (subagent) → generate + validate a sheet
   pull_request_template.md # PR checklist (tests + docs freshness)
 vite.config.ts             # Vite + Tailwind + PWA (app build)
 vitest.config.ts           # Vitest (unit/component) config — kept separate from vite.config.ts

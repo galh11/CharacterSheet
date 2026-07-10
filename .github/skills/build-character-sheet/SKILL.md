@@ -1,7 +1,7 @@
 ---
 name: build-character-sheet
-description: "Build a new CharacterSheet app sheet from a source character (a D&D Beyond JSON export, a pasted stat block, or a markdown/PDF dump). Use when the user says: build/create/make/import a character sheet, quick-start a character, turn this D&D Beyond export into a sheet, generate a sheet from this stat block, or add a sample character. Runs a three-stage pipeline: (1) save the source under samples/, (2) a read-only subagent sweeps the source into a compact character digest so the raw megabyte of DDB metadata never enters the build context, (3) a focused agent writes a scripts/gen-<slug>.mjs generator, produces samples/<slug>-sheet.json, and validates it. Do NOT use for editing an existing saved sheet or for generic coding."
-argument-hint: "path or paste of the source character (DDB JSON / stat block / markdown)"
+description: "Build a new CharacterSheet app sheet from a source character — a D&D Beyond character ID / URL (fetched automatically if public), a D&D Beyond JSON export, a pasted stat block, or a markdown/PDF dump. Use when the user says: build/create/make/import a character sheet, quick-start a character, here's my D&D Beyond character id/link, turn this D&D Beyond export into a sheet, generate a sheet from this stat block, or add a sample character. Runs a three-stage pipeline: (1) obtain + save the source under samples/ (fetch the public character-service JSON when given only an ID/URL), (2) a read-only subagent sweeps the source into a compact character digest so the raw megabyte of DDB metadata never enters the build context, (3) a focused agent writes a scripts/gen-<slug>.mjs generator, produces samples/<slug>-sheet.json, and validates it. Do NOT use for editing an existing saved sheet or for generic coding."
+argument-hint: "D&D Beyond character id / URL, or a path or paste of the source (DDB JSON / stat block / markdown)"
 ---
 
 # Build a Character Sheet
@@ -16,6 +16,7 @@ context small and focused.
 ## When to use
 
 - "Build / create / make a character sheet from this D&D Beyond export."
+- "Here's my D&D Beyond character **id** / link — make a sheet."
 - "Quick-start a sheet for <character>" / "turn this stat block into a sheet."
 - "Add <character> as a sample sheet."
 
@@ -35,12 +36,23 @@ Do **not** use this for editing an already-saved sheet, or for generic coding.
 
 ## Pipeline
 
-### Stage 1 — Save the source under `samples/`
+### Stage 1 — Obtain + save the source under `samples/`
 
 1. Pick a short kebab-case `<slug>` from the character name (e.g. `yad-armhand`).
-2. If the user pasted the source or pointed at a file **outside** `samples/`,
-   save it verbatim as `samples/<slug>-source.<ext>` (`.json` for a DDB export,
-   `.md`/`.txt` for text). If it's already in `samples/`, reuse it as-is.
+2. Get the source into `samples/<slug>-source.<ext>`:
+   - **Given only a D&D Beyond character ID or URL** (e.g. `166905628` or
+     `https://www.dndbeyond.com/characters/166905628`): pull the character ID out
+     of the URL and fetch the **public character-service JSON** yourself from
+     `https://character-service.dndbeyond.com/character/v5/character/<id>` (use
+     the `fetch_webpage` tool). A public character returns
+     `{"success": true, "data": { … }}`; save the whole payload as
+     `samples/<slug>-source.json`. If it returns `success:false` or `data:null`,
+     the character is **private** — tell the user to set its privacy to Public
+     (Character Sheet → gear/settings → Campaign & Privacy) and try again; do not
+     guess or fabricate data.
+   - **Given a pasted blob or a file outside `samples/`**: save it verbatim as
+     `samples/<slug>-source.<ext>` (`.json` for a DDB export, `.md`/`.txt` for
+     text). If it's already in `samples/`, reuse it as-is.
 3. Never hand-edit the source — it is the record of truth for the sweep.
 
 ### Stage 2 — Sweep the source into a compact digest (subagent)

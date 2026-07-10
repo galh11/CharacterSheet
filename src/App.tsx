@@ -122,7 +122,14 @@ function App() {
             return false
         }
     })
-    const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>('normal')
+    const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>(() => {
+        try {
+            const saved = localStorage.getItem('character-sheet:density')
+            return saved === 'compact' || saved === 'comfortable' ? saved : 'normal'
+        } catch {
+            return 'normal'
+        }
+    })
     const [query, setQuery] = useState('')
     const [theme, setTheme] = useState<string>(() => {
         try {
@@ -810,6 +817,14 @@ function App() {
         }
     }, [fitWidth])
 
+    useEffect(() => {
+        try {
+            localStorage.setItem('character-sheet:density', density)
+        } catch {
+            // ignore storage failures (private mode, quota)
+        }
+    }, [density])
+
     const toggleCollapse = (id: string) =>
         setCollapsed((prev) => {
             const next = new Set(prev)
@@ -826,7 +841,7 @@ function App() {
             return next
         })
 
-    const densityZoom = density === 'compact' ? 0.9 : density === 'comfortable' ? 1.12 : 1
+    const densityZoom = density === 'compact' ? 0.8 : density === 'comfortable' ? 1.2 : 1
     // The free canvas zooms with density in both modes; CanvasItem divides drag
     // deltas by this factor so moving/resizing still tracks the cursor 1:1.
     // "Fit to width" instead scales the whole canvas so its actual content — the
@@ -1146,14 +1161,23 @@ function App() {
                                         </span>
                                     </MenuItem>
                                     <MenuDivider />
-                                    <MenuLabel>Density</MenuLabel>
-                                    {(['compact', 'normal', 'comfortable'] as const).map((d) => (
-                                        <MenuItem key={d} onClick={() => { setDensity(d); close() }}>
+                                    <MenuLabel>Zoom</MenuLabel>
+                                    {([['compact', '80%'], ['normal', '100%'], ['comfortable', '120%']] as const).map(([d, pct]) => (
+                                        <MenuItem
+                                            key={d}
+                                            onClick={() => { setDensity(d); close() }}
+                                            disabled={fitWidth && !stackView}
+                                            title={fitWidth && !stackView ? 'Turn off “Fit to width” to set the zoom manually' : `Scale the whole sheet to ${pct}`}
+                                        >
                                             <span className="flex items-center gap-2 capitalize">
                                                 <span className="w-3 text-cyan-300">{density === d ? '✓' : ''}</span>{d}
+                                                <span className="ml-auto pl-3 text-xs text-slate-500">{pct}</span>
                                             </span>
                                         </MenuItem>
                                     ))}
+                                    {fitWidth && !stackView && (
+                                        <div className="px-3 pb-1 pt-0.5 text-[10px] text-slate-500">Overridden by “Fit to width”.</div>
+                                    )}
                                     {!stackView && (
                                         <>
                                             <MenuDivider />

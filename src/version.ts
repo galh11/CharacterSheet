@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.8.1',
+        date: '2026-07-10',
+        summary: 'Renamed the View menu’s “Density” to “Zoom”, showing each preset’s percentage (80% / 100% / 120%) so it’s clear it scales the whole sheet; the choice now sticks between sessions and is greyed out while “Fit to width” overrides it.',
+    },
+    {
         version: '1.8.0',
         date: '2026-07-10',
         summary: 'Reworked the top toolbar: the crowd of buttons is grouped into clearer menus (a single View menu holds display mode, density, canvas layout tools and the drawer; templates get their own menu), plus a nicer search box with an inline icon.',

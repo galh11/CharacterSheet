@@ -70,7 +70,7 @@ src/
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened by the ✎ pencil
     FormulaInput.tsx       # formula box with inline, section-grouped field autocomplete (completes the slug token at the caret)
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper + handle bar
-    RollLog.tsx            # floating roll panel: colour-coded rows, flash on new roll, collapsed latest-roll summary, expandable history, adv/dis, resizable
+    RollLog.tsx            # floating roll panel: colour-coded rows, flash on new roll, collapsed latest-roll summary, expandable history, adv/dis, drag-to-move + resizable, viewport-capped scroll
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
     HitDiceModal.tsx       # spend hit dice on a short rest
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)

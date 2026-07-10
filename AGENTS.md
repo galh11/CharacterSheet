@@ -196,7 +196,9 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   whole canvas so its content fills the current window width edge-to-edge: it
   zooms by `containerWidth / (maxX − minX)` — the cards' **real** left-to-right
   extent, not the padded scroll area — and shifts the canvas left by the leftmost
-  card (`marginLeft: −minX`) so both edges are flush with no trailing gap. It can
+  card (`marginLeft: −minX`) so both edges are flush with no trailing gap. While
+  it's on, the whole app drops its `max-w-7xl` cap so `main` spans the **full
+  viewport** (otherwise the fill would stop at 1280px on wide screens). It can
   up-scale narrow sheets too (clamped 0.3–3×) and adapts to window resize /
   browser page zoom via the container's `clientWidth`. **Spread across
   width** (`layout.tidyLayouts`) fits cards to content then skyline-packs them

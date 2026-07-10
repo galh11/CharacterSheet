@@ -234,7 +234,8 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   seamless — drag a card out of the drawer and drop it on the canvas to restore it
   there (the scratch-pad switches to `overflow-visible` mid-drag so the card can
   straddle both). The drawer **auto-closes** once its last card leaves
-  (`closeDrawerIfEmpty`), and the fixed panel docks below the header's live
+  (`closeDrawerIfEmpty`) — including when a drag that auto-opened an empty drawer
+  is dropped back on the canvas — and the fixed panel docks below the header's live
   `getBoundingClientRect().bottom` (tracked on scroll/resize) so it never overlaps
   the top bar. The tab persists whenever the current view's drawer holds ≥1 card
   (and hides when empty). Inside the drawer each tucked card gets its own

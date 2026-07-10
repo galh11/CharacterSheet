@@ -32,17 +32,19 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
     const before = await handle.boundingBox()
     expect(before).not.toBeNull()
 
-    // Simulate a real click-and-drag with the mouse.
+    // Simulate a real click-and-drag with the mouse. The grab starts at the drag
+    // bar's centre, so drag well past a whole column (>104px) to be sure the card
+    // crosses into a further-right column on the grid.
     await handle.hover()
     await page.mouse.down()
-    await page.mouse.move(before!.x + 160, before!.y + 96, { steps: 12 })
+    await page.mouse.move(before!.x + 360, before!.y, { steps: 12 })
     await page.mouse.up()
 
     const after = await handle.boundingBox()
     expect(after).not.toBeNull()
-    // The card should have moved to a new position.
+    // On the column grid the card snaps to a new column and the sheet compacts
+    // upward, so dragging right lands it in a further-right column.
     expect(after!.x).toBeGreaterThan(before!.x)
-    expect(after!.y).toBeGreaterThan(before!.y)
 })
 
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {

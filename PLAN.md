@@ -186,6 +186,9 @@ D&D extras
 - [x] **Layout & menus**: Tidy rewritten to pack cards into the nearest-corner
       gap; Death Saves merged into the HP widget (shown at 0 HP); dropdown menus
       clamp to the viewport and auto-shift to stay on-screen.
+- [x] **Dashboard-grid canvas**: cards snap to a 12-column grid and the sheet
+      auto-compacts upward on every drop (like Grafana / Notion), so it stays
+      tidy with no overlaps or gaps; Tidy fits heights then re-packs the grid.
 - [x] Action-meta inputs get field type-to-search for `{expr}` interpolation.
 - [x] **Action toggles**: repeatable on/off modifiers per weapon. Each toggle
       holds a list of typed damage parts (add extra dice or replace the base),

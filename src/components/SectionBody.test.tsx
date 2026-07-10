@@ -176,6 +176,43 @@ describe('ActionCards', () => {
         fireEvent.click(screen.getByRole('switch', { name: 'Flame Tongue' }))
         expect(onUpdateField).toHaveBeenCalledWith('f', { toggles: [expect.objectContaining({ active: true })] })
     })
+
+    it('reads a field-bound toggle as on from the scope, not its local flag', () => {
+        const section = actionsSection([
+            field({
+                id: 'f',
+                label: 'Handaxe',
+                meta: { damage: '1d6', type: 'slashing' },
+                toggles: [
+                    { id: 't', label: 'Flame Tongue', active: false, field: 'flame_tongue', hitMode: 'add', hit: '', setType: '', parts: [{ mode: 'add', damage: '2d6', type: 'fire' }], description: '' },
+                ],
+            }),
+        ])
+        // The linked boolean is on in the scope, so the extra fire part applies
+        // even though the toggle's own `active` is false.
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{ flame_tongue: 1 }} onRoll={() => { }} onToggleFlag={() => { }} />)
+        expect(screen.getByRole('switch', { name: 'Flame Tongue' })).toHaveAttribute('aria-checked', 'true')
+        expect(screen.getByText(/2d6 fire/)).toBeInTheDocument()
+    })
+
+    it('flips the shared boolean (not local state) when a field-bound toggle is clicked', () => {
+        const onToggleFlag = vi.fn()
+        const onUpdateField = vi.fn()
+        const section = actionsSection([
+            field({
+                id: 'f',
+                label: 'Handaxe',
+                meta: { damage: '1d6', type: 'slashing' },
+                toggles: [
+                    { id: 't', label: 'Flame Tongue', active: false, field: 'flame_tongue', hitMode: 'add', hit: '', setType: '', parts: [{ mode: 'add', damage: '2d6', type: 'fire' }], description: '' },
+                ],
+            }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={onUpdateField} scope={{}} onRoll={() => { }} onToggleFlag={onToggleFlag} />)
+        fireEvent.click(screen.getByRole('switch', { name: 'Flame Tongue' }))
+        expect(onToggleFlag).toHaveBeenCalledWith('flame_tongue')
+        expect(onUpdateField).not.toHaveBeenCalled()
+    })
 })
 
 describe('HpWidget death saves', () => {

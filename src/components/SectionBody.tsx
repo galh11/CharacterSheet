@@ -682,10 +682,13 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, 
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onTempHp, contributions, effectTags }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onToggleFlag, onTempHp, contributions, effectTags }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
-    const activeToggles = (field: CharacterField): ActionToggle[] => (field.toggles ?? []).filter((t) => t.active)
+    /** A toggle is on either from its own `active` flag or, when it's bound to a
+     *  boolean `field`, from that field's live value in the scope. */
+    const toggleOn = (t: ActionToggle): boolean => (t.field ? (scope?.[t.field] ?? 0) > 0 : t.active)
+    const activeToggles = (field: CharacterField): ActionToggle[] => (field.toggles ?? []).filter(toggleOn)
 
     /** Effective to-hit modifier after applying active toggles (replace overrides,
      *  add sums). Returns null when the action has no attack roll at all. */
@@ -725,10 +728,15 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
 
     const sit = bonus ?? 0
     const mode = rollMode ?? 'normal'
-    const setToggle = (field: CharacterField, toggleId: string, active: boolean) =>
-        onUpdateField(field.id, {
-            toggles: (field.toggles ?? []).map((t) => (t.id === toggleId ? { ...t, active } : t)),
-        })
+    /** Flip a toggle: a field-bound toggle flips the shared boolean (so every
+     *  place bound to it updates together); a plain toggle flips its own flag. */
+    const flipToggle = (field: CharacterField, t: ActionToggle) => {
+        if (t.field) onToggleFlag?.(t.field)
+        else
+            onUpdateField(field.id, {
+                toggles: (field.toggles ?? []).map((x) => (x.id === t.id ? { ...x, active: !x.active } : x)),
+            })
+    }
     const rollAttack = (field: CharacterField) => {
         const mod = effectiveHit(field) ?? 0
         const series = rollD20Series(mod + sit, mode, repeat ?? 1, bonusDie ?? 0)
@@ -805,22 +813,23 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
                         {showRow && onRoll && (
                             <div className="mt-1.5 flex flex-wrap gap-1 print:hidden">
                                 {toggles.map((t) => (
-                                    <Tooltip key={t.id} content={t.description || ''}>
+                                    <Tooltip key={t.id} content={t.description || (t.field ? `Linked to “${t.field}” — toggles everywhere at once` : '')}>
                                         <button
                                             type="button"
-                                            onClick={() => setToggle(field, t.id, !t.active)}
+                                            onClick={() => flipToggle(field, t)}
                                             role="switch"
-                                            aria-checked={t.active}
+                                            aria-checked={toggleOn(t)}
                                             aria-label={t.label || 'Toggle'}
                                             className={clsx(
                                                 'rounded px-2 py-0.5 text-[11px] font-medium ring-1 transition-colors',
-                                                t.active
+                                                toggleOn(t)
                                                     ? 'bg-amber-400/20 text-amber-200 ring-amber-400/60'
                                                     : 'bg-slate-800 text-slate-400 ring-slate-700 hover:text-slate-200',
                                             )}
-                                            title={t.active ? `${t.label} active — click to turn off` : `Activate ${t.label}`}
+                                            title={toggleOn(t) ? `${t.label} active — click to turn off` : `Activate ${t.label}`}
                                         >
-                                            {t.active ? '🔥' : '○'} {t.label || 'Toggle'}
+                                            {toggleOn(t) ? '🔥' : '○'} {t.label || 'Toggle'}
+                                            {t.field && <span className="ml-1 opacity-60" aria-hidden>🔗</span>}
                                         </button>
                                     </Tooltip>
                                 ))}

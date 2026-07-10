@@ -117,6 +117,9 @@ describe('characterSheetSchema', () => {
             expect(field.toggles?.[0]).toMatchObject({
                 label: 'Flame Tongue',
                 active: false,
+                // The old boolean gate (extraWhen) is preserved as a linked field
+                // so the toggle keeps syncing with the condition.
+                field: 'flame',
             })
             expect(field.toggles?.[0].parts).toEqual([{ mode: 'add', damage: '2d6', type: 'fire' }])
         }

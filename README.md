@@ -40,7 +40,9 @@ one hover away.
   `{expr}` values. One quarterstaff covers both its mundane Strength swing and a
   Shillelagh that replaces the die and uses your spellcasting ability; a handaxe
   adds 2d6 fire only when its Flame Tongue toggle is lit; a single bonus action
-  can add cold *and* radiant damage at once.
+  can add cold *and* radiant damage at once. A toggle can also be **linked to an
+  on/off field**, so the weapon's toggle, a dedicated bonus-action card, and a
+  Conditions chip all flip the same activation together and stay in sync.
 - **Play tools** — a dice engine with advantage/disadvantage, a roll log, rests,
   hit-dice spending, HP/temp-HP, conditions, buff timers, and specialized
   section widgets (abilities, skills, actions, spell slots, and a D&D-Beyond-style

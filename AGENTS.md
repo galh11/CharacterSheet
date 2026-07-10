@@ -138,9 +138,17 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   without changing the base type), or one bonus action that adds several typed
   parts at once (booming blade + cold + radiant). Add as many toggles / parts as
   you like in the section editor (`ActionTogglesEditor`); `ActionCards` folds the
-  active ones into attack/damage rolls. Legacy shapes migrate on load
+  active ones into attack/damage rolls. A toggle can also be **bound to a boolean
+  field** via `toggle.field` (a slug): when set, its on/off state *is* that
+  field's live value (read from `scope`), and clicking it flips the shared
+  boolean through `onToggleFlag`/`useSheet.toggleField` instead of a local flag.
+  So a Flame Tongue can be flipped from the weapon's toggle, a separate
+  bonus-action card, and a Conditions chip — all bound to the same `flame_tongue`
+  field and always in sync. The editor's **Linked** input autocompletes existing
+  boolean field slugs (`booleanReferences`). Legacy shapes migrate on load
   (`foldLegacyActionExtras`): the old single `meta.extra`/`extraWhen` "extra
-  damage" and the earlier single-`damage` toggle both fold into `parts`.
+  damage" folds into `parts` with `extraWhen` preserved as the toggle's linked
+  `field`, and the earlier single-`damage` toggle folds into `parts`.
   Cross-field buffs still use field `effects` (relational effects); toggles only
   reshape their own action's rolls.
 - **Section kinds** drive specialized widgets in `SectionBody` (abilities, hp,

@@ -40,9 +40,9 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
 
     const after = await handle.boundingBox()
     expect(after).not.toBeNull()
-    // The card should have moved to a new position.
+    // On the column grid the card snaps to a new column and the sheet compacts
+    // upward, so dragging right lands it in a further-right column.
     expect(after!.x).toBeGreaterThan(before!.x)
-    expect(after!.y).toBeGreaterThan(before!.y)
 })
 
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {

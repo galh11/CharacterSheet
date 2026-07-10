@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import { useImperativeHandle, useRef, useState, type ReactNode } from 'react'
 import type { SectionLayout } from '../model/characterSheet'
-import { snapMove, snapResize, GRID } from '../model/layout'
+import { snapMove, snapResize, snapToGrid, GRID, type GridMetrics } from '../model/layout'
 
 export interface SnapGuide {
     axis: 'x' | 'y'
@@ -17,6 +17,8 @@ interface CanvasItemProps {
     layout: SectionLayout
     /** Other sections' rects, used as snap targets. */
     siblings: SectionLayout[]
+    /** When set, the card snaps to this column grid instead of to sibling edges. */
+    grid?: GridMetrics
     /** Content zoom (1 = 100%). */
     scale?: number
     /** Environment zoom applied to the canvas (density); used to correct drag deltas. */
@@ -57,7 +59,7 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, drawerMode, dimmed, onDragStart, onDragMove, onDragEnd, handleRef, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, drawerMode, dimmed, onDragStart, onDragMove, onDragEnd, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
     const moved = useRef(false)
@@ -89,6 +91,18 @@ export function CanvasItem({ layout, siblings, scale = 1, zoom = 1, selected, on
         const guides: SnapGuide[] = []
 
         if (state.mode === 'move') onDragMove?.(event.clientX, event.clientY)
+
+        // On a column grid, snap the moving/resizing rect to whole cells and skip
+        // the free-canvas edge guides — the grid is the alignment.
+        if (grid) {
+            const raw =
+                state.mode === 'move'
+                    ? { ...state.origin, x: Math.max(0, state.origin.x + dx), y: Math.max(0, state.origin.y + dy) }
+                    : { ...state.origin, w: Math.max(MIN_W, state.origin.w + dx), h: Math.max(MIN_H, state.origin.h + dy) }
+            setLive(snapToGrid(raw, grid))
+            onGuidesChange?.([])
+            return
+        }
 
         if (state.mode === 'move') {
             const xCands = [0, ...siblings.flatMap((s) => [s.x, s.x + s.w / 2, s.x + s.w])]

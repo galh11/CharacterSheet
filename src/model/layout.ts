@@ -192,6 +192,101 @@ export const compactLayouts = (items: Placed[], gap = GAP): Placed[] => {
     return out
 }
 
+// ── Dashboard grid ──────────────────────────────────────────────────────────
+// Cards live on a fixed column grid (like Grafana / Notion / react-grid-layout):
+// a card is a whole number of columns wide and a whole number of small rows tall,
+// so the layout is tidy by construction — snap to columns, then compact upward to
+// fill vertical gaps. This removes the guessing that a free absolute canvas forces
+// onto "Tidy". Pixel layouts stay the source of truth; the grid is a snap +
+// compaction layer whose geometry is derived from these metrics.
+
+/** Geometry of the column grid. Margin is the gap between cells on both axes; a
+ *  card spanning several cells absorbs the internal margins into its own size. */
+export interface GridMetrics {
+    /** Number of columns. */
+    cols: number
+    /** Width of one column, in px. */
+    colWidth: number
+    /** Height of one row, in px (kept small so card heights aren't clipped). */
+    rowHeight: number
+    /** Gap between cells, in px (both axes). */
+    margin: number
+    /** Left / top padding before the first cell, in px. */
+    pad: number
+}
+
+export const DEFAULT_GRID_COLS = 12
+
+/** Build grid metrics for a column count (sensible defaults for card-sized tiles). */
+export const gridMetrics = (cols = DEFAULT_GRID_COLS): GridMetrics => ({
+    cols,
+    colWidth: 88,
+    rowHeight: 8,
+    margin: GAP,
+    pad: GAP,
+})
+
+/** A card's rectangle in whole grid cells. */
+export interface GridCell {
+    cx: number
+    cy: number
+    cw: number
+    ch: number
+}
+
+const colStep = (m: GridMetrics) => m.colWidth + m.margin
+const rowStep = (m: GridMetrics) => m.rowHeight + m.margin
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+
+/** Total logical width of the grid in px (used to size the canvas). */
+export const gridWidth = (m: GridMetrics): number =>
+    m.pad * 2 + m.cols * m.colWidth + (m.cols - 1) * m.margin
+
+/** Snap a pixel rect to the nearest grid cell (columns rounded, height ceiled so a
+ *  card never loses content). Column span is clamped to fit within the grid. */
+export const toCell = (l: SectionLayout, m: GridMetrics): GridCell => {
+    const cw = clamp(Math.round((l.w + m.margin) / colStep(m)), 1, m.cols)
+    const cx = clamp(Math.round((l.x - m.pad) / colStep(m)), 0, m.cols - cw)
+    const cy = Math.max(0, Math.round((l.y - m.pad) / rowStep(m)))
+    const ch = Math.max(1, Math.ceil((l.h + m.margin) / rowStep(m)))
+    return { cx, cy, cw, ch }
+}
+
+/** Convert a grid cell back to a pixel rect. */
+export const fromCell = (c: GridCell, m: GridMetrics): SectionLayout => ({
+    x: m.pad + c.cx * colStep(m),
+    y: m.pad + c.cy * rowStep(m),
+    w: c.cw * m.colWidth + (c.cw - 1) * m.margin,
+    h: c.ch * m.rowHeight + (c.ch - 1) * m.margin,
+})
+
+/** Snap a single pixel rect onto the grid (idempotent). */
+export const snapToGrid = (l: SectionLayout, m: GridMetrics): SectionLayout =>
+    fromCell(toCell(l, m), m)
+
+const cellsCollide = (a: GridCell, b: GridCell): boolean =>
+    a.cx < b.cx + b.cw && a.cx + a.cw > b.cx && a.cy < b.cy + b.ch && a.cy + a.ch > b.cy
+
+/** Snap every card to the grid, then compact upward: each card keeps its column
+ *  (cx) and drops to the highest row with no collision, filling vertical gaps
+ *  without reflowing across columns. Cards are processed top-to-bottom then
+ *  left-to-right so columns fill from the top. Idempotent. */
+export const compactGrid = (items: Placed[], m: GridMetrics): Placed[] => {
+    if (items.length === 0) return items
+    const cells = items.map((p) => ({ id: p.id, cell: toCell(p.layout, m), layout: p.layout }))
+    cells.sort((a, b) => a.cell.cy - b.cell.cy || a.cell.cx - b.cell.cx)
+    const placed: GridCell[] = []
+    const out: Placed[] = []
+    for (const { id, cell, layout } of cells) {
+        let cy = 0
+        while (placed.some((p) => cellsCollide({ ...cell, cy }, p))) cy++
+        const settled: GridCell = { ...cell, cy }
+        placed.push(settled)
+        out.push({ id, layout: { ...layout, ...fromCell(settled, m) } })
+    }
+    return out
+}
+
 const boundingBox = (rects: SectionLayout[]) => ({
     minX: Math.min(...rects.map((r) => r.x)),
     minY: Math.min(...rects.map((r) => r.y)),

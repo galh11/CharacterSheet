@@ -53,7 +53,7 @@ src/
     compute.ts             # resolveSheet: computed fields + relational effects -> results/scope/contributions/tags; interpolate {expr}
     formulaSuggest.ts      # pure autocomplete helpers: token-at-caret, prefix filter, group-by-section (used by FormulaInput)
     dice.ts                # d20 (advantage/disadvantage), damage, crit flags, roll formatting
-    layout.ts              # canvas geometry: compactLayouts (Tidy), snap/align/distribute, overlap resolution
+    layout.ts              # canvas geometry: dashboard grid (gridMetrics/toCell/snapToGrid/compactGrid), snap/align/distribute, skyline pack
   state/
     useSheet.ts            # central sheet state + immutable mutation ops + undo/redo
     persistence.ts         # versioned localStorage load/save/clear (+ migration)
@@ -198,15 +198,23 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `What's new · v<APP_VERSION>`, which opens `AboutModal` (version, build time,
   and each release's summary + GitHub PR link). Ship a user-visible change →
   prepend a `CHANGELOG` entry (bumping the version) in the same PR.
-- **Tidy** (`App.handleTidy` → `layout.compactLayouts`) neatens a **hand-built**
-  arrangement instead of collapsing it: it fits each card's **height** (keeping
-  the width you set), groups cards into columns by horizontal overlap in their
-  current positions, then stacks each column top-to-bottom and packs the columns
-  left-to-right — closing gaps **within and between** columns without reflowing a
-  card into a different column. Other `layout.ts` helpers handle snapping,
-  alignment, distribution, and overlap; **Spread across width**
-  (`layout.tidyLayouts`) is the reflow-everything option (fit both axes, then
-  skyline-pack across the window).
+- **Dashboard grid canvas**: canvas cards live on a fixed **column grid** (like
+  Grafana / Notion / react-grid-layout) so the layout is tidy by construction.
+  `layout.ts` `gridMetrics(cols)` defines the geometry (default **12 columns**,
+  `colWidth` 88, `rowHeight` 8, `margin` 16) and `toCell`/`fromCell`/`snapToGrid`
+  convert between pixel rects and whole grid cells (columns rounded, height
+  ceiled so a card never loses content). While dragging/resizing a canvas card,
+  `CanvasItem` snaps it to the grid (via its `grid` prop) instead of to sibling
+  edges. On drop, `App.commitLayout` runs `layout.compactGrid` over **every**
+  canvas card: each keeps its column (cx) and drops to the highest free row, so
+  the sheet re-packs with **no overlaps and no vertical gaps** in one undo step.
+  **Tidy** (`App.handleTidy`) = fit each card's height then `compactGrid`. The
+  module-scope `CANVAS_GRID = gridMetrics()` is the single grid; the canvas div is
+  at least `gridWidth(CANVAS_GRID)` wide so all columns are reachable. (Existing
+  pixel sheets keep their stored positions until the first drag/Tidy snaps them
+  onto the grid.) Other `layout.ts` helpers handle alignment/distribution;
+  `compactLayouts`/`tidyLayouts` remain for **Spread across width**
+  (`layout.tidyLayouts`, the reflow-everything skyline pack).
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the
   viewport (a non-moving click clears the selection). **Fit to width** scales the
   whole canvas so its content fills the current window width edge-to-edge: it

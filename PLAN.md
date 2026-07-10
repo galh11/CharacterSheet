@@ -207,6 +207,11 @@ D&D extras
 - [x] **Free-canvas scratch-pad**: opening the drawer shows a scrollable pad where
       tucked cards get their own `drawerLayout` and can be dragged/resized freely;
       ⊞ restores a card to the sheet.
+- [x] **Seamless in/out drag**: the drawer auto-opens as you drag a card toward
+      its tab, cards land at the drop point in either direction, and dragging a
+      card out onto the canvas restores it (the scratch-pad un-clips mid-drag so a
+      card can straddle both). The tab moved to the left edge and got a bolder,
+      higher-contrast style.
 - [ ] **Follow-up**: drag-to-reorder tiles in the stack view (separate PR).
 
 ## Notes

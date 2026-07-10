@@ -37,6 +37,28 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
         ],
     },
     {
+        id: 'spellcards',
+        label: 'Spell cards',
+        title: 'Spells',
+        kind: 'spellcards',
+        fields: [
+            {
+                label: 'Fire Bolt',
+                type: 'text',
+                value: '',
+                description: 'A ranged spell attack for 1d10 fire damage.',
+                meta: { level: '0', school: 'Evocation', range: '120 ft', save: '+{spell_attack}', damage: '1d10', type: 'fire' },
+            },
+            {
+                label: 'Burning Hands',
+                type: 'text',
+                value: '',
+                description: '15-ft cone; DEX save for half.',
+                meta: { level: '1', school: 'Evocation', range: 'Self (15-ft cone)', save: 'DC {spell_save_dc} DEX', damage: '3d6', type: 'fire', slot: 'level_1', cost: '1', slotLabel: 'L1 slot' },
+            },
+        ],
+    },
+    {
         id: 'conditions',
         label: 'Conditions',
         title: 'Conditions',

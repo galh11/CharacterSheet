@@ -1032,6 +1032,88 @@ function SpellSlots({ section, onUpdateField }: SectionBodyProps) {
     )
 }
 
+/** Spell cards: each field is a spell (name + level/school/range/save/damage). A
+ *  Cast button spends the linked spell-slot resource (via `onSpend`) and logs the
+ *  cast; a Damage button rolls the spell's damage dice. All numeric bits accept
+ *  `{expr}` interpolation, so a save DC or damage can reference other fields. */
+function SpellCards({ section, scope, onRoll, onSpend, contributions, effectTags }: SectionBodyProps) {
+    const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
+    const cast = (field: CharacterField) => {
+        const m = field.meta ?? {}
+        const cost = Number(m.cost) || 1
+        if (m.slot) onSpend?.(m.slot, cost)
+        onRoll?.({
+            title: `${field.label} — cast`,
+            detail: m.slot ? `Spent ${cost} × ${m.slotLabel || m.slot}` : 'Cast',
+            total: cost,
+            kind: 'raw',
+        })
+    }
+    const rollSpellDamage = (field: CharacterField, crit: boolean) => {
+        const m = field.meta ?? {}
+        if (!m.damage) return
+        const dmg = rollDamage([{ expr: crit ? doubleDice(val(m.damage)) : val(m.damage), type: m.type || '' }])
+        if (dmg.parts.length === 0) return
+        const detail = dmg.parts.map((p) => `${p.result.total}${p.type ? ` ${p.type}` : ''}`).join(' + ')
+        onRoll?.({ title: `${field.label} — damage${crit ? ' (crit)' : ''}`, detail, total: dmg.total, kind: 'damage' })
+    }
+    if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No spells yet.</p>
+    return (
+        <div className="flex flex-col gap-2">
+            {section.fields.map((field) => {
+                const m = field.meta ?? {}
+                const level = m.level ?? ''
+                const isCantrip = level === '' || level === '0'
+                const cost = Number(m.cost) || 1
+                const canCast = Boolean(m.slot)
+                const enough = !m.slot || (scope?.[m.slot] ?? 0) >= cost
+                return (
+                    <div key={field.id} className="rounded-lg border border-slate-700 bg-slate-900/70 p-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-medium text-slate-100">{field.label}</span>
+                            <EffectTargetBadges slug={slugify(field.label)} contributions={contributions} tags={effectTags} />
+                            <span className="rounded-md bg-violet-500/20 px-1.5 py-0.5 text-[10px] font-medium text-violet-200 ring-1 ring-violet-500/40">
+                                {isCantrip ? 'Cantrip' : `Lvl ${level}`}
+                            </span>
+                            {m.school && <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">{m.school}</span>}
+                            {m.range && <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">{m.range}</span>}
+                            {m.save && <span className="rounded-md bg-amber-500/15 px-1.5 py-0.5 text-xs text-amber-200 ring-1 ring-amber-500/30">{val(m.save)}</span>}
+                            {m.damage && (
+                                <span className={clsx('rounded-md px-1.5 py-0.5 font-mono text-xs ring-1', damageColor(m.type))}>
+                                    {val(m.damage)}{m.type ? ` ${m.type}` : ''}
+                                </span>
+                            )}
+                        </div>
+                        {onRoll && (
+                            <div className="mt-1.5 flex flex-wrap gap-1 print:hidden">
+                                <button
+                                    type="button"
+                                    onClick={() => cast(field)}
+                                    disabled={canCast && !enough}
+                                    className={clsx(
+                                        'rounded px-2 py-0.5 text-[11px] font-medium',
+                                        !canCast
+                                            ? 'bg-violet-600/80 text-white hover:bg-violet-500'
+                                            : enough
+                                              ? 'bg-fuchsia-600/80 text-white hover:bg-fuchsia-500'
+                                              : 'cursor-not-allowed bg-slate-800 text-slate-600',
+                                    )}
+                                    title={canCast ? `Cast — spend ${cost} × ${m.slotLabel || m.slot}` : 'Cast'}
+                                >
+                                    ✦ Cast{canCast ? ` −${cost}` : ''}
+                                </button>
+                                {m.damage && <button type="button" onClick={() => rollSpellDamage(field, false)} className="rounded bg-rose-600/80 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-rose-500">🎲 Damage</button>}
+                                {m.damage && <button type="button" onClick={() => rollSpellDamage(field, true)} className="rounded border border-amber-500/50 px-2 py-0.5 text-[11px] font-medium text-amber-300 hover:bg-amber-900/30" title="Roll damage with doubled dice (critical hit)">Crit</button>}
+                            </div>
+                        )}
+                        {field.description && <p className="m-0 mt-1 text-xs leading-snug text-slate-400">{field.description}</p>}
+                    </div>
+                )
+            })}
+        </div>
+    )
+}
+
 function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, bonusDie, onRoll }: SectionBodyProps) {
     const turn = section.meta?.turn
     const sorted = [...section.fields].sort((a, b) => toNum(b.value) - toNum(a.value))
@@ -1258,6 +1340,8 @@ export function SectionBody(props: SectionBodyProps) {
             return <Conditions {...props} />
         case 'spellslots':
             return <SpellSlots {...props} />
+        case 'spellcards':
+            return <SpellCards {...props} />
         case 'initiative':
             return <Initiative {...props} />
         case 'currency':

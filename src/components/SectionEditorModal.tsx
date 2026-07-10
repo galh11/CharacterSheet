@@ -46,6 +46,7 @@ const SECTION_KINDS: { value: SectionKind; label: string }[] = [
     { value: 'hitdice', label: 'Hit dice' },
     { value: 'conditions', label: 'Conditions' },
     { value: 'spellslots', label: 'Spell slots' },
+    { value: 'spellcards', label: 'Spell cards' },
     { value: 'initiative', label: 'Initiative' },
     { value: 'currency', label: 'Currency' },
     { value: 'inventory', label: 'Inventory' },
@@ -191,6 +192,21 @@ const ACTION_META_FIELDS: { key: string; label: string; placeholder: string; res
 const TOGGLE_MODES: { value: ToggleMode; label: string }[] = [
     { value: 'add', label: 'add to' },
     { value: 'replace', label: 'replace' },
+]
+
+/** Labeled inputs for a spell-card field's meta (level, school, damage, the
+ *  spell-slot resource its Cast button spends…). The `resource` flag marks the
+ *  slot input so it autocompletes spendable resources instead of formula fields. */
+const SPELL_META_FIELDS: { key: string; label: string; placeholder: string; resource?: boolean }[] = [
+    { key: 'level', label: 'Spell level (0 = cantrip)', placeholder: '1' },
+    { key: 'school', label: 'School', placeholder: 'Evocation' },
+    { key: 'range', label: 'Range', placeholder: '60 ft' },
+    { key: 'save', label: 'Save / to-hit', placeholder: 'DC {spell_save_dc} DEX' },
+    { key: 'damage', label: 'Damage dice', placeholder: '3d6' },
+    { key: 'type', label: 'Damage type', placeholder: 'fire' },
+    { key: 'slot', label: 'Spell-slot resource to spend (slug)', placeholder: 'level_1', resource: true },
+    { key: 'cost', label: 'Slots per cast', placeholder: '1' },
+    { key: 'slotLabel', label: 'Slot label', placeholder: 'L1 slot' },
 ]
 
 /** Editor for an action's activatable toggles — named on/off switches that add or
@@ -760,6 +776,24 @@ export function SectionEditorModal({
 
                                     {section.kind === 'actions' && (
                                         <ActionTogglesEditor field={field} references={formulaReferences} booleanReferences={booleanReferences} onUpdateField={onUpdateField} />
+                                    )}
+
+                                    {section.kind === 'spellcards' && (
+                                        <div className="mt-2 grid grid-cols-2 gap-1.5">
+                                            {SPELL_META_FIELDS.map(({ key, label, placeholder, resource }) => (
+                                                <label key={key} className="flex flex-col gap-0.5 text-[10px] text-slate-500">
+                                                    {label}
+                                                    <FormulaInput
+                                                        value={field.meta?.[key] ?? ''}
+                                                        onChange={(next) => setMeta(field, key, next)}
+                                                        references={resource ? resourceReferences : formulaReferences}
+                                                        placeholder={placeholder}
+                                                        className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                        aria-label={`Spell ${label}`}
+                                                    />
+                                                </label>
+                                            ))}
+                                        </div>
                                     )}
 
                                     <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">

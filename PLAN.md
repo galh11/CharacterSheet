@@ -160,9 +160,10 @@ Sharing & polish
 - [x] **27** ✅ Per-character colour theme (accent palette).
 
 D&D extras
-- [ ] **28** ⏳ Spell **cards** (distinct from the spell-slots tracker we shipped):
-      name/level/range/save/damage + a cast button that spends a slot. Not
-      relevant to Yad (no spells); build when a caster is added.
+- [x] **28** ✅ Spell **cards** (distinct from the spell-slots tracker): a
+      `spellcards` section kind — each spell shows level/school/range/save/damage;
+      a Cast button spends the linked spell slot (`meta.slot`) and a Damage button
+      rolls its dice. Cantrips (level 0) cast without spending.
 - [x] **29** ✅ Conditions library (one-click add common conditions with rules text).
 - [x] **30** ✅ Prominent **Inspiration** toggle (today it's only a generic boolean/condition).
 - [x] **31** ✅ Rest log (history of rests and what recovered).

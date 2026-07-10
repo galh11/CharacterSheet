@@ -215,6 +215,64 @@ describe('ActionCards', () => {
     })
 })
 
+describe('SpellCards', () => {
+    const spellSection = (fields: CharacterField[]): CharacterSection => ({
+        id: 's',
+        title: 'Spells',
+        description: '',
+        accent: '#000',
+        kind: 'spellcards',
+        scale: 1,
+        fields,
+        layout: { x: 0, y: 0, w: 1, h: 1 },
+    })
+
+    it('renders the level badge and interpolated damage', () => {
+        const section = spellSection([
+            field({ id: 'bh', label: 'Burning Hands', meta: { level: '1', school: 'Evocation', save: 'DC {spell_save_dc} DEX', damage: '3d6', type: 'fire' } }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{ spell_save_dc: 15 }} onRoll={() => { }} />)
+        expect(screen.getByText('Lvl 1')).toBeInTheDocument()
+        expect(screen.getByText('DC 15 DEX')).toBeInTheDocument()
+        expect(screen.getByText(/3d6 fire/)).toBeInTheDocument()
+    })
+
+    it('spends the linked spell slot when Cast is clicked', () => {
+        const onSpend = vi.fn()
+        const section = spellSection([
+            field({ id: 'bh', label: 'Burning Hands', meta: { level: '1', damage: '3d6', type: 'fire', slot: 'level_1', cost: '1', slotLabel: 'L1 slot' } }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{ level_1: 2 }} onRoll={() => { }} onSpend={onSpend} />)
+        fireEvent.click(screen.getByRole('button', { name: /Cast/ }))
+        expect(onSpend).toHaveBeenCalledWith('level_1', 1)
+    })
+
+    it('disables Cast when the linked slot is exhausted', () => {
+        const onSpend = vi.fn()
+        const section = spellSection([
+            field({ id: 'bh', label: 'Burning Hands', meta: { level: '1', slot: 'level_1', cost: '1' } }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{ level_1: 0 }} onRoll={() => { }} onSpend={onSpend} />)
+        const cast = screen.getByRole('button', { name: /Cast/ })
+        expect(cast).toBeDisabled()
+        fireEvent.click(cast)
+        expect(onSpend).not.toHaveBeenCalled()
+    })
+
+    it('casts a cantrip (no slot) without spending', () => {
+        const onSpend = vi.fn()
+        const onRoll = vi.fn()
+        const section = spellSection([
+            field({ id: 'fb', label: 'Fire Bolt', meta: { level: '0', damage: '1d10', type: 'fire' } }),
+        ])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{}} onRoll={onRoll} onSpend={onSpend} />)
+        expect(screen.getByText('Cantrip')).toBeInTheDocument()
+        fireEvent.click(screen.getByRole('button', { name: /Cast/ }))
+        expect(onSpend).not.toHaveBeenCalled()
+        expect(onRoll).toHaveBeenCalledWith(expect.objectContaining({ title: expect.stringContaining('cast') }))
+    })
+})
+
 describe('HpWidget death saves', () => {
     const hpSection = (current: string, meta?: Record<string, string>): CharacterSection => ({
         id: 'hp',

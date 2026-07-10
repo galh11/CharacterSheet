@@ -208,13 +208,19 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   by **dragging** it: the prominent violet **drawer tab** on the left edge
   auto-opens the panel as you drag a card near it, and releasing over the panel
   tucks the card **at the drop point** (`App.onCardDragMove` / `onCardDragEnd`
-  map the pointer into the target container via `pointToLayout`). The reverse is
-  just as seamless — drag a card out of the drawer and drop it on the canvas to
-  restore it there (the scratch-pad switches to `overflow-visible` mid-drag so the
-  card can straddle both). The tab persists whenever the current view's drawer
-  holds ≥1 card (and hides when empty). Inside the drawer each tucked card gets
-  its own `drawerLayout` and can be dragged/resized freely; ⊞ restores a card to
-  the sheet. Drawer cards still feed their fields into computed formulas.
+  map the pointer into the target container via `pointToLayout`, offset by the
+  grab point so a card lands exactly where you release it). While a card is
+  dragged over the drawer it's hidden in place and a **floating preview**
+  (`dragPoint` + `dragGrab`) straddles the panel edge; the reverse is just as
+  seamless — drag a card out of the drawer and drop it on the canvas to restore it
+  there (the scratch-pad switches to `overflow-visible` mid-drag so the card can
+  straddle both). The drawer **auto-closes** once its last card leaves
+  (`closeDrawerIfEmpty`), and the fixed panel docks below the header's live
+  `getBoundingClientRect().bottom` (tracked on scroll/resize) so it never overlaps
+  the top bar. The tab persists whenever the current view's drawer holds ≥1 card
+  (and hides when empty). Inside the drawer each tucked card gets its own
+  `drawerLayout` and can be dragged/resized freely; ⊞ restores a card to the
+  sheet. Drawer cards still feed their fields into computed formulas.
 
 ## Testing
 

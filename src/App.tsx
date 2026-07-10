@@ -98,7 +98,11 @@ function App() {
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dropHot, setDropHot] = useState(false)
-    const [headerH, setHeaderH] = useState(0)
+    const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null)
+    // Pointer offset (card-local px) where a drag was grabbed, so tuck/restore drops
+    // and the floating drag preview align the card under the cursor.
+    const [dragGrab, setDragGrab] = useState({ x: 0, y: 0 })
+    const [headerBottom, setHeaderBottom] = useState(0)
     const [containerWidth, setContainerWidth] = useState(0)
     const [fitWidth, setFitWidth] = useState(() => {
         try {
@@ -496,10 +500,18 @@ function App() {
         })
     }
 
+    // Collapse the drawer once its last card leaves, so it doesn't linger open and
+    // empty. `removedId` is the card being taken out (still present in `sheet`).
+    const closeDrawerIfEmpty = (removedId: string) => {
+        const remaining = sheet.sections.filter((s) => s.id !== removedId && inDrawer(s, view)).length
+        if (remaining === 0) setDrawerOpen(false)
+    }
+
     const showSection = (id: string) => {
         const section = sheet.sections.find((s) => s.id === id)
         if (!section) return
         updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: false } })
+        closeDrawerIfEmpty(id)
     }
 
     const pointInRect = (el: HTMLElement | null, x: number, y: number): boolean => {
@@ -513,8 +525,8 @@ function App() {
     const isOverTab = (x: number, y: number): boolean => pointInRect(drawerTabRef.current, x, y)
 
     // Map a screen point to a layout inside a positioned container (canvas or the
-    // drawer's scratch-pad), grabbing the card near its top-left so it lands under
-    // the cursor. `zoom` undoes any CSS zoom on the container.
+    // drawer's scratch-pad), keeping the grabbed point under the cursor so the card
+    // lands where you release it. `zoom` undoes any CSS zoom on the container.
     const pointToLayout = (
         el: HTMLElement | null,
         x: number,
@@ -526,15 +538,15 @@ function App() {
         if (!el) return null
         const r = el.getBoundingClientRect()
         return {
-            x: Math.max(0, Math.round((x - r.left) / zoom - 24)),
-            y: Math.max(0, Math.round((y - r.top) / zoom - 12)),
+            x: Math.max(0, Math.round((x - r.left) / zoom - dragGrab.x)),
+            y: Math.max(0, Math.round((y - r.top) / zoom - dragGrab.y)),
             w,
             h,
         }
     }
 
     // Live feedback while a card is dragged: auto-open the drawer as a canvas card
-    // approaches its tab, and highlight the drop target.
+    // approaches its tab, highlight the drop target, and drive the floating preview.
     const onCardDragMove = (id: string, x: number, y: number) => {
         const section = sheet.sections.find((s) => s.id === id)
         if (!section) return
@@ -544,7 +556,11 @@ function App() {
             return
         }
         if (!drawerOpen && isOverTab(x, y)) setDrawerOpen(true)
-        setDropHot(isOverTab(x, y) || isOverPanel(x, y))
+        const over = isOverTab(x, y) || isOverPanel(x, y)
+        setDropHot(over)
+        // Only float a preview while the card is over the drawer (where it would
+        // otherwise be hidden behind the panel); normal canvas dragging is untouched.
+        setDragPoint(over ? { x, y } : null)
     }
 
     // Decide where a dragged card lands. Canvas cards released over the drawer are
@@ -553,6 +569,7 @@ function App() {
     const onCardDragEnd = (id: string, x: number, y: number, moved: boolean): boolean => {
         setDraggingId(null)
         setDropHot(false)
+        setDragPoint(null)
         if (!moved) return false
         const section = sheet.sections.find((s) => s.id === id)
         if (!section) return false
@@ -567,6 +584,7 @@ function App() {
             } else {
                 updateSection(id, drawerPatch)
             }
+            closeDrawerIfEmpty(id)
             return true
         }
         // Canvas card: tuck it into the drawer if released over the panel or tab.
@@ -716,16 +734,23 @@ function App() {
         return () => ro.disconnect()
     }, [stackView])
 
-    // Track the header's height so the fixed drawer overlay docks just beneath it
-    // (the header collapses, so this can't be a constant).
+    // Track the header's on-screen bottom edge so the fixed drawer overlay docks
+    // just beneath it. Using the live bounding rect (not offsetHeight) accounts for
+    // the header sitting below the page's top padding and for it sticking on scroll.
     useEffect(() => {
         const el = headerRef.current
         if (!el) return
-        const measure = () => setHeaderH(el.offsetHeight)
+        const measure = () => setHeaderBottom(el.getBoundingClientRect().bottom)
         measure()
         const ro = new ResizeObserver(measure)
         ro.observe(el)
-        return () => ro.disconnect()
+        window.addEventListener('scroll', measure, { passive: true })
+        window.addEventListener('resize', measure)
+        return () => {
+            ro.disconnect()
+            window.removeEventListener('scroll', measure)
+            window.removeEventListener('resize', measure)
+        }
     }, [])
 
     useEffect(() => {
@@ -1251,7 +1276,8 @@ function App() {
                                     onSelect={(additive) => handleSelect(section.id, additive)}
                                     onEdit={() => setEditingSectionId(section.id)}
                                     onHide={() => hideSection(section.id)}
-                                    onDragStart={() => setDraggingId(section.id)}
+                                    dimmed={draggingId === section.id && dropHot}
+                                    onDragStart={(ox, oy) => { setDraggingId(section.id); setDragGrab({ x: ox, y: oy }) }}
                                     onDragMove={(x, y) => onCardDragMove(section.id, x, y)}
                                     onDragEnd={(x, y, moved) => onCardDragEnd(section.id, x, y, moved)}
                                     handleRef={(h) => {
@@ -1324,7 +1350,7 @@ function App() {
                         'fixed left-0 z-30 flex flex-col border-r-2 bg-slate-950/95 shadow-2xl backdrop-blur transition-colors print:hidden',
                         dropHot ? 'border-emerald-400' : 'border-violet-500/60',
                     )}
-                    style={{ top: headerH, bottom: 0, width: DRAWER_W }}
+                    style={{ top: headerBottom, bottom: 0, width: DRAWER_W }}
                 >
                     <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-2 text-xs font-medium text-violet-200">
                         <span className="whitespace-nowrap font-semibold">Drawer · {view === 'stack' ? 'Stack' : 'Canvas'}</span>
@@ -1347,7 +1373,7 @@ function App() {
                                     onScaleChange={(scale) => updateSection(section.id, { scale })}
                                     onEdit={() => setEditingSectionId(section.id)}
                                     onHide={() => showSection(section.id)}
-                                    onDragStart={() => setDraggingId(section.id)}
+                                    onDragStart={(ox, oy) => { setDraggingId(section.id); setDragGrab({ x: ox, y: oy }) }}
                                     onDragMove={(x, y) => onCardDragMove(section.id, x, y)}
                                     onDragEnd={(x, y, moved) => onCardDragEnd(section.id, x, y, moved)}
                                 >
@@ -1364,6 +1390,31 @@ function App() {
                     </div>
                 </div>
             )}
+
+            {/* Floating preview so a card visually straddles the canvas and the
+                drawer while being dragged in (where the panel would otherwise hide
+                it). Only shown for a canvas card over the drawer; the original is
+                dimmed in place meanwhile. */}
+            {dragPoint && (() => {
+                const dragging = draggingId ? sheet.sections.find((s) => s.id === draggingId) : null
+                if (!dragging || inDrawer(dragging, view)) return null
+                const grab = dragGrab
+                return (
+                    <div
+                        className="pointer-events-none fixed z-50 rounded-lg opacity-90 shadow-2xl ring-2 ring-violet-400 print:hidden"
+                        style={{
+                            left: dragPoint.x - grab.x * canvasZoom,
+                            top: dragPoint.y - grab.y * canvasZoom,
+                            width: dragging.layout.w,
+                            height: dragging.layout.h,
+                            transform: `scale(${canvasZoom})`,
+                            transformOrigin: '0 0',
+                        }}
+                    >
+                        {renderCard(dragging, false)}
+                    </div>
+                )
+            })()}
 
             {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
 

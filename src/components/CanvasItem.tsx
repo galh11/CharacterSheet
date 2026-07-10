@@ -45,6 +45,9 @@ interface CanvasItemProps {
     onDragStart?: (offsetX: number, offsetY: number) => void
     /** Fired continuously during a move-drag with screen coordinates. */
     onDragMove?: (x: number, y: number) => void
+    /** On a column grid, fired continuously during a move-drag with the card's
+     *  snapped grid layout, so the parent can reflow the other cards live. */
+    onGridDrag?: (layout: SectionLayout) => void
     /** Fired when a move-drag ends. Returning true means the drop was consumed
      *  elsewhere (e.g. tucked into the drawer), so the layout is not committed. */
     onDragEnd?: (x: number, y: number, moved: boolean) => boolean
@@ -59,7 +62,7 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, drawerMode, dimmed, onDragStart, onDragMove, onDragEnd, handleRef, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, onHide, drawerMode, dimmed, onDragStart, onDragMove, onGridDrag, onDragEnd, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
     const moved = useRef(false)
@@ -99,7 +102,9 @@ export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, select
                 state.mode === 'move'
                     ? { ...state.origin, x: Math.max(0, state.origin.x + dx), y: Math.max(0, state.origin.y + dy) }
                     : { ...state.origin, w: Math.max(MIN_W, state.origin.w + dx), h: Math.max(MIN_H, state.origin.h + dy) }
-            setLive(snapToGrid(raw, grid))
+            const snapped = snapToGrid(raw, grid)
+            setLive(snapped)
+            if (state.mode === 'move') onGridDrag?.(snapped)
             onGuidesChange?.([])
             return
         }
@@ -200,7 +205,15 @@ export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, select
     return (
         <div
             ref={rootRef}
-            className={clsx('group absolute rounded-lg', live && 'z-20 select-none', selected && 'z-10 ring-2 ring-cyan-400', dimmed && 'opacity-0')}
+            className={clsx(
+                'group absolute rounded-lg',
+                live && 'z-20 select-none',
+                // Smoothly slide into place when the parent reflows the grid, but not
+                // while this card is the one being dragged (it must track the cursor).
+                !live && grid && 'transition-[left,top] duration-150 ease-out motion-reduce:transition-none',
+                selected && 'z-10 ring-2 ring-cyan-400',
+                dimmed && 'opacity-0',
+            )}
             style={{ left: current.x, top: current.y, width: current.w, height: current.h }}
             onPointerMove={onPointerMove}
             onPointerUp={endDrag}

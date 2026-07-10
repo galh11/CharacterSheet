@@ -205,14 +205,19 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   convert between pixel rects and whole grid cells (columns rounded, height
   ceiled so a card never loses content). While dragging/resizing a canvas card,
   `CanvasItem` snaps it to the grid (via its `grid` prop) instead of to sibling
-  edges. On drop, `App.commitLayout` runs `layout.compactGrid` over **every**
-  canvas card: each keeps its column (cx) and drops to the highest free row, so
-  the sheet re-packs with **no overlaps and no vertical gaps** in one undo step.
-  **Tidy** (`App.handleTidy`) = fit each card's height then `compactGrid`. The
-  module-scope `CANVAS_GRID = gridMetrics()` is the single grid; the canvas div is
-  at least `gridWidth(CANVAS_GRID)` wide so all columns are reachable. (Existing
-  pixel sheets keep their stored positions until the first drag/Tidy snaps them
-  onto the grid.) Other `layout.ts` helpers handle alignment/distribution;
+  edges. On drop, `App.commitLayout` runs `layout.placeInGrid` — the released
+  card is **pinned at the cell where you dropped it** and every other card is
+  compacted upward around it (no overlaps), so what you saw while dragging is
+  exactly what lands. **While** dragging, `CanvasItem.onGridDrag` feeds the live
+  snapped layout to `App.onGridDrag`, which runs the same `placeInGrid` into
+  `gridPreview` and re-renders the *other* cards at their reflowed spots (they
+  slide out of the way via a short CSS transition; the dragged card tracks the
+  cursor). **Tidy** (`App.handleTidy`) fits each card's height then
+  `compactGrid`s (full upward compaction). The module-scope
+  `CANVAS_GRID = gridMetrics()` is the single grid; the canvas div is at least
+  `gridWidth(CANVAS_GRID)` wide so all columns are reachable. (Existing pixel
+  sheets keep their stored positions until the first drag/Tidy snaps them onto
+  the grid.) Other `layout.ts` helpers handle alignment/distribution;
   `compactLayouts`/`tidyLayouts` remain for **Spread across width**
   (`layout.tidyLayouts`, the reflow-everything skyline pack).
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the

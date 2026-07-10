@@ -287,6 +287,44 @@ export const compactGrid = (items: Placed[], m: GridMetrics): Placed[] => {
     return out
 }
 
+/** Reflow the grid around a card being dragged: the moving card is pinned at
+ *  `target` (its live cursor cell) and every other card is compacted upward
+ *  around it (kept in its own column, dropped to the highest free row). Used for
+ *  the live drag preview and the drop commit so the layout you see while dragging
+ *  is exactly what lands — neighbours slide out of the way, the dragged card stays
+ *  where you release it. Overlap-free. */
+export const placeInGrid = (
+    items: Placed[],
+    movingId: string,
+    target: GridCell,
+    m: GridMetrics,
+): Placed[] => {
+    if (items.length === 0) return items
+    const moving = items.find((p) => p.id === movingId)
+    const pinned: GridCell = {
+        cx: clamp(target.cx, 0, Math.max(0, m.cols - target.cw)),
+        cy: Math.max(0, target.cy),
+        cw: clamp(target.cw, 1, m.cols),
+        ch: Math.max(1, target.ch),
+    }
+    const placed: GridCell[] = [pinned]
+    const out: Placed[] = moving
+        ? [{ id: movingId, layout: { ...moving.layout, ...fromCell(pinned, m) } }]
+        : []
+    const others = items
+        .filter((p) => p.id !== movingId)
+        .map((p) => ({ id: p.id, cell: toCell(p.layout, m), layout: p.layout }))
+        .sort((a, b) => a.cell.cy - b.cell.cy || a.cell.cx - b.cell.cx)
+    for (const { id, cell, layout } of others) {
+        let cy = 0
+        while (placed.some((p) => cellsCollide({ ...cell, cy }, p))) cy++
+        const settled: GridCell = { ...cell, cy }
+        placed.push(settled)
+        out.push({ id, layout: { ...layout, ...fromCell(settled, m) } })
+    }
+    return out
+}
+
 const boundingBox = (rects: SectionLayout[]) => ({
     minX: Math.min(...rects.map((r) => r.x)),
     minY: Math.min(...rects.map((r) => r.y)),

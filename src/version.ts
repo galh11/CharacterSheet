@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.9.1',
+        date: '2026-07-10',
+        summary: 'Grid column count now works properly: fewer columns make the cards wider (the columns divide a fixed canvas width) instead of shrinking the whole canvas, so it lines up correctly with and without Fit to width.',
+    },
+    {
         version: '1.9.0',
         date: '2026-07-10',
         summary: 'New “Spell cards” section kind: each spell shows its level, school, range, save and damage, with a Cast button that spends a linked spell slot and a Damage roll — add one from the + Template ▾ menu or switch any section to it.',

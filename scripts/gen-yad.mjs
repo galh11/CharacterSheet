@@ -314,24 +314,11 @@ S('Languages', 'default', [
 ])
 
 // 17. Inventory — one D&D-Beyond-style section: coin purse at the top (Bone
-// Marks is a homebrew denomination), then notable gear (some grant effects) and
-// mundane equipment together.
+// Marks is a homebrew denomination), then the gear from Yad's export (some carry
+// custom names/notes) and mundane equipment together.
 S('Inventory', 'inventory', [
     F('Bone Marks', 'number', 108, { description: 'Homebrew currency.', meta: { coin: 'bones' } }),
     F('GP', 'number', 0, { meta: { coin: 'gp' } }),
-    // NB: the next two items are ILLUSTRATIVE DEMOS of relational `effects`
-    // (field-to-field buffs) — they are NOT in Yad's D&D Beyond export. When
-    // building a new character, do not copy them; take gear only from that
-    // character's own digest. (Everything else in this section IS from the export,
-    // incl. the custom-named "Reinforced Studded Leather" + its DR-3 note.)
-    F('Ring of Protection (Bone-Carved)', 'text', 'worn', {
-        description: '+1 to AC while worn (a relational effect — toggle it off in the editor to unequip).',
-        effects: [{ target: 'ac', op: 'add', value: '1' }],
-    }),
-    F('Knuckle-Wraps of Might', 'text', 'worn', {
-        description: '+1 to your Strength modifier (a relational effect folded into STR Mod and everything derived from it).',
-        effects: [{ target: 'str_mod', op: 'add', value: '1' }],
-    }),
     F('Flame Tongue Handaxe', 'text', 'equipped', { description: '+2d6 fire while ablaze (Bonus Action to ignite). Sheds Bright Light 40 ft.' }),
     F('Reinforced Studded Leather', 'text', 'worn', { description: 'Reduce all damage taken by 3 (applied in the HP tracker).' }),
     F('Dark Adaptation Helmet', 'text', 'worn', { description: 'Grants Darkvision 15 ft.' }),

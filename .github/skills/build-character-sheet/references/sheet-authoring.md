@@ -11,10 +11,9 @@ canonical examples — read them alongside this file:
 > *structure and patterns*, not content. Build every field from the character's
 > own digest; do not copy their items, effects, or numbers, and never clone a
 > near-identical existing generator (reconcile each item/effect against the
-> digest). `gen-yad.mjs` deliberately includes a couple of illustrative demo
-> items ("Ring of Protection (Bone-Carved)", "Knuckle-Wraps of Might") to show
-> relational `effects` — those are **not** in Yad's export, so copying the file
-> wholesale silently adds fake gear and inflates AC / STR.
+> digest). Copying a generator wholesale silently imports the other character's
+> gear and inflates AC / STR. Relational `effects` are documented with a worked
+> example under "Relational effects" below.
 
 The zod schema in [src/model/characterSheet.ts](../../../../src/model/characterSheet.ts)
 is the source of truth for shapes; the architecture notes in

@@ -14,6 +14,8 @@ import {
     gridMetrics,
     gridWidth,
     compactGrid,
+    placeInGrid,
+    toCell,
     type Placed,
     type AlignEdge,
 } from './model/layout'
@@ -103,6 +105,10 @@ function App() {
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dropHot, setDropHot] = useState(false)
+    // Live grid reflow: while a canvas card is dragged, the other cards' previewed
+    // positions (keyed by id). Null when not dragging on the grid.
+    const [gridPreview, setGridPreview] = useState<Map<string, SectionLayout> | null>(null)
+    const dragOverDrawerRef = useRef(false)
     const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null)
     // Pointer offset (card-local px) where a drag was grabbed, so tuck/restore drops
     // and the floating drag preview align the card under the cursor.
@@ -447,13 +453,26 @@ function App() {
     }, [sheet.sections])
 
     const commitLayout = (id: string, layout: SectionLayout) => {
-        // Dashboard grid: snap the moved/resized card to the column grid, then
-        // compact every canvas card upward so the sheet stays tidy — no overlaps,
-        // no gaps — by construction (like Grafana / Notion / react-grid-layout).
+        // Dashboard grid: pin the released card at its dropped cell and reflow the
+        // rest around it (what you saw while dragging is exactly what lands). The
+        // sheet stays overlap-free; Tidy fully compacts on demand.
         const items = sheet.sections
             .filter((s) => !inDrawer(s, 'canvas'))
             .map((s) => ({ id: s.id, layout: s.id === id ? layout : s.layout }))
-        setSectionLayouts(compactGrid(items, CANVAS_GRID))
+        setSectionLayouts(placeInGrid(items, id, toCell(layout, CANVAS_GRID), CANVAS_GRID))
+    }
+
+    // Reflow the other canvas cards live as this one is dragged over the grid.
+    const onGridDrag = (id: string, layout: SectionLayout) => {
+        if (dragOverDrawerRef.current) {
+            if (gridPreview) setGridPreview(null)
+            return
+        }
+        const items = sheet.sections
+            .filter((s) => !inDrawer(s, 'canvas'))
+            .map((s) => ({ id: s.id, layout: s.id === id ? layout : s.layout }))
+        const reflowed = placeInGrid(items, id, toCell(layout, CANVAS_GRID), CANVAS_GRID)
+        setGridPreview(new Map(reflowed.map((p) => [p.id, p.layout])))
     }
 
     /** Measure every card's natural content size (width clamped so text cards don't
@@ -569,11 +588,14 @@ function App() {
         if (inDrawer(section, view)) {
             // A drawer card straddling out toward the canvas needs no target hint.
             if (dropHot) setDropHot(false)
+            dragOverDrawerRef.current = false
             return
         }
         if (!drawerOpen && isOverTab(x, y)) setDrawerOpen(true)
         const over = isOverTab(x, y) || isOverPanel(x, y)
         setDropHot(over)
+        // Over the drawer the card is leaving the canvas, so stop reflowing the grid.
+        dragOverDrawerRef.current = over
         // Only float a preview while the card is over the drawer (where it would
         // otherwise be hidden behind the panel); normal canvas dragging is untouched.
         setDragPoint(over ? { x, y } : null)
@@ -586,6 +608,8 @@ function App() {
         setDraggingId(null)
         setDropHot(false)
         setDragPoint(null)
+        setGridPreview(null)
+        dragOverDrawerRef.current = false
         const section = sheet.sections.find((s) => s.id === id)
         if (!section) return false
         const fromDrawer = inDrawer(section, view)
@@ -1288,7 +1312,9 @@ function App() {
                             {canvasSections.map((section) => (
                                 <CanvasItem
                                     key={section.id}
-                                    layout={section.layout}
+                                    layout={draggingId && draggingId !== section.id
+                                        ? (gridPreview?.get(section.id) ?? section.layout)
+                                        : section.layout}
                                     scale={section.scale}
                                     zoom={canvasZoom}
                                     grid={CANVAS_GRID}
@@ -1305,6 +1331,7 @@ function App() {
                                     dimmed={draggingId === section.id && dropHot}
                                     onDragStart={(ox, oy) => { setDraggingId(section.id); setDragGrab({ x: ox, y: oy }) }}
                                     onDragMove={(x, y) => onCardDragMove(section.id, x, y)}
+                                    onGridDrag={(layout) => onGridDrag(section.id, layout)}
                                     onDragEnd={(x, y, moved) => onCardDragEnd(section.id, x, y, moved)}
                                     handleRef={(h) => {
                                         if (h) fitRefs.current.set(section.id, h)

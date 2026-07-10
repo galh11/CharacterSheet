@@ -14,6 +14,7 @@ import {
     fromCell,
     snapToGrid,
     compactGrid,
+    placeInGrid,
     gridWidth,
     type Placed,
 } from './layout'
@@ -211,6 +212,46 @@ describe('compactGrid', () => {
         const once = compactGrid(items, m)
         const twice = compactGrid(once, m)
         expect(twice.map((o) => o.layout)).toEqual(once.map((o) => o.layout))
+    })
+})
+
+describe('placeInGrid', () => {
+    const m = gridMetrics(12)
+    const cellOf = (l: { x: number; y: number; w: number; h: number }) => toCell(l, m)
+
+    it('pins the moving card at its target cell and reflows the rest around it', () => {
+        const a = fromCell({ cx: 0, cy: 0, cw: 3, ch: 3 }, m)
+        const b = fromCell({ cx: 0, cy: 3, cw: 3, ch: 3 }, m)
+        // Drop A into column 0 at row 4 (below B): A pins there, B compacts to the top.
+        const out = placeInGrid(
+            [{ id: 'a', layout: a }, { id: 'b', layout: b }],
+            'a',
+            { cx: 0, cy: 4, cw: 3, ch: 3 },
+            m,
+        )
+        const byId = Object.fromEntries(out.map((o) => [o.id, cellOf(o.layout)]))
+        expect(byId.a).toMatchObject({ cx: 0, cy: 4 }) // stays where released (a gap above is intentional)
+        expect(byId.b).toMatchObject({ cx: 0, cy: 0 }) // compacts to the top
+    })
+
+    it('never overlaps the pinned card', () => {
+        const a = fromCell({ cx: 0, cy: 0, cw: 4, ch: 4 }, m)
+        const b = fromCell({ cx: 4, cy: 0, cw: 4, ch: 4 }, m)
+        const c = fromCell({ cx: 8, cy: 0, cw: 4, ch: 4 }, m)
+        // Drag C on top of A's cell — A/B must move out of C's way, none overlap C.
+        const out = placeInGrid(
+            [{ id: 'a', layout: a }, { id: 'b', layout: b }, { id: 'c', layout: c }],
+            'c',
+            { cx: 0, cy: 0, cw: 4, ch: 4 },
+            m,
+        )
+        const byId = Object.fromEntries(out.map((o) => [o.id, cellOf(o.layout)]))
+        expect(byId.c).toMatchObject({ cx: 0, cy: 0 })
+        for (const id of ['a', 'b']) {
+            const o = byId[id]
+            const overlap = o.cx < 4 && o.cx + o.cw > 0 && o.cy < 4 && o.cy + o.ch > 0
+            expect(overlap).toBe(false)
+        }
     })
 })
 

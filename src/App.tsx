@@ -862,7 +862,7 @@ function App() {
     )
 
     return (
-        <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-3 p-4 md:px-8">
+        <main className={clsx('mx-auto flex min-h-screen w-full flex-col gap-3 p-4 md:px-8', !fitWidth && 'max-w-7xl')}>
             <header ref={headerRef} className="sticky top-0 z-40 -mx-4 border-b border-slate-800 bg-slate-950/85 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" style={{ borderTopColor: theme, borderTopWidth: 2 }}>
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="group relative shrink-0">

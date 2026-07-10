@@ -81,8 +81,15 @@ export const actionToggleSchema = z.object({
     id: z.string().min(1),
     /** Name shown on the toggle button, e.g. "Shillelagh". */
     label: z.string().default(''),
-    /** Whether the toggle is currently on. */
+    /** Whether the toggle is currently on. Only used when `field` is empty;
+     *  otherwise the linked boolean field is the source of truth. */
     active: z.boolean().default(false),
+    /** Optional slug of a boolean field this toggle is bound to. When set, the
+     *  toggle's on/off state *is* that field's value, so the weapon's toggle, a
+     *  bonus-action card, and a Conditions chip can all drive the same activation
+     *  and stay in sync — clicking any of them flips the shared boolean. When
+     *  empty/absent the toggle keeps its own local `active` state. */
+    field: z.string().optional(),
     /** To-hit change: `add` adds this to the attack modifier, `replace` overrides it. */
     hitMode: toggleModeSchema.default('add'),
     hit: z.string().default(''),
@@ -253,6 +260,10 @@ const foldLegacyActionExtras = (input: unknown): unknown => {
                         id: uid(),
                         label,
                         active: false,
+                        // Preserve the old boolean gate: an extra that was gated on
+                        // `extraWhen` becomes a toggle bound to that same field, so it
+                        // keeps syncing with the condition instead of a dead local switch.
+                        field: meta.extraWhen ?? '',
                         hitMode: 'add',
                         hit: '',
                         parts: [{ mode: 'add', damage: meta.extra, type: meta.extraType ?? '' }],

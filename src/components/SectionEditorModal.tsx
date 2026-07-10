@@ -200,10 +200,12 @@ const TOGGLE_MODES: { value: ToggleMode; label: string }[] = [
 function ActionTogglesEditor({
     field,
     references,
+    booleanReferences,
     onUpdateField,
 }: {
     field: CharacterField
     references: FieldReference[]
+    booleanReferences: FieldReference[]
     onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
 }) {
     const toggles = field.toggles ?? []
@@ -218,6 +220,7 @@ function ActionTogglesEditor({
                 id: crypto.randomUUID(),
                 label: '',
                 active: false,
+                field: '',
                 hitMode: 'add',
                 hit: '',
                 parts: [],
@@ -242,6 +245,8 @@ function ActionTogglesEditor({
                     e.g. a <span className="font-mono">Shillelagh</span> that <em>replaces</em> damage with{' '}
                     <span className="font-mono">1d8+{'{wis_mod}'}</span>, a Flame Tongue that <em>adds</em>{' '}
                     <span className="font-mono">2d6</span> fire, or one activation that adds several typed parts at once.
+                    Set a <span className="font-mono">Linked</span> field to sync the on/off with a condition and other
+                    cards (a bonus action, a Conditions chip).
                 </p>
             )}
             <div className="mt-1 flex flex-col gap-2">
@@ -255,14 +260,18 @@ function ActionTogglesEditor({
                                 className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-100"
                                 aria-label="Toggle name"
                             />
-                            <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Start active?">
-                                <input
-                                    type="checkbox"
-                                    checked={toggle.active}
-                                    onChange={(event) => update(i, { active: event.target.checked })}
-                                />
-                                on
-                            </label>
+                            {toggle.field ? (
+                                <span className="text-[10px] text-slate-500" title="On/off follows the linked field">🔗 linked</span>
+                            ) : (
+                                <label className="flex items-center gap-1 text-[10px] text-slate-400" title="Start active?">
+                                    <input
+                                        type="checkbox"
+                                        checked={toggle.active}
+                                        onChange={(event) => update(i, { active: event.target.checked })}
+                                    />
+                                    on
+                                </label>
+                            )}
                             <button
                                 type="button"
                                 onClick={() => remove(i)}
@@ -271,6 +280,20 @@ function ActionTogglesEditor({
                             >
                                 ✕
                             </button>
+                        </div>
+                        {/* Link to a boolean field so the weapon toggle, a bonus-action
+                            card, and a Conditions chip all flip together. */}
+                        <div className="mt-1 flex items-center gap-1">
+                            <span className="w-14 text-[10px] text-slate-500" title="Bind on/off to a boolean field so every place linked to it toggles together (e.g. a Flame Tongue you can flip from the weapon or a bonus action)">Linked</span>
+                            <FormulaInput
+                                value={toggle.field ?? ''}
+                                onChange={(next) => update(i, { field: next })}
+                                references={booleanReferences}
+                                placeholder="on/off field slug (optional, e.g. flame_tongue)"
+                                wrapperClassName="min-w-0 flex-1"
+                                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-200"
+                                aria-label="Toggle linked field"
+                            />
                         </div>
                         {/* Damage parts — add as many typed parts as you like. */}
                         <div className="mt-1 flex flex-col gap-1">
@@ -395,6 +418,8 @@ export function SectionEditorModal({
     // Booleans (conditions) are technically 0/1 but rarely belong in a formula,
     // so keep them out of the autocomplete noise; users can still type a slug.
     const formulaReferences = references.filter((r) => r.kind !== 'boolean')
+    // Boolean fields only, for binding a toggle's on/off to a shared condition.
+    const booleanReferences = references.filter((r) => r.kind === 'boolean')
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') onClose()
@@ -734,7 +759,7 @@ export function SectionEditorModal({
                                     )}
 
                                     {section.kind === 'actions' && (
-                                        <ActionTogglesEditor field={field} references={formulaReferences} onUpdateField={onUpdateField} />
+                                        <ActionTogglesEditor field={field} references={formulaReferences} booleanReferences={booleanReferences} onUpdateField={onUpdateField} />
                                     )}
 
                                     <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">

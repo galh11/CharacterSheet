@@ -13,6 +13,21 @@ body {
     color: #e2e8f0;
 }
 
+/* Brief cyan ring pulse on the newest roll row so a fresh result is noticed. */
+@keyframes roll-flash {
+    0% {
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.65);
+    }
+
+    100% {
+        box-shadow: 0 0 0 2px rgba(56, 189, 248, 0);
+    }
+}
+
+.animate-roll-flash {
+    animation: roll-flash 0.7s ease-out;
+}
+
 /* Compact, ink-friendly print / PDF export. */
 @media print {
 

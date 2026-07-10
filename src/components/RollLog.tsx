@@ -24,13 +24,15 @@ const MODES: { value: D20Mode; label: string }[] = [
     { value: 'disadvantage', label: 'DIS' },
 ]
 
-const kindColor: Record<RollLogEntry['kind'], string> = {
-    attack: 'text-cyan-300',
-    damage: 'text-rose-300',
-    check: 'text-slate-200',
-    save: 'text-violet-300',
-    heal: 'text-emerald-300',
-    raw: 'text-slate-200',
+/** Per-kind colour scheme: the title text colour, the left accent bar, and the
+ *  total badge tint, so each roll type is scannable at a glance. */
+const kindStyle: Record<RollLogEntry['kind'], { text: string; accent: string; badge: string }> = {
+    attack: { text: 'text-cyan-300', accent: 'bg-cyan-500', badge: 'bg-cyan-500/15 text-cyan-200' },
+    damage: { text: 'text-rose-300', accent: 'bg-rose-500', badge: 'bg-rose-500/15 text-rose-200' },
+    check: { text: 'text-slate-200', accent: 'bg-slate-500', badge: 'bg-slate-800 text-slate-100' },
+    save: { text: 'text-violet-300', accent: 'bg-violet-500', badge: 'bg-violet-500/15 text-violet-200' },
+    heal: { text: 'text-emerald-300', accent: 'bg-emerald-500', badge: 'bg-emerald-500/15 text-emerald-200' },
+    raw: { text: 'text-slate-200', accent: 'bg-slate-500', badge: 'bg-slate-800 text-slate-100' },
 }
 
 const SIZE_KEY = 'character-sheet:rolllog-size'
@@ -56,19 +58,32 @@ const loadSize = (): { w: number; h: number } => {
     return DEFAULT_SIZE
 }
 
-/** A single roll row. */
-function RollRow({ e }: { e: RollLogEntry }) {
+/** A single roll row: a kind-coloured accent bar, the title (with a crit/miss
+ *  pill), the dice breakdown, and the total badge. `flash` briefly rings the row
+ *  when a fresh roll lands. */
+function RollRow({ e, flash }: { e: RollLogEntry; flash?: boolean }) {
+    const s = kindStyle[e.kind]
     return (
-        <li className="flex items-start gap-2 border-b border-slate-800/60 pb-1.5 last:border-0">
+        <li
+            className={clsx(
+                'relative flex items-start gap-2 overflow-hidden rounded-md border border-slate-800/70 bg-slate-900/40 py-1.5 pl-3 pr-2',
+                flash && 'animate-roll-flash motion-reduce:animate-none',
+            )}
+        >
+            <span className={clsx('absolute inset-y-0 left-0 w-1', s.accent)} aria-hidden="true" />
             <div className="min-w-0 flex-1">
-                <div className={clsx('truncate text-xs font-medium', kindColor[e.kind])}>
-                    {e.title}
-                    {e.crit === 'hit' && <span className="ml-1 text-emerald-400">CRIT!</span>}
-                    {e.crit === 'miss' && <span className="ml-1 text-rose-400">MISS!</span>}
+                <div className={clsx('flex items-center gap-1 text-xs font-medium', s.text)}>
+                    <span className="truncate">{e.title}</span>
+                    {e.crit === 'hit' && (
+                        <span className="shrink-0 rounded bg-emerald-500/20 px-1 text-[10px] font-bold text-emerald-300">CRIT</span>
+                    )}
+                    {e.crit === 'miss' && (
+                        <span className="shrink-0 rounded bg-rose-500/20 px-1 text-[10px] font-bold text-rose-300">MISS</span>
+                    )}
                 </div>
                 <div className="truncate font-mono text-[11px] text-slate-400">{e.detail}</div>
             </div>
-            <span className="mt-0.5 shrink-0 rounded bg-slate-800 px-1.5 py-0.5 font-mono text-sm font-bold text-slate-100">
+            <span className={clsx('mt-0.5 shrink-0 rounded-md px-2 py-0.5 font-mono text-sm font-bold tabular-nums', s.badge)}>
                 {e.total}
             </span>
         </li>
@@ -76,8 +91,9 @@ function RollRow({ e }: { e: RollLogEntry }) {
 }
 
 /** Floating panel showing recent dice rolls plus the advantage/disadvantage toggle.
- *  Shows only the latest roll until the history is expanded, keeps Clear always
- *  visible, and can be resized (width + history height, persisted). */
+ *  Shows only the latest roll (with a flash on each fresh result) until the history
+ *  is expanded; when collapsed it still shows a compact latest-roll summary, and it
+ *  can be resized (width + history height, persisted). */
 export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusChange, bonusDie, onBonusDieChange, repeat, onRepeatChange, luck, onSpendLuck, onRollDice, onClear }: RollLogProps) {
     const [open, setOpen] = useState(true)
     const [historyOpen, setHistoryOpen] = useState(false)
@@ -136,45 +152,60 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
             )}
             <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-2">
                 <span className="text-sm font-semibold text-slate-200">🎲 Rolls</span>
-                <div className="ml-auto flex overflow-hidden rounded-md border border-slate-700">
-                    {MODES.map((m) => (
+                {open ? (
+                    <>
+                        <div className="ml-auto flex overflow-hidden rounded-md border border-slate-700" role="radiogroup" aria-label="Roll mode">
+                            {MODES.map((m) => (
+                                <button
+                                    key={m.value}
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={rollMode === m.value}
+                                    onClick={() => onRollModeChange(m.value)}
+                                    className={clsx(
+                                        'px-1.5 py-0.5 text-[10px] font-semibold transition-colors',
+                                        rollMode === m.value
+                                            ? m.value === 'advantage'
+                                                ? 'bg-emerald-600 text-white'
+                                                : m.value === 'disadvantage'
+                                                    ? 'bg-rose-600 text-white'
+                                                    : 'bg-slate-600 text-white'
+                                            : 'text-slate-400 hover:bg-slate-800',
+                                    )}
+                                    title={`Roll with ${m.value}`}
+                                >
+                                    {m.label}
+                                </button>
+                            ))}
+                        </div>
                         <button
-                            key={m.value}
                             type="button"
-                            onClick={() => onRollModeChange(m.value)}
+                            onClick={onClear}
+                            disabled={entries.length === 0}
                             className={clsx(
-                                'px-1.5 py-0.5 text-[10px] font-semibold transition-colors',
-                                rollMode === m.value
-                                    ? m.value === 'advantage'
-                                        ? 'bg-emerald-600 text-white'
-                                        : m.value === 'disadvantage'
-                                            ? 'bg-rose-600 text-white'
-                                            : 'bg-slate-600 text-white'
-                                    : 'text-slate-400 hover:bg-slate-800',
+                                'rounded px-1.5 py-0.5 text-[11px]',
+                                entries.length === 0 ? 'cursor-not-allowed text-slate-600' : 'text-slate-400 hover:bg-slate-800 hover:text-rose-300',
                             )}
-                            title={`Roll with ${m.value}`}
+                            title="Clear the roll log"
+                            aria-label="Clear roll log"
                         >
-                            {m.label}
+                            Clear
                         </button>
-                    ))}
-                </div>
-                <button
-                    type="button"
-                    onClick={onClear}
-                    disabled={entries.length === 0}
-                    className={clsx(
-                        'rounded px-1.5 py-0.5 text-[11px]',
-                        entries.length === 0 ? 'cursor-not-allowed text-slate-600' : 'text-slate-400 hover:bg-slate-800 hover:text-rose-300',
-                    )}
-                    title="Clear the roll log"
-                    aria-label="Clear roll log"
-                >
-                    Clear
-                </button>
+                    </>
+                ) : (
+                    latest && (
+                        <span className="ml-auto flex min-w-0 items-center gap-1.5" title={`${latest.title} — ${latest.detail}`}>
+                            <span className={clsx('truncate text-xs font-medium', kindStyle[latest.kind].text)}>{latest.title}</span>
+                            <span className={clsx('shrink-0 rounded px-1.5 py-0.5 font-mono text-xs font-bold tabular-nums', kindStyle[latest.kind].badge)}>
+                                {latest.total}
+                            </span>
+                        </span>
+                    )
+                )}
                 <button
                     type="button"
                     onClick={() => setOpen((o) => !o)}
-                    className="rounded px-1 text-slate-400 hover:bg-slate-800"
+                    className={clsx('rounded px-1 text-slate-400 hover:bg-slate-800', !open && !latest && 'ml-auto')}
                     aria-label={open ? 'Collapse roll log' : 'Expand roll log'}
                 >
                     {open ? '▾' : '▸'}
@@ -256,11 +287,14 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                     </form>
                     <div className="px-3 py-2">
                         {!latest ? (
-                            <p className="m-0 text-xs italic text-slate-500">Click an attack, skill, save or hit die to roll.</p>
+                            <div className="flex flex-col items-center gap-1 py-3 text-center">
+                                <span className="text-2xl opacity-40" aria-hidden="true">🎲</span>
+                                <p className="m-0 text-xs italic text-slate-500">Click an attack, skill, save or hit die to roll.</p>
+                            </div>
                         ) : (
                             <>
                                 <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-                                    <RollRow e={latest} />
+                                    <RollRow key={latest.id} e={latest} flash />
                                 </ul>
                                 {rest.length > 0 && (
                                     <>

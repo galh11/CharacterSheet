@@ -178,6 +178,20 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   via `useSheet.setPortrait`. The top bar shows it as a circular avatar next to
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled
   to 256px JPEG by `App.readImageAsDataUrl`), and a hover ✕ removes it.
+- **Top toolbar**: the sticky header has two rows. The always-visible top row is
+  identity + play + status (portrait avatar, editable name, ★ Inspiration,
+  **Rest ▾**, the ✓ Autosaved indicator, and the ▾/▸ collapse arrow). The second
+  row (hidden when the header is collapsed) is grouped by purpose with thin
+  dividers: **Character** (switcher `<select>` + **Character ▾**), **history**
+  (undo/redo), a **search** box with an inline magnifier icon, **add** (the violet
+  **+ Section** button + a **+ Template ▾** menu), a single **View ▾** menu, then
+  **⋯ More** and the theme-colour swatch. **View ▾** consolidates what used to be
+  a row of standalone buttons: the Canvas/Stack view mode (with a ✓ on the active
+  one), Density (compact/normal/comfortable, ✓-marked), the canvas-only layout
+  tools (Tidy up, Fit to width, Fit all to content, Spread across width, Save
+  this layout…, Apply saved layout), and Open/Close drawer (with its tucked-card
+  count). Keep the `Character name` input's aria-label and the **+ Section**
+  button's exact label — the e2e specs query them.
 - **Save / load**: a sheet is portable as JSON via `state/transfer.ts`
   (`exportSheetToFile` / `importSheetFromFile`, both zod-validated) — surfaced as
   **Export JSON** / **Import JSON…** in the ⋯ More menu. There is no external

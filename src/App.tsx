@@ -448,21 +448,27 @@ function App() {
     }
 
     /** Measure every card's natural content size (width clamped so text cards don't
-     *  blow out). Best run in play mode — edit mode renders bulky field editors. */
-    const fittedItems = (): Placed[] =>
+     *  blow out). Best run in play mode — edit mode renders bulky field editors.
+     *  Pass heightOnly to keep each card's current width (used by Tidy so it
+     *  preserves the column widths you set instead of re-narrowing every card). */
+    const fittedItems = (heightOnly = false): Placed[] =>
         sheet.sections
             .filter((s) => !inDrawer(s, 'canvas'))
             .map((s) => {
                 const handle = fitRefs.current.get(s.id)
-                const w = handle ? Math.min(340, handle.measureWidth()) : s.layout.w
+                const w = heightOnly
+                    ? s.layout.w
+                    : handle ? Math.min(340, handle.measureWidth()) : s.layout.w
                 const h = handle ? handle.measureHeight() : s.layout.h
                 return { id: s.id, layout: { ...s.layout, w, h } }
             })
 
     const handleTidy = () => {
-        // Fit each card to its content, then compact into clean columns based on
-        // how you've arranged them (keeps your columns, removes gaps, no scrollbars).
-        setSectionLayouts(compactLayouts(fittedItems()))
+        // Keep each card's width, fit its height, then compact into the columns you
+        // arranged them in — closing the gaps within and between columns without
+        // reflowing cards across columns. Neatens a manual layout instead of
+        // collapsing it into the corner.
+        setSectionLayouts(compactLayouts(fittedItems(true)))
     }
 
     const handleFitAll = () => {

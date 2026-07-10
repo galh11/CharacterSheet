@@ -189,8 +189,15 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `What's new · v<APP_VERSION>`, which opens `AboutModal` (version, build time,
   and each release's summary + GitHub PR link). Ship a user-visible change →
   prepend a `CHANGELOG` entry (bumping the version) in the same PR.
-- **Tidy** (`layout.compactLayouts`) packs cards toward the top-left; other
-  `layout.ts` helpers handle snapping, alignment, distribution, and overlap.
+- **Tidy** (`App.handleTidy` → `layout.compactLayouts`) neatens a **hand-built**
+  arrangement instead of collapsing it: it fits each card's **height** (keeping
+  the width you set), groups cards into columns by horizontal overlap in their
+  current positions, then stacks each column top-to-bottom and packs the columns
+  left-to-right — closing gaps **within and between** columns without reflowing a
+  card into a different column. Other `layout.ts` helpers handle snapping,
+  alignment, distribution, and overlap; **Spread across width**
+  (`layout.tidyLayouts`) is the reflow-everything option (fit both axes, then
+  skyline-pack across the window).
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the
   viewport (a non-moving click clears the selection). **Fit to width** scales the
   whole canvas so its content fills the current window width edge-to-edge: it

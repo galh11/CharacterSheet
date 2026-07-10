@@ -113,6 +113,24 @@ describe('compactLayouts', () => {
         const byId = Object.fromEntries(out.map((o) => [o.id, o.layout]))
         expect(byId.b).toMatchObject({ x: 132, y: 16 }) // a right (116) + gap (16)
     })
+
+    it('preserves hand-built columns: a card stays in its column instead of reflowing', () => {
+        // Column 0 has a tall card with one below it; column 1 has two cards.
+        const items = [
+            placed('a', 16, 16, 200, 300),
+            placed('b', 16, 340, 200, 100),
+            placed('c', 240, 16, 200, 100),
+            placed('d', 240, 140, 200, 100),
+        ]
+        const out = compactLayouts(items, 16)
+        const byId = Object.fromEntries(out.map((o) => [o.id, o.layout]))
+        // Column 0 stacks a then b; column 1 (packed against column 0) stacks c then d.
+        expect(byId.a).toMatchObject({ x: 16, y: 16 })
+        expect(byId.b).toMatchObject({ x: 16, y: 332 }) // a bottom (316) + gap (16)
+        expect(byId.c).toMatchObject({ x: 232, y: 16 }) // a right (216) + gap (16)
+        expect(byId.d).toMatchObject({ x: 232, y: 132 }) // c bottom (116) + gap (16)
+        // c did NOT rise into the space beside a — the column arrangement is kept.
+    })
 })
 
 describe('alignEdge', () => {

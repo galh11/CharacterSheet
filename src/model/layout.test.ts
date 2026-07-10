@@ -165,6 +165,17 @@ describe('grid math', () => {
         // 16*2 + 12*88 + 11*16 = 32 + 1056 + 176 = 1264
         expect(gridWidth(m)).toBe(1264)
     })
+
+    it('keeps a constant total width so fewer columns mean wider columns', () => {
+        // The grid always spans the same width; the column count divides it, so
+        // choosing fewer columns widens each column (and card) instead of shrinking
+        // the whole canvas. This is what makes the count integrate with Fit to width.
+        expect(gridWidth(gridMetrics(6))).toBe(1264)
+        expect(gridWidth(gridMetrics(8))).toBe(1264)
+        expect(gridWidth(gridMetrics(12))).toBe(1264)
+        expect(gridMetrics(6).colWidth).toBeGreaterThan(gridMetrics(8).colWidth)
+        expect(gridMetrics(8).colWidth).toBeGreaterThan(gridMetrics(12).colWidth)
+    })
 })
 
 describe('compactGrid', () => {

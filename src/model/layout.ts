@@ -217,14 +217,29 @@ export interface GridMetrics {
 
 export const DEFAULT_GRID_COLS = 12
 
-/** Build grid metrics for a column count (sensible defaults for card-sized tiles). */
-export const gridMetrics = (cols = DEFAULT_GRID_COLS): GridMetrics => ({
-    cols,
-    colWidth: 88,
-    rowHeight: 8,
-    margin: GAP,
-    pad: GAP,
-})
+/** Total logical width of the grid, in px. Fixed regardless of the column count
+ *  so that choosing fewer columns makes each column (and card) **wider** — the
+ *  columns divide a constant width — rather than shrinking the whole canvas. This
+ *  is what keeps the column count integrating cleanly with "Fit to width" (which
+ *  scales this constant width to the window) and the plain zoom presets. The
+ *  value equals the historical 12-column width (colWidth 88), so existing sheets
+ *  are pixel-identical at 12 columns. */
+export const GRID_TOTAL_WIDTH = 1264
+
+/** Build grid metrics for a column count. `colWidth` is derived so the whole grid
+ *  always spans `GRID_TOTAL_WIDTH`; fewer columns ⇒ wider columns. */
+export const gridMetrics = (cols = DEFAULT_GRID_COLS): GridMetrics => {
+    const margin = GAP
+    const pad = GAP
+    const colWidth = Math.floor((GRID_TOTAL_WIDTH - 2 * pad - (cols - 1) * margin) / cols)
+    return {
+        cols,
+        colWidth,
+        rowHeight: 8,
+        margin,
+        pad,
+    }
+}
 
 /** A card's rectangle in whole grid cells. */
 export interface GridCell {

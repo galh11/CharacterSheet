@@ -224,7 +224,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 - **Dashboard grid canvas**: canvas cards live on a fixed **column grid** (like
   Grafana / Notion / react-grid-layout) so the layout is tidy by construction.
   `layout.ts` `gridMetrics(cols)` defines the geometry (default **12 columns**,
-  `colWidth` 88, `rowHeight` 8, `margin` 16) and `toCell`/`fromCell`/`snapToGrid`
+  `rowHeight` 8, `margin` 16); `colWidth` is **derived** so the grid always spans
+  a constant `GRID_TOTAL_WIDTH` (1264px = the historical 12-column width, so 12-col
+  sheets are pixel-identical) — choosing **fewer** columns therefore makes each
+  column (and card) **wider** instead of shrinking the whole canvas, which is what
+  lets the column count integrate cleanly with Fit to width and the zoom presets.
+  `toCell`/`fromCell`/`snapToGrid`
   convert between pixel rects and whole grid cells (columns rounded, height
   ceiled so a card never loses content). While dragging/resizing a canvas card,
   `CanvasItem` snaps it to the grid (via its `grid` prop) instead of to sibling

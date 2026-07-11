@@ -182,18 +182,28 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   autocomplete spendable resource/counter slugs (`compute.listResourceReferences`),
   while `listReferences` tags each reference with its field `kind` for that split.
 - **Portrait**: the sheet carries an optional `portrait` (an image data URL) set
-  via `useSheet.setPortrait`. The top bar shows it as a circular avatar next to
+  via `useSheet.setPortrait`. The side nav shows it as a circular avatar above
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled
   to 256px JPEG by `App.readImageAsDataUrl`), and a hover ✕ removes it.
-- **Top toolbar**: the sticky header has two rows. The always-visible top row is
-  identity + play + status (portrait avatar, editable name, ★ Inspiration,
-  **Rest ▾**, the ✓ Autosaved indicator, and the ▾/▸ collapse arrow). The second
-  row (hidden when the header is collapsed) is grouped by purpose with thin
-  dividers: **Character** (switcher `<select>` + **Character ▾**), **history**
-  (undo/redo), a **search** box with an inline magnifier icon, **add** (the violet
-  **+ Section** button + a **+ Template ▾** menu), a single **View ▾** menu, then
-  **⋯ More** and the theme-colour swatch. **View ▾** consolidates what used to be
-  a row of standalone buttons: the Canvas/Stack view mode (with a ✓ on the active
+- **Side nav**: the app's persistent controls live in a **right-hand vertical
+  sidebar** (`<header>` styled as a rail; `md:sticky md:top-0 md:h-screen md:w-64`)
+  so the canvas reclaims the full top of the window (vertical space is the scarce
+  axis on landscape monitors). `App` renders it as the `order-2` flex child of a
+  `flex` `<main>`; the canvas/modals sit in an `order-1 flex-1` content column to
+  its left. Top-to-bottom it mirrors the video's sidebar anatomy: **profile**
+  (portrait avatar, editable name, ★ Inspiration, **Rest ▾**, the ✓ Autosaved
+  indicator + a ▴/▾ collapse toggle), then a **tools** group separated by thin
+  horizontal rules — **Character** (switcher `<select>` + **Character ▾**),
+  **history** (undo/redo), a **search** box with an inline magnifier icon, **add**
+  (the violet **+ Section** button + a **+ Template ▾** menu), a single **View ▾**
+  menu, then **⋯ More** and the theme-colour swatch. The ▴/▾ toggle hides the
+  tools group (persisted as `character-sheet:sidebar-collapsed`), leaving just the
+  profile; on narrow (`< md`) widths the rail is hidden and a fixed **≡ hamburger**
+  opens it as a right-side overlay (with a backdrop, dismissed by a ✕/tap).
+  Dropdown `Menu`s open `align="right"` and auto-nudge back on-screen. The
+  floating `RollLog` default anchor shifts left of the rail (`md:right-[17rem]`)
+  so they don't overlap. **View ▾** consolidates what used to be a row of
+  standalone buttons: the Canvas/Stack view mode (with a ✓ on the active
   one), **Zoom** (Compact 80% / Normal 100% / Comfortable 120%, ✓-marked — a
   persisted whole-sheet CSS-`zoom` preset; disabled in canvas view while **Fit to
   width** overrides it), the canvas-only layout
@@ -286,9 +296,9 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   there (the scratch-pad switches to `overflow-visible` mid-drag so the card can
   straddle both). The drawer **auto-closes** once its last card leaves
   (`closeDrawerIfEmpty`) — including when a drag that auto-opened an empty drawer
-  is dropped back on the canvas — and the fixed panel docks below the header's live
-  `getBoundingClientRect().bottom` (tracked on scroll/resize) so it never overlaps
-  the top bar. The tab persists whenever the current view's drawer holds ≥1 card
+  is dropped back on the canvas — and the fixed panel (docked to the **left**
+  edge, `top: 0` to `bottom: 0`) spans the full viewport height clear of the
+  right-hand side nav. The tab persists whenever the current view's drawer holds ≥1 card
   (and hides when empty). Inside the drawer each tucked card gets its own
   `drawerLayout` and can be dragged/resized freely; ⊞ restores a card to the
   sheet. Drawer cards still feed their fields into computed formulas.

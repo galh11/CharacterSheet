@@ -206,7 +206,7 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
     return (
         <div
             ref={rootRef}
-            className={clsx('fixed z-40 print:hidden', !pos && 'bottom-4 right-4')}
+            className={clsx('fixed z-40 print:hidden', !pos && 'bottom-4 right-4 md:right-[17rem]')}
             style={pos ? { left: pos.x, top: pos.y, width: size.w } : { width: size.w }}
         >
             <div className="relative flex max-h-[calc(100vh-1rem)] flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-950/95 shadow-xl backdrop-blur">

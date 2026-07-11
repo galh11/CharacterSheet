@@ -82,7 +82,16 @@ const GRID_COL_OPTIONS = [6, 8, 12] as const
 
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
-    const [headerCollapsed, setHeaderCollapsed] = useState(false)
+    // Collapse the side nav down to a slim icon rail (persisted, desktop only).
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        try {
+            return localStorage.getItem('character-sheet:sidebar-collapsed') === '1'
+        } catch {
+            return false
+        }
+    })
+    // Open the side nav as an overlay on narrow (mobile) widths.
+    const [mobileNavOpen, setMobileNavOpen] = useState(false)
     const [showHitDice, setShowHitDice] = useState(false)
     const [showAbout, setShowAbout] = useState(false)
     const [notice, setNotice] = useState<string | null>(null)
@@ -117,7 +126,6 @@ function App() {
     // Pointer offset (card-local px) where a drag was grabbed, so tuck/restore drops
     // and the floating drag preview align the card under the cursor.
     const [dragGrab, setDragGrab] = useState({ x: 0, y: 0 })
-    const [headerBottom, setHeaderBottom] = useState(0)
     const [containerWidth, setContainerWidth] = useState(0)
     const [fitWidth, setFitWidth] = useState(() => {
         try {
@@ -162,7 +170,6 @@ function App() {
     const captureRef = useRef<HTMLDivElement>(null)
     const portraitRef = useRef<HTMLInputElement>(null)
     const canvasScrollRef = useRef<HTMLDivElement>(null)
-    const headerRef = useRef<HTMLElement>(null)
     const drawerTabRef = useRef<HTMLButtonElement>(null)
     const drawerPanelRef = useRef<HTMLDivElement>(null)
     const drawerCanvasRef = useRef<HTMLDivElement>(null)
@@ -817,24 +824,13 @@ function App() {
         return () => ro.disconnect()
     }, [stackView])
 
-    // Track the header's on-screen bottom edge so the fixed drawer overlay docks
-    // just beneath it. Using the live bounding rect (not offsetHeight) accounts for
-    // the header sitting below the page's top padding and for it sticking on scroll.
     useEffect(() => {
-        const el = headerRef.current
-        if (!el) return
-        const measure = () => setHeaderBottom(el.getBoundingClientRect().bottom)
-        measure()
-        const ro = new ResizeObserver(measure)
-        ro.observe(el)
-        window.addEventListener('scroll', measure, { passive: true })
-        window.addEventListener('resize', measure)
-        return () => {
-            ro.disconnect()
-            window.removeEventListener('scroll', measure)
-            window.removeEventListener('resize', measure)
+        try {
+            localStorage.setItem('character-sheet:sidebar-collapsed', sidebarCollapsed ? '1' : '0')
+        } catch {
+            // ignore storage failures (private mode, quota)
         }
-    }, [])
+    }, [sidebarCollapsed])
 
     useEffect(() => {
         try {
@@ -953,10 +949,33 @@ function App() {
     )
 
     return (
-        <main className={clsx('mx-auto flex min-h-screen w-full flex-col gap-3 p-4 md:px-8', !fitWidth && 'max-w-7xl')}>
-            <header ref={headerRef} className="sticky top-0 z-40 -mx-4 border-b border-slate-800 bg-slate-950/85 px-4 py-2 backdrop-blur md:-mx-8 md:px-8" style={{ borderTopColor: theme, borderTopWidth: 2 }}>
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="group relative shrink-0">
+        <main className="flex min-h-screen w-full">
+            <button
+                type="button"
+                onClick={() => setMobileNavOpen(true)}
+                className="fixed right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-lg border border-slate-600 bg-slate-950/85 text-2xl leading-none text-slate-200 shadow-lg backdrop-blur hover:bg-slate-800 md:hidden print:hidden"
+                aria-label="Open menu"
+                title="Open menu"
+            >
+                ≡
+            </button>
+            {mobileNavOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/50 md:hidden"
+                    onClick={() => setMobileNavOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+            <header
+                className={clsx(
+                    'order-2 flex flex-col gap-2 overflow-y-auto border-l-2 bg-slate-950/85 p-3 backdrop-blur print:hidden',
+                    'md:sticky md:top-0 md:h-screen md:max-h-screen md:self-start md:z-30 md:w-64',
+                    mobileNavOpen ? 'fixed inset-y-0 right-0 z-50 flex w-72 shadow-2xl' : 'hidden md:flex',
+                )}
+                style={{ borderLeftColor: theme }}
+            >
+                <div className="flex flex-col items-stretch gap-2">
+                    <div className="group relative shrink-0 self-center">
                         <button
                             type="button"
                             onClick={() => portraitRef.current?.click()}
@@ -1000,7 +1019,7 @@ function App() {
                         onChange={(event) => renameSheet(event.target.value)}
                         aria-label="Character name"
                         title="Click to rename this character"
-                        className="min-w-0 rounded-md border border-transparent bg-transparent px-1 text-2xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none sm:w-64"
+                        className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1 text-xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
                     />
                     {inspirationField && (
                         <button
@@ -1017,7 +1036,7 @@ function App() {
                             ★ Insp.
                         </button>
                     )}
-                    <Menu label="Rest ▾" title="Take a short or long rest" align="left">
+                    <Menu label="Rest ▾" title="Take a short or long rest" align="right" className="w-full text-left">
                         {(close) => (
                             <>
                                 <MenuItem onClick={() => { startShortRest(); close() }} title="Refill short-rest resources and spend hit dice">
@@ -1029,28 +1048,39 @@ function App() {
                             </>
                         )}
                     </Menu>
-                    <div className="ml-auto flex items-center gap-3 text-xs text-slate-500">
+                    <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
                         <span title="Your sheet is saved automatically in this browser">
                             ✓ Autosaved{notice ? <span className="text-cyan-300"> · {notice}</span> : null}
                         </span>
-                        <button
-                            type="button"
-                            onClick={() => setHeaderCollapsed((c) => !c)}
-                            className="rounded-md border border-slate-600 px-3 py-1.5 text-xl leading-none text-slate-200 hover:bg-slate-800 hover:text-white"
-                            aria-label={headerCollapsed ? 'Show toolbar' : 'Hide toolbar'}
-                            title={headerCollapsed ? 'Show toolbar' : 'Hide toolbar'}
-                        >
-                            {headerCollapsed ? '▸' : '▾'}
-                        </button>
+                        <div className="flex items-center gap-1">
+                            <button
+                                type="button"
+                                onClick={() => setSidebarCollapsed((c) => !c)}
+                                className="hidden rounded-md border border-slate-600 px-2 py-1 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:inline-flex"
+                                aria-label={sidebarCollapsed ? 'Show tools' : 'Hide tools'}
+                                title={sidebarCollapsed ? 'Show tools' : 'Hide tools'}
+                            >
+                                {sidebarCollapsed ? '▾' : '▴'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMobileNavOpen(false)}
+                                className="rounded-md border border-slate-600 px-2 py-1 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:hidden"
+                                aria-label="Close menu"
+                                title="Close menu"
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
                 </div>
-                {!headerCollapsed && (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {(!sidebarCollapsed || mobileNavOpen) && (
+                    <div className="flex flex-col items-stretch gap-1.5">
                         {/* Character group: switch between saved characters + manage them. */}
                         <select
                             value={activeId}
                             onChange={(event) => switchCharacter(event.target.value)}
-                            className="max-w-[10rem] rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
+                            className="w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
                             aria-label="Active character"
                             title="Switch character"
                         >
@@ -1060,7 +1090,7 @@ function App() {
                                 </option>
                             ))}
                         </select>
-                        <Menu label="Character ▾" title="Character actions" align="left">
+                        <Menu label="Character ▾" title="Character actions" align="right" className="w-full text-left">
                             {(close) => (
                                 <>
                                     <MenuItem onClick={() => { newCharacter(); close() }}>+ New character</MenuItem>
@@ -1083,7 +1113,7 @@ function App() {
                             )}
                         </Menu>
 
-                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
 
                         {/* History group: undo / redo. */}
                         <div className="flex items-center gap-1">
@@ -1092,7 +1122,7 @@ function App() {
                                 onClick={undo}
                                 disabled={!canUndo}
                                 className={clsx(
-                                    'rounded-md border border-slate-600 px-3 py-2 text-sm',
+                                    'flex-1 rounded-md border border-slate-600 px-3 py-2 text-sm',
                                     canUndo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
                                 )}
                                 title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'}
@@ -1105,7 +1135,7 @@ function App() {
                                 onClick={redo}
                                 disabled={!canRedo}
                                 className={clsx(
-                                    'rounded-md border border-slate-600 px-3 py-2 text-sm',
+                                    'flex-1 rounded-md border border-slate-600 px-3 py-2 text-sm',
                                     canRedo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
                                 )}
                                 title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)'}
@@ -1115,7 +1145,7 @@ function App() {
                             </button>
                         </div>
 
-                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
 
                         {/* Search: filters visible sections and fields. */}
                         <div className="relative">
@@ -1135,7 +1165,7 @@ function App() {
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search…"
                                 aria-label="Search"
-                                className="w-44 rounded-md border border-slate-600 bg-slate-900 py-2 pl-8 pr-7 text-sm text-slate-200"
+                                className="w-full rounded-md border border-slate-600 bg-slate-900 py-2 pl-8 pr-7 text-sm text-slate-200"
                             />
                             {query && (
                                 <button
@@ -1150,17 +1180,17 @@ function App() {
                             )}
                         </div>
 
-                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
 
                         {/* Add group: a new blank section or one from a template. */}
                         <button
                             type="button"
                             onClick={addSection}
-                            className="rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
+                            className="w-full rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
                         >
                             + Section
                         </button>
-                        <Menu label="+ Template ▾" title="Add a section from a ready-made template" align="left">
+                        <Menu label="+ Template ▾" title="Add a section from a ready-made template" align="right" className="w-full text-left">
                             {(close) => (
                                 <>
                                     {SECTION_TEMPLATES.map((t) => (
@@ -1173,7 +1203,7 @@ function App() {
                         </Menu>
 
                         {/* View group: display mode, density, canvas layout tools, and the drawer. */}
-                        <Menu label="View ▾" title="Display mode and layout options" align="left">
+                        <Menu label="View ▾" title="Display mode and layout options" align="right" className="w-full text-left">
                             {(close) => (
                                 <>
                                     <MenuLabel>Layout</MenuLabel>
@@ -1256,9 +1286,9 @@ function App() {
                             )}
                         </Menu>
 
-                        <span className="mx-0.5 hidden h-6 w-px bg-slate-700 sm:block" aria-hidden="true" />
+                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
 
-                        <Menu label="⋯ More" title="Import, export, and share" align="right">
+                        <Menu label="⋯ More" title="Import, export, and share" align="right" className="w-full text-left">
                             {(close) => (
                                 <>
                                     {levelField && (
@@ -1309,7 +1339,7 @@ function App() {
                                 event.target.value = ''
                             }}
                         />
-                        <label className="flex items-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
+                        <label className="flex w-full items-center justify-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
                             <input
                                 type="color"
                                 value={theme}
@@ -1322,7 +1352,8 @@ function App() {
                 )}
             </header>
 
-            <section>
+            <div className="order-1 flex min-w-0 flex-1 flex-col gap-3 p-4 md:px-8">
+            <section className={clsx('w-full', !fitWidth && 'mx-auto max-w-7xl')}>
                 {selectedIds.size > 0 && (
                     <div className="mb-3 flex flex-wrap items-center gap-1 rounded-md border border-cyan-800/50 bg-slate-900/60 p-2 text-xs text-slate-300">
                         <span className="mr-1 font-medium text-cyan-300">{selectedIds.size} selected</span>
@@ -1531,7 +1562,7 @@ function App() {
                         'fixed left-0 z-30 flex flex-col border-r-2 bg-slate-950/95 shadow-2xl backdrop-blur transition-colors print:hidden',
                         dropHot ? 'border-emerald-400' : 'border-violet-500/60',
                     )}
-                    style={{ top: headerBottom, bottom: 0, width: DRAWER_W }}
+                    style={{ top: 0, bottom: 0, width: DRAWER_W }}
                 >
                     <div className="flex items-center gap-2 border-b border-slate-800 px-3 py-2 text-xs font-medium text-violet-200">
                         <span className="whitespace-nowrap font-semibold">Drawer · {view === 'stack' ? 'Stack' : 'Canvas'}</span>
@@ -1639,6 +1670,7 @@ function App() {
                 onReload={appUpdate.applyUpdate}
                 onDismiss={appUpdate.dismiss}
             />
+            </div>
         </main>
     )
 }

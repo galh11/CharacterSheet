@@ -26,6 +26,13 @@ Other agents may be working **in parallel**. For any change to the repo:
 - Push the branch and open a PR (use the GitHub PR tooling, or `gh pr create
   --fill` if the `gh` CLI is installed). CI runs and, when green, the change
   **auto-merges** to `main` — do not approve it yourself.
+- **If your change alters the UI's appearance** (anything the visual snapshots
+  capture), the visual-regression check will otherwise fail. Opt into a baseline
+  refresh by putting **`[update-visuals]`** in the PR title or body (agents can
+  always do this) **or** adding the **`update-visuals`** label (if you can apply
+  labels). CI then regenerates the Linux baselines and commits them back to your
+  branch automatically — no manual snapshot juggling. If you can't do either, say
+  so and ask the maintainer to add the label.
 - **Confirm it merged** — don't stop at "PR opened". After CI passes, verify with
   git: `git fetch origin --prune`, then `git ls-remote --heads origin <branch>`
   prints nothing (the branch auto-deletes on merge). If CI fails, fix on the same

@@ -233,7 +233,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   (portrait avatar, editable name, ★ Inspiration, **Rest ▾**, the ✓ Autosaved
   indicator + a ▴/▾ collapse toggle), then a **tools** group separated by thin
   horizontal rules — **Character** (switcher `<select>` + **Character ▾**),
-  **history** (undo/redo), a **search** box with an inline magnifier icon, **add**
+  **history** (undo/redo), a **search** box with an inline magnifier icon (it
+  filters the visible cards + fields *and* the drawer list, shows a live match
+  count, and Enter jumps to the first match), a **Sections** navigator
+  (`SectionNav` — a collapsible list of the current view's cards; click a row to
+  scroll it into view + select it, with the active card highlighted and, while
+  searching, matched titles highlighted / non-matches dimmed), **add**
   (the violet **+ Section** button + a **+ Template ▾** menu), a single **View ▾**
   menu, then **⋯ More** and the theme-colour swatch. The ▴/▾ toggle hides the
   tools group (persisted as `character-sheet:sidebar-collapsed`), leaving just the

@@ -46,6 +46,10 @@ interface HeaderToolbarProps {
     navSections: { id: string; title: string; accent?: string }[]
     activeIds: Set<string>
     onJumpToSection: (id: string) => void
+    navMatchIds: Set<string>
+    searchMatchCount: number
+    onSearchSubmit: () => void
+    queryActive: boolean
     addSection: () => void
     addTemplateSection: (template: SectionTemplate) => void
     stackView: boolean
@@ -114,6 +118,10 @@ export function HeaderToolbar({
     navSections,
     activeIds,
     onJumpToSection,
+    navMatchIds,
+    searchMatchCount,
+    onSearchSubmit,
+    queryActive,
     addSection,
     addTemplateSection,
     stackView,
@@ -357,6 +365,7 @@ export function HeaderToolbar({
                             <input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onSearchSubmit() } }}
                                 placeholder="Search…"
                                 aria-label="Search"
                                 className="w-full rounded-md border border-slate-600 bg-slate-900 py-2 pl-8 pr-7 text-sm text-slate-200"
@@ -374,10 +383,18 @@ export function HeaderToolbar({
                             )}
                         </div>
 
+                        {queryActive && (
+                            <p className={clsx('px-1 text-[11px]', searchMatchCount === 0 ? 'text-amber-400' : 'text-slate-400')}>
+                                {searchMatchCount === 0
+                                    ? 'No matches'
+                                    : `${searchMatchCount} match${searchMatchCount === 1 ? '' : 'es'} · press ↵ to jump`}
+                            </p>
+                        )}
+
                         <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
 
                         {/* Section navigator: jump to a card and highlight the active one. */}
-                        <SectionNav sections={navSections} activeIds={activeIds} onJump={onJumpToSection} />
+                        <SectionNav sections={navSections} activeIds={activeIds} onJump={onJumpToSection} query={query} matchIds={navMatchIds} />
 
                         <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
 

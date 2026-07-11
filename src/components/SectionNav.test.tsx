@@ -35,4 +35,22 @@ describe('SectionNav', () => {
         const active = screen.getByRole('button', { name: 'Jump to Abilities' })
         expect(active.className).toContain('bg-slate-700/70')
     })
+
+    it('highlights matched title text and dims non-matches when searching', () => {
+        render(
+            <SectionNav
+                sections={sections}
+                activeIds={new Set()}
+                onJump={() => {}}
+                query="com"
+                matchIds={new Set(['b'])}
+            />,
+        )
+        // "Combat" -> the "Com" prefix is wrapped in a <mark>.
+        const mark = screen.getByText('Com', { selector: 'mark' })
+        expect(mark).toBeInTheDocument()
+        // The non-matching row (Abilities) is dimmed.
+        expect(screen.getByRole('button', { name: 'Jump to Abilities' }).className).toContain('opacity-40')
+        expect(screen.getByRole('button', { name: 'Jump to Combat' }).className).not.toContain('opacity-40')
+    })
 })

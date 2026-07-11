@@ -22,6 +22,8 @@ one hover away.
   emptying it closes the drawer automatically.
 - **Editable everything** — add/rename/delete sections and fields through a
   per-section editor (the ✎ pencil on each card); there is no separate edit mode.
+  A ✐ quick-edit button opens a small non-blocking popover to rename, recolour
+  and switch a section's layout without leaving the canvas.
 - **Typed fields** — `text`, `number`, `boolean`, `computed`, `counter`, and
   `resource` (pips).
 - **Calculations** — `computed` fields run a safe formula engine that can

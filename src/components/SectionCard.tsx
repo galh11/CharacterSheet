@@ -3,6 +3,7 @@ import type { FormulaResult } from '../model/formula'
 import type { Contribution, EffectTag } from '../model/compute'
 import type { D20Mode, RollLogEntry } from '../model/dice'
 import { SectionBody } from './SectionBody'
+import { SectionQuickEdit } from './SectionQuickEdit'
 import { type CharacterField, type CharacterSection } from '../model/characterSheet'
 
 interface SectionCardProps {
@@ -91,6 +92,14 @@ export function SectionCard({
                     </button>
                 )}
                 <h3 className="m-0 flex-1 text-base font-semibold text-slate-100">{section.title}</h3>
+                {onEdit && (
+                    <SectionQuickEdit
+                        section={section}
+                        onUpdateSection={onUpdateSection}
+                        onEdit={onEdit}
+                        className="shrink-0 rounded px-1 text-slate-400 opacity-60 hover:bg-slate-800 hover:text-slate-200 hover:opacity-100"
+                    />
+                )}
                 {onEdit && (
                     <button
                         type="button"

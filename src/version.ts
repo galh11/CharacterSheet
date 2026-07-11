@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.16.0',
+        date: '2026-07-11',
+        summary: 'Added a ✐ quick-edit button on every section that opens a small non-blocking popover to rename it, recolour it (preset swatches or a custom colour) and switch its layout — without opening the full editor.',
+    },
+    {
         version: '1.15.0',
         date: '2026-07-11',
         summary: 'Actions like importing, exporting, sharing, resetting, and layout changes now confirm with brief pop-up toasts (green for success, red for errors) instead of a tiny line next to “Autosaved”, so nothing important is missed.',

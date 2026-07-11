@@ -78,6 +78,8 @@ src/
     SectionCard.tsx        # section frame: header, ✎ pencil, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened by the ✎ pencil
+    SectionQuickEdit.tsx   # ✐ quick-edit trigger: a non-blocking Popover for fast rename / accent colour / layout kind (+ "More settings…" opens the full editor)
+    Popover.tsx            # lightweight, non-blocking floating panel anchored to a trigger (no backdrop/focus-trap); closes on outside click / Escape; used by SectionQuickEdit
     FormulaInput.tsx       # formula box with inline, section-grouped field autocomplete (completes the slug token at the caret)
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper + handle bar
     RollLog.tsx            # floating roll panel: colour-coded rows, flash on new roll, collapsed latest-roll summary, expandable history, adv/dis, drag-to-move + resizable, viewport-capped scroll
@@ -193,7 +195,14 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   their source item/feature* (with attribution) instead of as detached HP fields.
   Flat **damage reduction stays note-only** (informational, not subtracted).
 - Editing is **per-section** via the `SectionEditorModal` (opened by the ✎
-  pencil) — there is **no global edit mode**. Every formula box (computed field
+  pencil) — there is **no global edit mode**. Alongside the pencil, a **✐
+  quick-edit** button (`SectionQuickEdit`) opens a lightweight, non-blocking
+  `Popover` (no backdrop / focus-trap, unlike the modal) for the three tweaks you
+  reach for most — **rename**, **accent colour** (preset swatches or a custom
+  colour input) and **layout kind** — plus a *More settings…* link that opens the
+  full `SectionEditorModal`. It's wired in both views: the `SectionCard` header
+  (stack view) and the `CanvasItem` handle bar (canvas view, via the card's
+  `quickEdit` prop). Every formula box (computed field
   value, effect amount, action to-hit/damage, toggle hit/damage) is a
   `FormulaInput`: as you type an identifier it drops an inline autocomplete of
   matching field slugs, grouped under each source section's bold name, and

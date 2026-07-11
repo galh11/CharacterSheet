@@ -32,10 +32,11 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
     const before = await handle.boundingBox()
     expect(before).not.toBeNull()
 
-    // Simulate a real click-and-drag with the mouse. The grab starts at the drag
-    // bar's centre, so drag well past a whole column (>104px) to be sure the card
-    // crosses into a further-right column on the grid.
-    await handle.hover()
+    // Simulate a real click-and-drag with the mouse. Grab the ⠿ grip on the
+    // left of the bar (its right side holds the handle buttons), then drag well
+    // past a whole column (>104px) to be sure the card crosses into a
+    // further-right column on the grid.
+    await handle.hover({ position: { x: 6, y: 8 } })
     await page.mouse.down()
     await page.mouse.move(before!.x + 360, before!.y, { steps: 12 })
     await page.mouse.up()
@@ -83,9 +84,10 @@ test('dragging a card onto the drawer tab tucks it seamlessly', async ({ page })
     const box = await handle.boundingBox()
     expect(box).not.toBeNull()
 
-    // Grab a canvas card and drag it toward the left-edge drawer tab; the drawer
-    // auto-opens as the pointer approaches, and releasing over it tucks the card.
-    await handle.hover()
+    // Grab a canvas card by its ⠿ grip and drag it toward the left-edge drawer
+    // tab; the drawer auto-opens as the pointer approaches, and releasing over
+    // it tucks the card.
+    await handle.hover({ position: { x: 6, y: 8 } })
     await page.mouse.down()
     await page.mouse.move(box!.x - 60, box!.y, { steps: 6 })
     await page.mouse.move(20, 360, { steps: 12 })
@@ -101,7 +103,7 @@ test('an auto-opened empty drawer closes if the card is dropped back on the canv
     const box = await handle.boundingBox()
     expect(box).not.toBeNull()
 
-    await handle.hover()
+    await handle.hover({ position: { x: 6, y: 8 } })
     await page.mouse.down()
     // Drag toward the left tab so the (empty) drawer auto-opens…
     await page.mouse.move(20, 360, { steps: 12 })

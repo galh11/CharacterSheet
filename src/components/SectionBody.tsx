@@ -646,18 +646,24 @@ const profDot = (state?: string): { cls: string; title: string } => {
 }
 
 function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, contributions, effectTags }: SectionBodyProps) {
-    /** Resolve a skill's modifier: auto from ability + proficiency, or manual value. */
+    /** Resolve a skill's modifier: auto from ability + proficiency, or manual value.
+     *  Numeric relational effects (add/sub) an item/feature grants to the skill's
+     *  slug fold in too, so e.g. Primal Order Magician's +wis_mod to Arcana reaches
+     *  the roll (and is attributed by the badge). */
     const skillMod = (field: CharacterField): number => {
+        const contribNet = (contributions?.get(slugify(field.label)) ?? [])
+            .filter((c) => c.op !== 'set')
+            .reduce((sum, c) => sum + c.amount, 0)
         const m = field.meta ?? {}
         if (m.auto === 'true' && m.ability && scope) {
             const score = scope[slugify(m.ability)]
             if (score != null) {
                 const pb = scope['proficiency'] ?? scope['proficiency_bonus'] ?? scope['prof'] ?? 0
                 const bonus = m.prof === 'expertise' ? pb * 2 : m.prof === 'proficient' ? pb : 0
-                return abilityMod(score) + bonus
+                return abilityMod(score) + bonus + contribNet
             }
         }
-        return parseModifier(field.value)
+        return parseModifier(field.value) + contribNet
     }
     const roll = (field: CharacterField) => {
         const mod = skillMod(field)

@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.14.0',
+        date: '2026-07-11',
+        summary: 'The HP card now shows resistances, immunities, vulnerabilities and reminder notes that come from your items and features — each with the source that grants it — and applies matching typed damage accordingly, so defenses can be authored on the item instead of as loose HP fields.',
+    },
+    {
         version: '1.13.0',
         date: '2026-07-11',
         summary: 'A sheet with no sections now shows a friendly empty state with a “+ Section” button and quick template picks, instead of a blank canvas.',

@@ -512,4 +512,24 @@ describe('relational effect badges', () => {
         expect(screen.getByText('ADV')).toBeInTheDocument()
         expect(screen.getByText('· Tavern Brawler')).toBeInTheDocument()
     })
+
+    it('folds a numeric effect granted to a skill into its auto modifier', () => {
+        const section = skillsSection([
+            field({ id: 'arc', label: 'Arcana', type: 'number', value: '', meta: { ability: 'INT', prof: 'proficient', auto: 'true' } }),
+        ])
+        render(
+            <SectionBody
+                section={section}
+                results={new Map()}
+                onUpdateField={() => { }}
+                onRoll={() => { }}
+                scope={{ int: 10, proficiency: 3 }}
+                contributions={new Map([
+                    ['arcana', [{ sourceId: 'pom', sourceLabel: 'Primal Order', op: 'add', amount: 2, value: 'wis_mod' }]],
+                ])}
+            />,
+        )
+        // INT 10 -> +0, proficient +3, plus the +2 from Primal Order = +5.
+        expect(screen.getByText('+5')).toBeInTheDocument()
+    })
 })

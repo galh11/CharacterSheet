@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.18.0',
+        date: '2026-07-11',
+        summary: 'A numeric bonus an item or feature grants to a skill or saving throw (like a background feature adding your Wisdom modifier to a skill) now actually adds to that check’s modifier and roll — not just the little badge beside it.',
+    },
+    {
         version: '1.17.0',
         date: '2026-07-11',
         summary: 'The multi-select bar now does more than align cards: select sections on the canvas and Duplicate, Tuck into the drawer, Recolour, or Delete them all at once — each a single undo.',

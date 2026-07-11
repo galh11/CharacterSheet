@@ -141,6 +141,9 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   source inline — next to the target across **default lists, abilities, skills,
   saves, and actions** (e.g. "ADV to end grappled · Grappler" beside Athletics),
   while `FieldGrantChips` shows the reverse (what the source grants, and on what).
+  A **numeric** effect (add/sub) granted to a **skill/save** slug also folds into
+  that row's auto-calculated modifier (`SkillRows.skillMod`), so e.g. Primal Order
+  Magician's +wis_mod to Arcana reaches the roll — not just the badge.
 - `{expr}` **interpolation** (`compute.interpolate`) lets action meta (to-hit,
   damage, temp HP…) embed live values, e.g. `+{str_mod + proficiency}`.
 - **Action toggles**: an action/weapon field can carry a list of `toggles`

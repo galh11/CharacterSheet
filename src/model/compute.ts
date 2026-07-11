@@ -20,6 +20,27 @@ export const interpolate = (input: string, scope: Record<string, number>): strin
         .replace(/-\+/g, '-')
 }
 
+/**
+ * Resolve a field's effective numeric maximum. Prefers `maxFormula` (evaluated
+ * against the scope, so a resource/counter cap can scale with level or ability),
+ * falling back to the static `max`. Returns undefined when neither yields a
+ * number — callers treat that as "no cap".
+ */
+export const resolveFieldMax = (
+    field: CharacterField,
+    scope: Record<string, number>,
+): number | undefined => {
+    const formula = field.maxFormula?.trim()
+    if (formula) {
+        // Accept both a bare formula (`proficiency`, `2 + floor(level / 4)`) and
+        // one that wraps references in `{expr}` braces — interpolate resolves the
+        // braces first, then the evaluator handles the rest.
+        const r = evaluateFormula(interpolate(formula, scope), scope)
+        if (r.ok && r.value !== null) return Math.max(0, Math.round(r.value))
+    }
+    return field.max
+}
+
 /** A single numeric modifier one field grants to a target slug. */
 export interface Contribution {
     sourceId: string

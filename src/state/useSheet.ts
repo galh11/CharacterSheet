@@ -9,6 +9,7 @@ import {
     type CritMode,
     type SectionLayout,
 } from '../model/characterSheet'
+import { resolveSheet, resolveFieldMax } from '../model/compute'
 import type { SectionTemplate } from './templates'
 import {
     getActiveSheet,
@@ -286,7 +287,9 @@ export const useSheet = () => {
      */
     const rest = useCallback(
         (kind: 'short' | 'long') => {
-            commit((c) => ({
+            commit((c) => {
+                const scope = resolveSheet(c).scope
+                return {
                 ...c,
                 sections: c.sections.map((section) => {
                     const maxHp = section.fields.find((f) => f.label.toLowerCase() === 'max hp')?.value
@@ -301,6 +304,7 @@ export const useSheet = () => {
                         meta,
                         fields: section.fields.map((field) => {
                             const label = field.label.toLowerCase()
+                            const cap = resolveFieldMax(field, scope)
                             if (kind === 'long') {
                                 if (label === 'current hp' && maxHp != null) return { ...field, value: maxHp }
                                 if (label === 'temp hp') return { ...field, value: '0' }
@@ -308,23 +312,24 @@ export const useSheet = () => {
                                     return { ...field, value: String(Math.max(0, (Number(field.value) || 0) - 1)) }
                                 }
                                 // Hit dice and spell slots refill on a long rest.
-                                if (section.kind === 'hitdice' && field.max != null) {
-                                    return { ...field, value: String(field.max) }
+                                if (section.kind === 'hitdice' && cap != null) {
+                                    return { ...field, value: String(cap) }
                                 }
-                                if (section.kind === 'spellslots' && field.max != null) {
-                                    return { ...field, value: String(field.max) }
+                                if (section.kind === 'spellslots' && cap != null) {
+                                    return { ...field, value: String(cap) }
                                 }
                             }
-                            if (field.type === 'resource' && field.max != null) {
+                            if (field.type === 'resource' && cap != null) {
                                 const recharge = field.meta?.recharge ?? 'long'
-                                if (kind === 'long' && recharge !== 'none') return { ...field, value: String(field.max) }
-                                if (kind === 'short' && recharge === 'short') return { ...field, value: String(field.max) }
+                                if (kind === 'long' && recharge !== 'none') return { ...field, value: String(cap) }
+                                if (kind === 'short' && recharge === 'short') return { ...field, value: String(cap) }
                             }
                             return field
                         }),
                     }
                 }),
-            }), kind === 'long' ? 'Long rest' : 'Short rest')
+            }
+            }, kind === 'long' ? 'Long rest' : 'Short rest')
         },
         [commit],
     )
@@ -411,14 +416,17 @@ export const useSheet = () => {
     const restoreResource = useCallback(
         (refillSlug: string, costSlug?: string) => {
             commit(
-                (c) => ({
+                (c) => {
+                    const scope = resolveSheet(c).scope
+                    return {
                     ...c,
                     sections: c.sections.map((section) => ({
                         ...section,
                         fields: section.fields.map((field) => {
                             const slug = slugify(field.label)
-                            if (slug === refillSlug && field.max != null) {
-                                return { ...field, value: String(field.max) }
+                            const cap = resolveFieldMax(field, scope)
+                            if (slug === refillSlug && cap != null) {
+                                return { ...field, value: String(cap) }
                             }
                             if (costSlug && slug === costSlug) {
                                 return { ...field, value: String((Number(field.value) || 0) + 1) }
@@ -426,7 +434,8 @@ export const useSheet = () => {
                             return field
                         }),
                     })),
-                }),
+                }
+                },
                 'Restore',
             )
         },

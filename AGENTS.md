@@ -221,6 +221,17 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   (they're 0/1 noise); the "resource to spend / refill" slug inputs instead
   autocomplete spendable resource/counter slugs (`compute.listResourceReferences`),
   while `listReferences` tags each reference with its field `kind` for that split.
+- **Formula-backed resource/counter caps**: a `resource`/`counter` field's upper
+  bound can be a **`maxFormula`** (schema field on `characterSheet.ts`) instead of
+  the static numeric `max`. `compute.resolveFieldMax(field, scope)` resolves it —
+  preferring `maxFormula` (evaluated against the sheet scope, rounded, floored at
+  0) and falling back to `max` — so a limited-use cap scales with level/ability
+  (e.g. `{wis_mod}`, `proficiency`) instead of a frozen literal that drifts on
+  level-up. The pip/counter widgets (`ResourcePips`/`Counter`, threaded the
+  `scope`) and the rest/refill logic (`useSheet.rest` and `restoreResource`, which
+  resolve the scope via `resolveSheet` first) all read the resolved cap, so a
+  formula-capped resource refills to the right value on a rest. The section editor
+  adds a "max formula" `FormulaInput` beside the numeric max input.
 - **Portrait**: the sheet carries an optional `portrait` (an image data URL) set
   via `useSheet.setPortrait`. The side nav shows it as a circular avatar above
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled

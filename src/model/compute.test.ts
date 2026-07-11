@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeSheet, resolveSheet, interpolate, listReferences, listResourceReferences } from './compute'
+import { computeSheet, resolveSheet, resolveFieldMax, interpolate, listReferences, listResourceReferences } from './compute'
 import { createField, createSection, type CharacterSheet } from './characterSheet'
 
 // Builds a minimal sheet: one number field and one computed field that
@@ -120,6 +120,41 @@ describe('resolveSheet effects', () => {
         }
         const { tags } = resolveSheet(sheet)
         expect(tags.get('dex_save')?.[0]).toMatchObject({ op: 'advantage', sourceLabel: 'Shield of Faith' })
+    })
+})
+
+describe('resolveFieldMax', () => {
+    const scope = { wis_mod: 4, proficiency: 3, level: 8 }
+
+    it('returns the static max when no formula is set', () => {
+        const field = createField({ label: 'Moxie', type: 'resource', value: '2', max: 5 })
+        expect(resolveFieldMax(field, scope)).toBe(5)
+    })
+
+    it('resolves a formula max against the scope', () => {
+        const field = createField({ label: 'Moonlight Step', type: 'resource', value: '1', maxFormula: '{wis_mod}' })
+        expect(resolveFieldMax(field, scope)).toBe(4)
+    })
+
+    it('lets the formula override the static max', () => {
+        const field = createField({ label: 'Tumble', type: 'resource', value: '1', max: 99, maxFormula: 'proficiency' })
+        expect(resolveFieldMax(field, scope)).toBe(3)
+    })
+
+    it('rounds and floors a fractional/negative formula result', () => {
+        const field = createField({ label: 'Odd', type: 'resource', value: '0', maxFormula: '(level - 10) / 2' })
+        // (8 - 10) / 2 = -1 -> clamped to 0
+        expect(resolveFieldMax(field, scope)).toBe(0)
+    })
+
+    it('falls back to the static max when the formula is unresolvable', () => {
+        const field = createField({ label: 'Bad', type: 'resource', value: '0', max: 2, maxFormula: '{nope +' })
+        expect(resolveFieldMax(field, scope)).toBe(2)
+    })
+
+    it('returns undefined when neither max nor a valid formula yields a number', () => {
+        const field = createField({ label: 'None', type: 'resource', value: '0' })
+        expect(resolveFieldMax(field, scope)).toBeUndefined()
     })
 })
 

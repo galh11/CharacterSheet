@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
 import { slugify, type CharacterField, type CharacterSection, type EffectOp, type ActionToggle, type CritMode } from '../model/characterSheet'
-import { interpolate, type Contribution, type EffectTag } from '../model/compute'
+import { interpolate, resolveFieldMax, type Contribution, type EffectTag } from '../model/compute'
 import {
     rollD20,
     rollD20Series,
@@ -121,11 +121,12 @@ const CONDITION_LIBRARY: [string, string][] = [
 
 /* ── Interactive field widgets ─────────────────────────────────────────── */
 
-function Counter({ field, onUpdateField }: { field: CharacterField; onUpdateField: SectionBodyProps['onUpdateField'] }) {
+function Counter({ field, scope, onUpdateField }: { field: CharacterField; scope?: Record<string, number>; onUpdateField: SectionBodyProps['onUpdateField'] }) {
     const n = toNum(field.value)
+    const max = resolveFieldMax(field, scope ?? {})
     const isExhaustion = field.label.toLowerCase() === 'exhaustion'
     const set = (next: number) => {
-        const clamped = Math.max(0, field.max != null ? Math.min(field.max, next) : next)
+        const clamped = Math.max(0, max != null ? Math.min(max, next) : next)
         onUpdateField(field.id, { value: String(clamped) })
     }
     return (
@@ -142,7 +143,7 @@ function Counter({ field, onUpdateField }: { field: CharacterField; onUpdateFiel
                         aria-label={field.label}
                         className="w-9 rounded bg-slate-900/50 text-center font-mono text-sm text-slate-100 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
                     />
-                    {field.max != null && <span className="font-mono text-sm text-slate-500">/{field.max}</span>}
+                    {max != null && <span className="font-mono text-sm text-slate-500">/{max}</span>}
                     <button type="button" onClick={() => set(n + 1)} className="h-6 w-6 rounded bg-slate-800 text-sm text-slate-300 hover:bg-slate-700" aria-label={`Increase ${field.label}`}>+</button>
                 </div>
             </div>
@@ -155,8 +156,8 @@ function Counter({ field, onUpdateField }: { field: CharacterField; onUpdateFiel
     )
 }
 
-function ResourcePips({ field, onUpdateField }: { field: CharacterField; onUpdateField: SectionBodyProps['onUpdateField'] }) {
-    const max = field.max ?? 0
+function ResourcePips({ field, scope, onUpdateField }: { field: CharacterField; scope?: Record<string, number>; onUpdateField: SectionBodyProps['onUpdateField'] }) {
+    const max = resolveFieldMax(field, scope ?? {}) ?? 0
     const val = Math.max(0, Math.min(max, toNum(field.value)))
     const set = (i: number) => onUpdateField(field.id, { value: String(val === i ? i - 1 : i) })
     return (
@@ -320,16 +321,16 @@ function FieldGrantChips({ field }: { field: CharacterField }) {
 
 /* ── Section kinds ─────────────────────────────────────────────────────── */
 
-function DefaultList({ section, results, onUpdateField, contributions, effectTags }: SectionBodyProps) {
+function DefaultList({ section, results, scope, onUpdateField, contributions, effectTags }: SectionBodyProps) {
     if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No fields yet.</p>
     return (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {section.fields.map((field) => (
                 <li key={field.id}>
                     {field.type === 'counter' ? (
-                        <Counter field={field} onUpdateField={onUpdateField} />
+                        <Counter field={field} scope={scope} onUpdateField={onUpdateField} />
                     ) : field.type === 'resource' ? (
-                        <ResourcePips field={field} onUpdateField={onUpdateField} />
+                        <ResourcePips field={field} scope={scope} onUpdateField={onUpdateField} />
                     ) : field.type === 'boolean' ? (
                         <BoolToggle field={field} onUpdateField={onUpdateField} />
                     ) : (
@@ -1049,12 +1050,12 @@ function Conditions({ section, onUpdateField, onAddField }: SectionBodyProps) {
     )
 }
 
-function SpellSlots({ section, onUpdateField }: SectionBodyProps) {
+function SpellSlots({ section, scope, onUpdateField }: SectionBodyProps) {
     if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No spell slots yet.</p>
     return (
         <div className="flex flex-col gap-1.5">
             {section.fields.map((field) => (
-                <ResourcePips key={field.id} field={field} onUpdateField={onUpdateField} />
+                <ResourcePips key={field.id} field={field} scope={scope} onUpdateField={onUpdateField} />
             ))}
         </div>
     )
@@ -1229,7 +1230,7 @@ const COIN_ORDER = ['cp', 'sp', 'ep', 'gp', 'pp']
 /** A single, D&D-Beyond-style inventory: a coin purse (fields flagged
  *  `meta.coin`) across the top, then the item list below. Everything lives in
  *  one section so currency travels with the gear. */
-function InventoryWidget({ section, results, onUpdateField, contributions, effectTags }: SectionBodyProps) {
+function InventoryWidget({ section, results, scope, onUpdateField, contributions, effectTags }: SectionBodyProps) {
     if (section.fields.length === 0) return <p className="text-xs italic text-slate-500">No items yet.</p>
     const coins = section.fields
         .filter((f) => f.meta?.coin)
@@ -1268,9 +1269,9 @@ function InventoryWidget({ section, results, onUpdateField, contributions, effec
                     {items.map((field) => (
                         <li key={field.id}>
                             {field.type === 'counter' ? (
-                                <Counter field={field} onUpdateField={onUpdateField} />
+                                <Counter field={field} scope={scope} onUpdateField={onUpdateField} />
                             ) : field.type === 'resource' ? (
-                                <ResourcePips field={field} onUpdateField={onUpdateField} />
+                                <ResourcePips field={field} scope={scope} onUpdateField={onUpdateField} />
                             ) : field.type === 'boolean' ? (
                                 <BoolToggle field={field} onUpdateField={onUpdateField} />
                             ) : (

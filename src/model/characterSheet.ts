@@ -112,6 +112,12 @@ export const fieldSchema = z.object({
     description: z.string().default(''),
     /** Upper bound for `resource` pips and `counter` clamping. */
     max: z.number().optional(),
+    /** Optional formula for a dynamic upper bound, resolved against the sheet's
+     *  scope (e.g. `{wis_mod}`, `proficiency`, `2 + floor(level / 4)`). When set
+     *  it overrides the static `max`, so a resource/counter cap can scale with
+     *  level or ability instead of being frozen as a literal that drifts on
+     *  level-up. */
+    maxFormula: z.string().optional(),
     /** Free-form structured extras used by specialized section renderers. */
     meta: z.record(z.string(), z.string()).optional(),
     /** Modifiers this field grants to other fields (relational effects). */

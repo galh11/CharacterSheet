@@ -673,6 +673,20 @@ export function SectionEditorModal({
                                         />
                                     )}
 
+                                    {(field.type === 'counter' || field.type === 'resource') && (
+                                        <FormulaInput
+                                            value={field.maxFormula ?? ''}
+                                            onChange={(next) =>
+                                                onUpdateField(field.id, { maxFormula: next === '' ? undefined : next })
+                                            }
+                                            references={formulaReferences}
+                                            placeholder="max formula (optional, e.g. proficiency)"
+                                            wrapperClassName="mt-2"
+                                            className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-400"
+                                            aria-label="Max formula"
+                                        />
+                                    )}
+
                                     {field.type === 'resource' && (
                                         <select
                                             value={field.meta?.recharge ?? 'long'}

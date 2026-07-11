@@ -270,6 +270,33 @@ describe('useSheet', () => {
         expect(fieldVal(result.current, 'tmp')).toBe('5')
     })
 
+    it('refills a resource whose max is a formula to the resolved value', () => {
+        const sheet = {
+            id: 's',
+            name: 'T',
+            sections: [
+                {
+                    id: 'sec',
+                    title: 'X',
+                    description: '',
+                    accent: '#000',
+                    kind: 'default' as const,
+                    scale: 1,
+                    layout: { x: 0, y: 0, w: 1, h: 1 },
+                    fields: [
+                        { id: 'prof', label: 'Proficiency', type: 'number' as const, value: '3', description: '' },
+                        { id: 'tumble', label: "Hill's Tumble", type: 'resource' as const, value: '0', maxFormula: 'proficiency', description: '', meta: { recharge: 'long' } },
+                    ],
+                },
+            ],
+        }
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(sheet))
+        act(() => result.current.rest('long'))
+        const tumble = result.current.sheet.sections[0].fields.find((f) => f.id === 'tumble')
+        expect(tumble?.value).toBe('3')
+    })
+
     it('heals current HP up to max', () => {
         const { result } = renderHook(() => useSheet())
         act(() => result.current.replaceSheet(restSheet()))

@@ -1404,7 +1404,6 @@ function App() {
                                     onScaleChange={(scale) => updateSection(section.id, { scale })}
                                     onGuidesChange={setGuides}
                                     onSelect={(additive) => handleSelect(section.id, additive)}
-                                    onEdit={() => setEditingSectionId(section.id)}
                                     quickEdit={
                                         <SectionQuickEdit
                                             section={section}
@@ -1510,7 +1509,6 @@ function App() {
                                         .map((p) => p.layout)}
                                     onLayoutCommit={(l) => updateSection(section.id, { drawerLayout: l })}
                                     onScaleChange={(scale) => updateSection(section.id, { scale })}
-                                    onEdit={() => setEditingSectionId(section.id)}
                                     quickEdit={
                                         <SectionQuickEdit
                                             section={section}

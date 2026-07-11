@@ -38,9 +38,9 @@ interface SectionQuickEditProps {
 export function SectionQuickEdit({ section, onUpdateSection, onEdit, className }: SectionQuickEditProps) {
     return (
         <Popover
-            trigger="✐"
-            title="Quick edit — rename, colour, layout"
-            ariaLabel={`Quick edit ${section.title}`}
+            trigger="✎"
+            title="Edit — rename, colour, layout, or open full settings"
+            ariaLabel={`Edit ${section.title}`}
             triggerClassName={className}
         >
             {(close) => (

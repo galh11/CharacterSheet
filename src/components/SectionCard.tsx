@@ -100,17 +100,6 @@ export function SectionCard({
                         className="shrink-0 rounded px-1 text-slate-400 opacity-60 hover:bg-slate-800 hover:text-slate-200 hover:opacity-100"
                     />
                 )}
-                {onEdit && (
-                    <button
-                        type="button"
-                        onClick={onEdit}
-                        className="shrink-0 rounded px-1 text-slate-400 opacity-60 hover:bg-slate-800 hover:text-slate-200 hover:opacity-100"
-                        aria-label={`Edit ${section.title}`}
-                        title="Edit fields, formulas and settings"
-                    >
-                        ✎
-                    </button>
-                )}
                 {onHide && (
                     <button
                         type="button"

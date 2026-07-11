@@ -17,7 +17,9 @@ test('view mode matches the visual snapshot', async ({ page }) => {
 })
 
 test('the section editor modal matches the visual snapshot', async ({ page }) => {
-    await page.getByRole('button', { name: 'Edit section' }).first().click()
+    // The ✎ button opens the quick-edit popover; "More settings…" opens the full editor.
+    await page.getByRole('button', { name: /^Edit / }).first().click()
+    await page.getByRole('button', { name: 'More settings…' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await expect(page).toHaveScreenshot('section-editor.png', { fullPage: true })
 })

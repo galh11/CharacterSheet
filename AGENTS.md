@@ -37,7 +37,13 @@ Always run `npm run lint`, `npm run build`, `npm run test:run`, and
 via the editor's TypeScript diagnostics instead.
 
 **Environment note:** on the maintainer's machine Node isn't on the global PATH —
-run `conda activate nodejs` first in any new terminal, then `npm …` works.
+run `conda activate nodejs` first in any new terminal, then `npm …` works. The
+**GitHub CLI (`gh`) is installed in that same `nodejs` env and authenticated**, so
+prefer it for GitHub actions an agent used to be unable to do: open/merge/inspect
+PRs (`gh pr create` / `gh pr checks` / `gh pr view`), create and apply labels
+(`gh label create`, `gh pr edit --add-label`), read failed CI logs
+(`gh run view --log-failed`), and trigger `workflow_dispatch` workflows
+(`gh workflow run "<name>"`). Manage branch rules via `gh api …/rulesets`.
 
 ## Project structure
 
@@ -335,7 +341,9 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   before opening the PR as usual.)
 - **Bootstrapping baselines from scratch**: to generate the very first Linux
   baselines (or outside a PR), run the **Update visual baselines** workflow
-  (`.github/workflows/visual-baselines.yml`, `workflow_dispatch`): it runs
+  (`.github/workflows/visual-baselines.yml`, `workflow_dispatch`) — with `gh`
+  installed an agent can trigger it directly:
+  `gh workflow run "Update visual baselines"` (no Actions-UI click needed). It runs
   `--update-snapshots` on an ubuntu runner and uploads the PNGs as the
   `linux-visual-baselines` artifact; download them into the snapshots folder and
   commit them.
@@ -420,19 +428,22 @@ git branch -D <type>/<slug>                            # remote branch auto-dele
 git fetch --prune origin; git merge --ff-only origin/main   # refresh the primary main
 ```
 
-### One-time repo setup (maintainer)
+### Repo setup — the branch gate (maintainer)
 
-So CI truly gates and nothing lands unreviewed-but-unchecked, protect `main`
-(GitHub → **Settings → Branches → Add branch protection rule** for `main`):
+`main` is guarded by a repository **ruleset** (`run-ci-before-main`), which you can
+inspect or edit with `gh api repos/galh11/CharacterSheet/rulesets` (or GitHub →
+**Settings → Rules → Rulesets**). It currently enforces:
 
 - **Require a pull request before merging** — Required approvals: **0**.
-- **Require status checks to pass** — add the **`test`** check (the CI job).
-- Leave "Require branches up to date" **off** so parallel PRs auto-merge without
-  serialized re-runs.
+- **Block force-pushes** (non-fast-forward) to `main`.
+- **No required status check.** CI is intentionally *not* a required check, so the
+  **Auto-merge** workflow is the real gate — it squash-merges a PR only after the
+  `CI` workflow succeeds. Keeping CI off the required-checks list is what lets the
+  `update-visuals` flow's bot-pushed baseline commit (pushed with `GITHUB_TOKEN`,
+  which doesn't re-trigger CI) merge hands-free; a required check would block it.
 
-With 0 required approvals, no human approval is ever needed; the CI check is the
-only gate, and the auto-merge workflow does the merge. (No branch protection is
-strictly required for auto-merge to work, but it blocks accidental direct pushes.)
+So no human approval is ever needed, direct/force pushes to `main` are blocked,
+and the CI-gated Auto-merge workflow does the merge.
 
 ### Parallel-awareness checklist
 

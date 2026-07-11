@@ -74,6 +74,8 @@ src/
     useSelection.ts        # canvas multi-select + align / match-size / distribute over the selection
     usePresets.ts          # named canvas layout presets (save/apply a snapshot of every card's position)
     usePersistentState.ts  # useState mirrored to localStorage (persisted UI prefs: fit-width, density, grid cols, sidebar)
+    useCanvasGridLayout.ts # dashboard grid geometry + zoom + drop/reflow/auto-arrange handlers (extracted from App)
+    useDrawerDrag.ts       # drawer + canvas card drag/tuck/restore state + handlers; exports inDrawer (extracted from App)
   components/
     HeaderToolbar.tsx      # the right-hand side nav (rail): profile/portrait, character switcher, undo/redo, search, add + View/⋯ More menus, theme swatch, plus the narrow-width hamburger + overlay (extracted from App.tsx)
     SectionCard.tsx        # section frame: header, ✎ edit button, collapse/pin; hosts SectionBody
@@ -328,7 +330,11 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   (Existing pixel sheets keep their stored positions until the first
   drag/Auto-arrange snaps them onto the grid.) Other `layout.ts` helpers handle
   alignment/distribution (`compactLayouts`/`tidyLayouts` are retained legacy
-  packers, no longer surfaced in the UI).
+  packers, no longer surfaced in the UI). The grid geometry (`grid`/`canvasSize`),
+  the fit-to-width / density `canvasZoom`, and the drop / live-reflow / auto-arrange
+  handlers (`commitLayout`/`onGridDrag`/`handleOrganize`/`changeGridCols`) are
+  extracted into the `state/useCanvasGridLayout.ts` hook, which owns the live
+  `gridPreview` reflow and the `dragOverDrawerRef` flag it shares with the drawer.
 - **Multi-select bulk actions**: clicking canvas card handles builds the
   `useSelection` hook's `selectedIds` set; while it's non-empty a **selection
   bar** renders above the canvas. Beyond the layout-only align / match /
@@ -371,7 +377,11 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   right-hand side nav. The tab persists whenever the current view's drawer holds ≥1 card
   (and hides when empty). Inside the drawer each tucked card gets its own
   `drawerLayout` and can be dragged/resized freely; ⊞ restores a card to the
-  sheet. Drawer cards still feed their fields into computed formulas.
+  sheet. Drawer cards still feed their fields into computed formulas. The drawer
+  open/drag state (`drawerOpen`/`draggingId`/`dropHot`/`dragPoint`/`dragGrab`), the
+  pointer-geometry helpers, and the `onCardDragMove`/`onCardDragEnd`/`hideSection`/
+  `showSection` handlers live in the `state/useDrawerDrag.ts` hook (which also
+  exports the shared `inDrawer(section, view)` helper).
 
 ## Testing
 

@@ -73,8 +73,11 @@ save or load a whole sheet as JSON.
 ### Phase I — Continuous integration  [x]
 - [x] GitHub Actions: run lint, build, unit tests, and e2e on push / PR.
 - [x] Upload the Playwright HTML report as a build artifact.
-- [x] Note: visual snapshots are Windows baselines, so CI runs functional e2e
-      only until Linux baselines are generated.
+- [x] Note: visual snapshots started as Windows-only baselines, so CI ran
+      functional e2e only. CI now gates visual regression too, conditionally on
+      committed `*-chromium-linux.png` baselines (generated on demand by the
+      **Update visual baselines** workflow); until they're committed the visual
+      step skips.
 - [x] Verify the workflow goes green on the first push.
 
 ### Phase J — Deployment  [x]

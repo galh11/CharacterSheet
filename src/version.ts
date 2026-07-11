@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.19.0',
+        date: '2026-07-11',
+        summary: 'Merged each section\u2019s two edit buttons into one: the \u270e button now opens the quick-edit popover (rename, colour, layout), and its \u201cMore settings\u2026\u201d link opens the full editor \u2014 no more redundant pencil.',
+    },
+    {
         version: '1.18.0',
         date: '2026-07-11',
         summary: 'A numeric bonus an item or feature grants to a skill or saving throw (like a background feature adding your Wisdom modifier to a skill) now actually adds to that check’s modifier and roll — not just the little badge beside it.',

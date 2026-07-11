@@ -21,7 +21,7 @@ describe('SectionQuickEdit', () => {
         const onUpdateSection = vi.fn()
         render(<SectionQuickEdit section={section} onUpdateSection={onUpdateSection} />)
 
-        await user.click(screen.getByRole('button', { name: 'Quick edit Combat' }))
+        await user.click(screen.getByRole('button', { name: 'Edit Combat' }))
         await user.type(screen.getByLabelText('Section name'), '!')
         expect(onUpdateSection).toHaveBeenCalledWith({ title: 'Combat!' })
     })
@@ -31,7 +31,7 @@ describe('SectionQuickEdit', () => {
         const onUpdateSection = vi.fn()
         render(<SectionQuickEdit section={section} onUpdateSection={onUpdateSection} />)
 
-        await user.click(screen.getByRole('button', { name: 'Quick edit Combat' }))
+        await user.click(screen.getByRole('button', { name: 'Edit Combat' }))
         await user.selectOptions(screen.getByLabelText('Section layout'), 'hp')
         expect(onUpdateSection).toHaveBeenCalledWith({ kind: 'hp' })
     })
@@ -41,7 +41,7 @@ describe('SectionQuickEdit', () => {
         const onUpdateSection = vi.fn()
         render(<SectionQuickEdit section={section} onUpdateSection={onUpdateSection} />)
 
-        await user.click(screen.getByRole('button', { name: 'Quick edit Combat' }))
+        await user.click(screen.getByRole('button', { name: 'Edit Combat' }))
         await user.click(screen.getByRole('button', { name: 'Set colour #059669' }))
         expect(onUpdateSection).toHaveBeenCalledWith({ accent: '#059669' })
     })
@@ -51,7 +51,7 @@ describe('SectionQuickEdit', () => {
         const onEdit = vi.fn()
         render(<SectionQuickEdit section={section} onUpdateSection={vi.fn()} onEdit={onEdit} />)
 
-        await user.click(screen.getByRole('button', { name: 'Quick edit Combat' }))
+        await user.click(screen.getByRole('button', { name: 'Edit Combat' }))
         await user.click(screen.getByRole('button', { name: 'More settings…' }))
         expect(onEdit).toHaveBeenCalledOnce()
         expect(screen.queryByLabelText('Section name')).not.toBeInTheDocument()

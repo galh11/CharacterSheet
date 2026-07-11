@@ -31,9 +31,8 @@ interface CanvasItemProps {
     onGuidesChange?: (guides: SnapGuide[]) => void
     /** Fired on a click (no drag) of the handle; additive = Shift/Ctrl held. */
     onSelect?: (additive: boolean) => void
-    /** Open the per-section editor (rendered as a ✎ in the handle bar). */
-    onEdit?: () => void
-    /** A quick-edit control (✐ popover) rendered in the handle bar before ✎. */
+    /** The edit control (✎ popover) rendered in the handle bar — quick rename /
+     *  colour / layout, plus a "More settings…" link into the full editor. */
     quickEdit?: ReactNode
     /** Tuck this card into the drawer (⊟), or restore it (⊞) in drawer mode. */
     onHide?: () => void
@@ -65,7 +64,7 @@ type DragState =
     | { mode: 'idle' }
     | { mode: 'move' | 'resize'; pointerId: number; startX: number; startY: number; origin: SectionLayout }
 
-export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, onEdit, quickEdit, onHide, drawerMode, dimmed, onDragStart, onDragMove, onGridDrag, onDragEnd, handleRef, children }: CanvasItemProps) {
+export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, selected, onLayoutCommit, onScaleChange, onGuidesChange, onSelect, quickEdit, onHide, drawerMode, dimmed, onDragStart, onDragMove, onGridDrag, onDragEnd, handleRef, children }: CanvasItemProps) {
     const [live, setLive] = useState<SectionLayout | null>(null)
     const drag = useRef<DragState>({ mode: 'idle' })
     const moved = useRef(false)
@@ -255,9 +254,6 @@ export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, select
                     <button type="button" onClick={fitHeight} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit height to content">↕</button>
                     <button type="button" onClick={fitWidth} className="rounded px-1 hover:bg-slate-700 hover:text-slate-200" title="Fit width to content">↔</button>
                     {quickEdit}
-                    {onEdit && (
-                        <button type="button" onClick={onEdit} className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100" title="Edit fields, formulas and settings" aria-label="Edit section">✎</button>
-                    )}
                     {onHide && (
                         <button type="button" onClick={onHide} className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100" title={drawerMode ? 'Restore to the sheet' : 'Move to drawer'} aria-label={drawerMode ? 'Restore section from drawer' : 'Move section to drawer'}>{drawerMode ? '⊞' : '⊟'}</button>
                     )}

@@ -20,10 +20,10 @@ one hover away.
   have their own drawer, and tucked cards still feed their fields into
   calculations. The tab and panel appear only while the drawer holds something —
   emptying it closes the drawer automatically.
-- **Editable everything** — add/rename/delete sections and fields through a
-  per-section editor (the ✎ pencil on each card); there is no separate edit mode.
-  A ✐ quick-edit button opens a small non-blocking popover to rename, recolour
-  and switch a section's layout without leaving the canvas.
+- **Editable everything** — each card's ✎ button opens a small non-blocking
+  popover to rename, recolour and switch a section's layout without leaving the
+  canvas, with a *More settings…* link into the full per-section editor (fields,
+  formulas, effects); there is no separate edit mode.
 - **Typed fields** — `text`, `number`, `boolean`, `computed`, `counter`, and
   `resource` (pips).
 - **Calculations** — `computed` fields run a safe formula engine that can

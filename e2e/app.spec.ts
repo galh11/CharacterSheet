@@ -14,8 +14,9 @@ test('loads the starter sheet', async ({ page }) => {
 test('drag handles and the section editor are available without an edit mode', async ({ page }) => {
     // Cards can be moved/resized straight away.
     await expect(page.getByTitle(/Drag to move/).first()).toBeVisible()
-    // The pencil in the handle bar opens a per-section editor modal.
-    await page.getByRole('button', { name: 'Edit section' }).first().click()
+    // The ✎ button opens a quick-edit popover; "More settings…" opens the full editor.
+    await page.getByRole('button', { name: /^Edit / }).first().click()
+    await page.getByRole('button', { name: 'More settings…' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toHaveCount(0)

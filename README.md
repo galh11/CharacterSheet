@@ -51,7 +51,10 @@ one hover away.
   Cast-and-spend-a-slot button, and a D&D-Beyond-style
   inventory whose coin purse and items share one card…).
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
-- **Character portrait** — add a D&D-Beyond-style circular avatar in the top bar;
+- **Side-nav dashboard** — all persistent controls live in a collapsible
+  right-hand sidebar so the canvas keeps the full height of the window; it folds
+  to a hamburger overlay on narrow screens.
+- **Character portrait** — add a D&D-Beyond-style circular avatar in the side nav;
   click to upload or replace an image (auto-downscaled), hover to remove it.
 - **Persistence & portability** — autosaves to a versioned `localStorage` schema
   (with migration) and keeps a **roster** of multiple characters; export/import

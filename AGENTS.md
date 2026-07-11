@@ -90,6 +90,7 @@ src/
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
     HitDiceModal.tsx       # spend hit dice on a short rest
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
+    GameMechanicsModal.tsx # "Game mechanics" house-rules pane (opened from ⋯ More → Settings): per-sheet rules like the crit-damage mode
     Tooltip.tsx            # hover/focus description bubble (portaled to body, fixed-positioned so it's never clipped by a card's overflow)
     UpdateToast.tsx        # "new version available" reload prompt (fed by useAppUpdate)
     EmptyCanvas.tsx        # app-level empty state (shown when the sheet has zero sections): + Section CTA + quick template picks
@@ -260,6 +261,16 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   (`exportSheetToFile` / `importSheetFromFile`, both zod-validated) — surfaced as
   **Export JSON** / **Import JSON…** in the ⋯ More menu. There is no external
   (D&D Beyond) importer; import only accepts a sheet this app exported.
+- **Game mechanics / house rules**: the sheet carries an optional `rules` object
+  (zod `rulesSchema` in `model/characterSheet.ts`) for table house rules that
+  change how the app *rolls* without editing any character field. Today it holds
+  `critMode` (`'double-dice'` RAW, default, or `'max-plus-roll'` = maximise the
+  normal dice then add a rolled set). `model/dice.ts` `critDamage(expr, mode)`
+  applies it; `ActionCards`/`SpellCards` pass `critMode` (threaded App → SectionCard
+  → SectionBody) into the Crit buttons. `components/GameMechanicsModal.tsx` (⋯ More →
+  **Settings → Game mechanics…**) edits it via `useSheet.setCritMode` (undoable).
+  The pane is built to grow more toggles (e.g. concentration DC, death-save/crit
+  variants). `rules` is optional, so reads fall back to `DEFAULT_CRIT_MODE`.
 - **Empty state**: when `sheet.sections.length === 0` (a brand-new or fully
   cleared character) the canvas/stack slot renders `components/EmptyCanvas.tsx`
   instead of a blank canvas — a centered card with a **+ Section** CTA (calls

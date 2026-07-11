@@ -6,6 +6,7 @@ import {
     type CharacterField,
     type CharacterSection,
     type CharacterSheet,
+    type CritMode,
     type SectionLayout,
 } from '../model/characterSheet'
 import type { SectionTemplate } from './templates'
@@ -109,6 +110,13 @@ export const useSheet = () => {
     const setPortrait = useCallback(
         (portrait: string | undefined) =>
             commit((c) => ({ ...c, portrait: portrait || undefined }), portrait ? 'Set portrait' : 'Remove portrait'),
+        [commit],
+    )
+
+    /** Update a house-rule setting (the "Game Mechanics" pane), e.g. crit mode. */
+    const setCritMode = useCallback(
+        (critMode: CritMode) =>
+            commit((c) => ({ ...c, rules: { ...c.rules, critMode } }), 'Set crit mode'),
         [commit],
     )
 
@@ -534,6 +542,7 @@ export const useSheet = () => {
         replaceSheet,
         renameSheet,
         setPortrait,
+        setCritMode,
         updateSection,
         setSectionLayout,
         setSectionLayouts,

@@ -87,6 +87,8 @@ src/
     Tooltip.tsx            # hover/focus description bubble (portaled to body, fixed-positioned so it's never clipped by a card's overflow)
     UpdateToast.tsx        # "new version available" reload prompt (fed by useAppUpdate)
     EmptyCanvas.tsx        # app-level empty state (shown when the sheet has zero sections): + Section CTA + quick template picks
+    Toast.tsx              # ToastProvider (queue + auto-dismiss) + Toaster (bottom-centre stack); global action notifications
+    toastContext.ts        # ToastContext + useToast() hook + Toast/ToastVariant/ShowToast types (split out for react-refresh)
   test/
     setup.ts               # Vitest setup: jest-dom matchers + in-memory localStorage mock
   **/*.test.ts(x)          # unit/component tests colocated with source
@@ -242,6 +244,20 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `addSection`) plus a quick-pick button per `SECTION_TEMPLATES` entry (calls
   `addTemplateSection`), mirroring the rail's add controls. Section-level empty
   hints (e.g. "No items yet.") are separate and still render per-widget.
+- **Toasts**: `components/Toast.tsx` (`ToastProvider` + `Toaster`) plus
+  `components/toastContext.ts` (`ToastContext` + `useToast()` hook) give the app a
+  global notification queue. `main.tsx` wraps `<App/>` in `ToastProvider`; `App`
+  calls `const toast = useToast()` and fires `toast(message, variant?)` — variants
+  `info` (default) / `success` (green) / `error` (red, lingers longer) — for
+  import/export/share/reset/portrait/level-up/restore/preset/update actions
+  (`usePresets` still surfaces its own notices through the same `onNotice` seam,
+  wrapped to `success`). The `Toaster` is a bottom-centre fixed stack that renders
+  **nothing when empty** (so the resting layout is unchanged) and each toast
+  auto-dismisses or can be closed with ✕. It replaced the tiny inline
+  "· notice" text that used to sit beside the "✓ Autosaved" indicator.
+  `toastContext.ts` is a separate module only because ESLint's
+  `react-refresh/only-export-components` forbids exporting the hook next to the
+  components.
 - **Stack view reorder**: in the Stack (masonry) view each card exposes a ⠿ grip
   handle on hover; dragging it onto another card calls `useSheet.moveSection`
   (native HTML5 drag-and-drop), which reorders the underlying `sheet.sections`

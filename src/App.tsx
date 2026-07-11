@@ -21,6 +21,7 @@ import { SectionEditorModal } from './components/SectionEditorModal'
 import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { AboutModal } from './components/AboutModal'
 import { UpdateToast } from './components/UpdateToast'
+import { useToast } from './components/toastContext'
 import { RollLog } from './components/RollLog'
 import { EmptyCanvas } from './components/EmptyCanvas'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
@@ -106,12 +107,12 @@ function App() {
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
     const [showHitDice, setShowHitDice] = useState(false)
     const [showAbout, setShowAbout] = useState(false)
-    const [notice, setNotice] = useState<string | null>(null)
+    const toast = useToast()
     const appUpdate = useAppUpdate()
     const handleCheckUpdate = async () => {
-        setNotice('Checking for updates…')
+        toast('Checking for updates…')
         const found = await appUpdate.checkForUpdate()
-        if (!found) setNotice("You're on the latest version.")
+        if (!found) toast("You're on the latest version.")
     }
     const [guides, setGuides] = useState<SnapGuide[]>([])
     const [rollMode, setRollMode] = useState<D20Mode>('normal')
@@ -197,7 +198,7 @@ function App() {
 
     const { rollLog, setRollLog, pushRoll } = useRollLog(activeId)
     const { selectedIds, clearSelection, handleSelect, deselect, align, match, distribute } = useSelection(sheet, setSectionLayout)
-    const { presets, savePreset, applyPreset } = usePresets(sheet, updateSection, setNotice)
+    const { presets, savePreset, applyPreset } = usePresets(sheet, updateSection, (m) => toast(m, 'success'))
 
     const resolved = useMemo(() => resolveSheet(sheet), [sheet])
     const computed = resolved.results
@@ -268,7 +269,7 @@ function App() {
     const spendLuck = () => {
         const left = scope['luck_points'] ?? 0
         if (left <= 0) {
-            setNotice('No Luck Points left.')
+            toast('No Luck Points left.')
             return
         }
         spendResource('luck_points', 1)
@@ -309,7 +310,7 @@ function App() {
         if (!levelField) return
         const next = (Number(levelField.field.value) || 0) + 1
         updateField(levelField.sectionId, levelField.field.id, { value: String(next) })
-        setNotice(`Leveled up to ${next}. Update HP max, hit dice, and features as needed.`)
+        toast(`Leveled up to ${next}. Update HP max, hit dice, and features as needed.`, 'success')
     }
 
     // Hit-dice pools live as resource/counter fields tagged with `meta.die`
@@ -359,31 +360,31 @@ function App() {
         const result = await importSheetFromFile(file)
         if (result.ok && result.sheet) {
             replaceSheet(result.sheet)
-            setNotice('Sheet imported.')
+            toast('Sheet imported.', 'success')
         } else {
-            setNotice(result.error)
+            toast(result.error ?? 'Could not import that file.', 'error')
         }
     }
 
     const handlePortrait = async (file: File | undefined) => {
         if (!file) return
         if (!file.type.startsWith('image/')) {
-            setNotice('Please choose an image file.')
+            toast('Please choose an image file.', 'error')
             return
         }
         try {
             const dataUrl = await readImageAsDataUrl(file, 256)
             setPortrait(dataUrl)
-            setNotice('Portrait updated.')
+            toast('Portrait updated.', 'success')
         } catch {
-            setNotice('Could not read that image.')
+            toast('Could not read that image.', 'error')
         }
     }
 
     const handleReset = () => {
         if (window.confirm('Reset to a fresh starter sheet? This cannot be undone.')) {
             replaceSheet(createStarterSheet())
-            setNotice('Sheet reset.')
+            toast('Sheet reset.', 'success')
         }
     }
 
@@ -397,9 +398,9 @@ function App() {
             link.download = `${sheet.name || 'character-sheet'}.png`
             link.href = dataUrl
             link.click()
-            setNotice('Exported PNG.')
+            toast('Exported PNG.', 'success')
         } catch {
-            setNotice('PNG export failed.')
+            toast('PNG export failed.', 'error')
         }
     }
 
@@ -407,7 +408,7 @@ function App() {
         const url = buildShareUrl(sheet)
         try {
             await navigator.clipboard.writeText(url)
-            setNotice('Share link copied to clipboard.')
+            toast('Share link copied to clipboard.', 'success')
         } catch {
             window.prompt('Copy this share link:', url)
         }
@@ -417,7 +418,7 @@ function App() {
         const name = characters.find((c) => c.id === activeId)?.name ?? 'this character'
         if (window.confirm(`Delete “${name}”? This cannot be undone.`)) {
             deleteCharacter(activeId)
-            setNotice('Character deleted.')
+            toast('Character deleted.', 'success')
         }
     }
 
@@ -425,7 +426,7 @@ function App() {
         const restored = restoreBackup(activeId, ts)
         if (restored) {
             replaceSheet(restored)
-            setNotice('Restored an earlier version.')
+            toast('Restored an earlier version.', 'success')
         }
     }
 
@@ -682,7 +683,7 @@ function App() {
         queueMicrotask(() => {
             if (window.confirm(`Load shared character “${shared.name}”? This replaces your current sheet.`)) {
                 replaceSheet(shared)
-                setNotice('Shared character loaded.')
+                toast('Shared character loaded.', 'success')
             }
             clearShareHash()
         })
@@ -922,7 +923,7 @@ function App() {
                     </Menu>
                     <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
                         <span title="Your sheet is saved automatically in this browser">
-                            ✓ Autosaved{notice ? <span className="text-cyan-300"> · {notice}</span> : null}
+                            ✓ Autosaved
                         </span>
                         <div className="flex items-center gap-1">
                             <button

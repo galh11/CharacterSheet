@@ -60,6 +60,8 @@ one hover away.
 - **Persistence & portability** — autosaves to a versioned `localStorage` schema
   (with migration) and keeps a **roster** of multiple characters; export/import
   the whole sheet as JSON, or share it via a link. Installable as an offline PWA.
+  Actions like import/export/share/reset confirm with brief pop-up **toasts**
+  (green for success, red for errors).
 - **Installable (PWA)** — a service worker precaches the app so it works offline
   and can be installed to a phone/tablet home screen for at-the-table use. When a
   new version deploys you get a **"new version available · Reload"** prompt, and

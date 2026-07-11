@@ -102,6 +102,10 @@ function App() {
     const [stackView, setStackView] = useState(false)
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
     const [pinned, setPinned] = useState<Set<string>>(new Set())
+    // Drag-to-reorder in the stack view: the section being dragged and the one
+    // currently hovered as a drop target.
+    const [stackDragId, setStackDragId] = useState<string | null>(null)
+    const [stackOverId, setStackOverId] = useState<string | null>(null)
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [draggingId, setDraggingId] = useState<string | null>(null)
     const [dropHot, setDropHot] = useState(false)
@@ -188,6 +192,7 @@ function App() {
         addTemplateSection,
         deleteSection,
         duplicateSection,
+        moveSection,
         rest,
         healHp,
         spendResource,
@@ -1351,9 +1356,55 @@ function App() {
 
                 {stackView ? (
                     <div ref={captureRef} className="columns-1 gap-4 md:columns-2 xl:columns-3" style={{ zoom: densityZoom }}>
-                        {stackSections.map((section) => (
-                            <div key={section.id} className="mb-4 break-inside-avoid">{renderCard(section, true)}</div>
-                        ))}
+                        {stackSections.map((section) => {
+                            const isTarget = stackDragId != null && stackOverId === section.id && stackDragId !== section.id
+                            return (
+                                <div
+                                    key={section.id}
+                                    className="mb-4 break-inside-avoid"
+                                    onDragOver={
+                                        stackDragId
+                                            ? (e) => {
+                                                  e.preventDefault()
+                                                  if (stackOverId !== section.id) setStackOverId(section.id)
+                                              }
+                                            : undefined
+                                    }
+                                    onDrop={
+                                        stackDragId
+                                            ? (e) => {
+                                                  e.preventDefault()
+                                                  moveSection(stackDragId, section.id)
+                                                  setStackDragId(null)
+                                                  setStackOverId(null)
+                                              }
+                                            : undefined
+                                    }
+                                >
+                                    <div className={clsx('group relative rounded-xl', isTarget && 'ring-2 ring-violet-400/70')}>
+                                        <button
+                                            type="button"
+                                            draggable
+                                            onDragStart={(e) => {
+                                                setStackDragId(section.id)
+                                                e.dataTransfer.effectAllowed = 'move'
+                                                e.dataTransfer.setData('text/plain', section.id)
+                                            }}
+                                            onDragEnd={() => {
+                                                setStackDragId(null)
+                                                setStackOverId(null)
+                                            }}
+                                            aria-label="Drag to reorder section"
+                                            title="Drag to reorder"
+                                            className="absolute -top-2 left-1/2 z-10 -translate-x-1/2 cursor-grab rounded-full border border-slate-600 bg-slate-800/90 px-2 text-xs leading-5 text-slate-400 opacity-0 transition-opacity hover:text-slate-200 active:cursor-grabbing group-hover:opacity-100 print:hidden"
+                                        >
+                                            ⠿
+                                        </button>
+                                        {renderCard(section, true)}
+                                    </div>
+                                </div>
+                            )
+                        })}
                     </div>
                 ) : (
                     <div ref={canvasScrollRef} className={clsx(fitWidth ? 'overflow-y-auto overflow-x-hidden' : 'overflow-auto')}>

@@ -38,6 +38,30 @@ describe('useSheet', () => {
         expect(result.current.sheet.sections).toHaveLength(before)
     })
 
+    it('reorders sections with moveSection (drag-to-reorder) and is undoable', () => {
+        const { result } = renderHook(() => useSheet())
+        const ids = result.current.sheet.sections.map((s) => s.id)
+        expect(ids.length).toBeGreaterThanOrEqual(2)
+        const [first, second] = ids
+
+        // Drop the second section onto the first → it lands before it.
+        act(() => result.current.moveSection(second, first))
+        expect(result.current.sheet.sections.map((s) => s.id).slice(0, 2)).toEqual([second, first])
+
+        // Dropping a section on itself is a no-op.
+        act(() => result.current.moveSection(second, second))
+        expect(result.current.sheet.sections.map((s) => s.id).slice(0, 2)).toEqual([second, first])
+
+        // An omitted target moves the source to the end.
+        act(() => result.current.moveSection(second))
+        expect(result.current.sheet.sections.at(-1)!.id).toBe(second)
+
+        // The reorder is a single undoable step back to the original order.
+        act(() => result.current.undo())
+        act(() => result.current.undo())
+        expect(result.current.sheet.sections.map((s) => s.id).slice(0, 2)).toEqual([first, second])
+    })
+
     it('adds, updates, and deletes a field', () => {
         const { result } = renderHook(() => useSheet())
         const sectionId = result.current.sheet.sections[0].id

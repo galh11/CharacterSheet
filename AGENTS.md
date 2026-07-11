@@ -55,7 +55,7 @@ src/
     dice.ts                # d20 (advantage/disadvantage), damage, crit flags, roll formatting
     layout.ts              # canvas geometry: dashboard grid (gridMetrics/toCell/snapToGrid/compactGrid), snap/align/distribute, skyline pack
   state/
-    useSheet.ts            # central sheet state + immutable mutation ops + undo/redo
+    useSheet.ts            # central sheet state + immutable mutation ops (incl. moveSection reorder) + undo/redo
     persistence.ts         # versioned localStorage load/save/clear (+ migration)
     transfer.ts            # whole-sheet JSON export / import
     roster.ts              # multiple characters (character-sheet:char:{id}, character-sheet:roster:v1)
@@ -205,6 +205,11 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   (`exportSheetToFile` / `importSheetFromFile`, both zod-validated) — surfaced as
   **Export JSON** / **Import JSON…** in the ⋯ More menu. There is no external
   (D&D Beyond) importer; import only accepts a sheet this app exported.
+- **Stack view reorder**: in the Stack (masonry) view each card exposes a ⠿ grip
+  handle on hover; dragging it onto another card calls `useSheet.moveSection`
+  (native HTML5 drag-and-drop), which reorders the underlying `sheet.sections`
+  array (undoable). Pinned cards still sort to the top of the display, so a drop
+  reorders the base list rather than the pinned-first view.
 - **PWA updates**: the app is a `vite-plugin-pwa` service worker with
   `registerType: 'autoUpdate'`, so an open tab keeps serving the precached build
   until a newer service worker is fetched and activated. `state/useAppUpdate.ts`

@@ -7,9 +7,6 @@ import {
 } from './model/characterSheet'
 import { resolveSheet, listReferences, listResourceReferences } from './model/compute'
 import {
-    alignEdge,
-    matchDimension,
-    distribute as distributeLayout,
     gridMetrics,
     gridWidth,
     compactGrid,
@@ -17,7 +14,6 @@ import {
     toCell,
     fromCell,
     type Placed,
-    type AlignEdge,
 } from './model/layout'
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
@@ -38,6 +34,7 @@ import { SECTION_TEMPLATES } from './state/templates'
 import { useSheet } from './state/useSheet'
 import { usePersistentState, boolCodec, type Codec } from './state/usePersistentState'
 import { useRollLog } from './state/useRollLog'
+import { useSelection } from './state/useSelection'
 import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode } from './model/dice'
 
@@ -116,7 +113,6 @@ function App() {
         if (!found) setNotice("You're on the latest version.")
     }
     const [guides, setGuides] = useState<SnapGuide[]>([])
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [presets, setPresets] = useState<Presets>(() => loadPresets())
     const [rollMode, setRollMode] = useState<D20Mode>('normal')
     const [situational, setSituational] = useState(0)
@@ -200,6 +196,7 @@ function App() {
     } = useSheet()
 
     const { rollLog, setRollLog, pushRoll } = useRollLog(activeId)
+    const { selectedIds, clearSelection, handleSelect, deselect, align, match, distribute } = useSelection(sheet, setSectionLayout)
 
     const resolved = useMemo(() => resolveSheet(sheet), [sheet])
     const computed = resolved.results
@@ -519,12 +516,7 @@ function App() {
         }
         updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: true }, drawerLayout })
         setDrawerOpen(true)
-        setSelectedIds((prev) => {
-            if (!prev.has(id)) return prev
-            const next = new Set(prev)
-            next.delete(id)
-            return next
-        })
+        deselect(id)
     }
 
     // Collapse the drawer once its last card leaves, so it doesn't linger open and
@@ -634,12 +626,7 @@ function App() {
             const drawerLayout = pointToLayout(drawerCanvasRef.current, x, y, 1, w, h) ?? section.drawerLayout
             updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: true }, drawerLayout })
             setDrawerOpen(true)
-            setSelectedIds((prev) => {
-                if (!prev.has(id)) return prev
-                const next = new Set(prev)
-                next.delete(id)
-                return next
-            })
+            deselect(id)
             return true
         }
         if (isOverTab(x, y)) {
@@ -684,28 +671,8 @@ function App() {
         const pan = panRef.current
         if (!pan || pan.pointerId !== e.pointerId) return
         panRef.current = null
-        if (!pan.moved) setSelectedIds(new Set())
+        if (!pan.moved) clearSelection()
     }
-
-    const handleSelect = (id: string, additive: boolean) => {
-        setSelectedIds((prev) => {
-            const next = new Set(additive ? prev : [])
-            if (additive && prev.has(id)) next.delete(id)
-            else next.add(id)
-            return next
-        })
-    }
-
-    const selectedItems = (): Placed[] =>
-        sheet.sections.filter((s) => selectedIds.has(s.id)).map((s) => ({ id: s.id, layout: s.layout }))
-
-    const applyPlaced = (items: Placed[]) => {
-        for (const { id, layout } of items) setSectionLayout(id, layout)
-    }
-
-    const align = (edge: AlignEdge) => applyPlaced(alignEdge(selectedItems(), edge))
-    const match = (dim: 'w' | 'h') => applyPlaced(matchDimension(selectedItems(), dim))
-    const distribute = (axis: 'h' | 'v') => applyPlaced(distributeLayout(selectedItems(), axis))
 
     const savePreset = () => {
         const name = window.prompt('Save current layout as:')?.trim()
@@ -1304,7 +1271,7 @@ function App() {
                         <button type="button" onClick={() => match('h')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Match height to first selected">Match H</button>
                         <button type="button" onClick={() => distribute('h')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Distribute horizontally (3+ selected)">Dist H</button>
                         <button type="button" onClick={() => distribute('v')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Distribute vertically (3+ selected)">Dist V</button>
-                        <button type="button" onClick={() => setSelectedIds(new Set())} className="ml-auto rounded border border-slate-700 px-2 py-1 text-slate-400 hover:bg-slate-800">Clear</button>
+                        <button type="button" onClick={() => clearSelection()} className="ml-auto rounded border border-slate-700 px-2 py-1 text-slate-400 hover:bg-slate-800">Clear</button>
                     </div>
                 )}
 

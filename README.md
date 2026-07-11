@@ -10,7 +10,8 @@ one hover away.
 - **Dashboard-grid canvas** — drag and resize section cards on a column grid;
   cards snap to columns and the sheet auto-compacts upward on every drop, so it
   stays tidy with no overlaps or gaps. The layout is saved automatically, and
-  **Tidy** fits each card's height and re-packs the grid.
+  one **Auto-arrange** button fits every card to its content and packs them into
+  tidy columns.
 - **Per-view drawer** — drag a card toward the drawer tab on the left edge and
   the drawer opens so you can drop it straight in (the card straddles the edge as
   you cross), or use the ⊟ button; drag a card back out onto the canvas to restore

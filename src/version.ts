@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.19.2',
+        date: '2026-07-11',
+        summary: 'Internal refactor: extracted the canvas dashboard-grid layout and the drawer drag-and-tuck logic out of App into dedicated useCanvasGridLayout / useDrawerDrag hooks. No behaviour change.',
+    },
+    {
         version: '1.19.1',
         date: '2026-07-11',
         summary: 'Internal: extracted the side-nav rail into a dedicated HeaderToolbar component so the toolbar lives in one place — no change to how the app looks or behaves.',

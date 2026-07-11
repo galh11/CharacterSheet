@@ -6,15 +6,6 @@ import {
     type SectionLayout,
 } from './model/characterSheet'
 import { resolveSheet, listReferences, listResourceReferences } from './model/compute'
-import {
-    gridMetrics,
-    gridWidth,
-    compactGrid,
-    placeInGrid,
-    toCell,
-    fromCell,
-    type Placed,
-} from './model/layout'
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
 import { SectionQuickEdit } from './components/SectionQuickEdit'
@@ -36,6 +27,8 @@ import { usePersistentState, boolCodec, type Codec } from './state/usePersistent
 import { useRollLog } from './state/useRollLog'
 import { useSelection } from './state/useSelection'
 import { usePresets } from './state/usePresets'
+import { useCanvasGridLayout } from './state/useCanvasGridLayout'
+import { useDrawerDrag, inDrawer } from './state/useDrawerDrag'
 import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode } from './model/dice'
 
@@ -67,12 +60,6 @@ const readImageAsDataUrl = (file: File, max: number): Promise<string> =>
         }
         img.src = url
     })
-
-/** Whether a section is tucked into the given view's drawer scratch-pad. */
-const inDrawer = (
-    section: { drawer?: { canvas?: boolean; stack?: boolean } },
-    view: 'canvas' | 'stack',
-): boolean => Boolean(section.drawer?.[view])
 
 /** Width of the sliding drawer panel (never wider than the viewport). */
 const DRAWER_W = 'min(440px, 92vw)'
@@ -125,17 +112,6 @@ function App() {
     // currently hovered as a drop target.
     const [stackDragId, setStackDragId] = useState<string | null>(null)
     const [stackOverId, setStackOverId] = useState<string | null>(null)
-    const [drawerOpen, setDrawerOpen] = useState(false)
-    const [draggingId, setDraggingId] = useState<string | null>(null)
-    const [dropHot, setDropHot] = useState(false)
-    // Live grid reflow: while a canvas card is dragged, the other cards' previewed
-    // positions (keyed by id). Null when not dragging on the grid.
-    const [gridPreview, setGridPreview] = useState<Map<string, SectionLayout> | null>(null)
-    const dragOverDrawerRef = useRef(false)
-    const [dragPoint, setDragPoint] = useState<{ x: number; y: number } | null>(null)
-    // Pointer offset (card-local px) where a drag was grabbed, so tuck/restore drops
-    // and the floating drag preview align the card under the cursor.
-    const [dragGrab, setDragGrab] = useState({ x: 0, y: 0 })
     const [containerWidth, setContainerWidth] = useState(0)
     const [fitWidth, setFitWidth] = usePersistentState('character-sheet:fit-width', false, boolCodec)
     const [density, setDensity] = usePersistentState<Density>('character-sheet:density', 'normal', densityCodec)
@@ -152,9 +128,6 @@ function App() {
     const captureRef = useRef<HTMLDivElement>(null)
     const portraitRef = useRef<HTMLInputElement>(null)
     const canvasScrollRef = useRef<HTMLDivElement>(null)
-    const drawerTabRef = useRef<HTMLButtonElement>(null)
-    const drawerPanelRef = useRef<HTMLDivElement>(null)
-    const drawerCanvasRef = useRef<HTMLDivElement>(null)
     const panRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; moved: boolean } | null>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
     const {
@@ -226,6 +199,61 @@ function App() {
     // The drawer is per-view: tucking a card in the canvas doesn't hide it in the
     // stack, and vice-versa. `view` picks which view's drawer we're acting on.
     const view: 'canvas' | 'stack' = stackView ? 'stack' : 'canvas'
+
+    const densityZoom = density === 'compact' ? 0.8 : density === 'comfortable' ? 1.2 : 1
+
+    // Dashboard grid canvas geometry + layout handlers (grid, canvas size, zoom,
+    // drop/reflow/auto-arrange). Owns the live reflow preview + drag-over-drawer flag.
+    const {
+        grid,
+        canvasSize,
+        canvasZoom,
+        gridPreview,
+        setGridPreview,
+        dragOverDrawerRef,
+        commitLayout,
+        onGridDrag,
+        handleOrganize,
+        changeGridCols,
+    } = useCanvasGridLayout({
+        sheet,
+        gridCols,
+        setGridCols,
+        setSectionLayouts,
+        fitRefs,
+        containerWidth,
+        fitWidth,
+        densityZoom,
+    })
+
+    // Drawer + canvas card drag/tuck/restore behaviour (drawer state, drag move/end
+    // handlers). Consumes canvasZoom + the grid hook's reflow preview / drawer flag.
+    const {
+        drawerOpen,
+        setDrawerOpen,
+        draggingId,
+        setDraggingId,
+        dropHot,
+        dragPoint,
+        dragGrab,
+        setDragGrab,
+        drawerTabRef,
+        drawerPanelRef,
+        drawerCanvasRef,
+        hideSection,
+        showSection,
+        onCardDragMove,
+        onCardDragEnd,
+    } = useDrawerDrag({
+        sheet,
+        view,
+        updateSection,
+        deselect,
+        captureRef,
+        canvasZoom,
+        setGridPreview,
+        dragOverDrawerRef,
+    })
 
     // Reload the theme when switching characters (its storage key is per-character).
     const prevActiveRef = useRef(activeId)
@@ -432,97 +460,6 @@ function App() {
         }
     }
 
-    // The canvas column grid cards snap to (dashboard-style); the column count is a
-    // persisted per-user preference chosen in the View menu.
-    const grid = useMemo(() => gridMetrics(gridCols), [gridCols])
-
-    const canvasSize = useMemo(() => {
-        const shown = sheet.sections.filter((section) => !inDrawer(section, 'canvas'))
-        const width = Math.max(
-            gridWidth(grid),
-            ...shown.map((section) => section.layout.x + section.layout.w + 48),
-        )
-        const height = Math.max(
-            520,
-            ...shown.map((section) => section.layout.y + section.layout.h + 80),
-        )
-        // Real left/right extent of the actual cards (no scroll padding / floor),
-        // used by "Fit to width" so content fills the window edge-to-edge.
-        const minX = shown.length ? Math.min(...shown.map((s) => s.layout.x)) : 0
-        const maxX = shown.length ? Math.max(...shown.map((s) => s.layout.x + s.layout.w)) : width
-        return { width, height, minX, maxX }
-    }, [sheet.sections, grid])
-
-    const commitLayout = (id: string, layout: SectionLayout) => {
-        // Dashboard grid: pin the released card at its dropped cell and reflow the
-        // rest around it (what you saw while dragging is exactly what lands). The
-        // sheet stays overlap-free; Tidy fully compacts on demand.
-        const items = sheet.sections
-            .filter((s) => !inDrawer(s, 'canvas'))
-            .map((s) => ({ id: s.id, layout: s.id === id ? layout : s.layout }))
-        setSectionLayouts(placeInGrid(items, id, toCell(layout, grid), grid))
-    }
-
-    // Reflow the other canvas cards live as this one is dragged over the grid.
-    const onGridDrag = (id: string, layout: SectionLayout) => {
-        if (dragOverDrawerRef.current) {
-            if (gridPreview) setGridPreview(null)
-            return
-        }
-        const items = sheet.sections
-            .filter((s) => !inDrawer(s, 'canvas'))
-            .map((s) => ({ id: s.id, layout: s.id === id ? layout : s.layout }))
-        const reflowed = placeInGrid(items, id, toCell(layout, grid), grid)
-        setGridPreview(new Map(reflowed.map((p) => [p.id, p.layout])))
-    }
-
-    /** Fit every canvas card to its content on the grid: measure each card's
-     *  natural content width, snap it to a whole number of columns, then measure
-     *  its height AT that snapped width (so a narrowed card isn't cropped). Best
-     *  run in play mode — edit mode renders bulky field editors. */
-    const organizeItems = (m = grid): Placed[] =>
-        sheet.sections
-            .filter((s) => !inDrawer(s, 'canvas'))
-            .map((s) => {
-                const handle = fitRefs.current.get(s.id)
-                if (!handle) return { id: s.id, layout: s.layout }
-                const cw = toCell({ x: 0, y: 0, w: handle.measureWidth(), h: 1 }, m).cw
-                const w = fromCell({ cx: 0, cy: 0, cw, ch: 1 }, m).w
-                const h = handle.measureHeightAtWidth(w)
-                return { id: s.id, layout: { ...s.layout, w, h } }
-            })
-
-    // The one “organize this” action: fit every card to its content and pack them
-    // into tidy columns — no overlaps, no gaps, no cropping. Idempotent.
-    const handleOrganize = () => {
-        setSectionLayouts(compactGrid(organizeItems(), grid))
-    }
-
-    // Change the grid's column count (persisted) and re-organize onto the new grid.
-    const changeGridCols = (n: number) => {
-        setGridCols(n)
-        const m = gridMetrics(n)
-        setSectionLayouts(compactGrid(organizeItems(m), m))
-    }
-
-    const hideSection = (id: string) => {
-        const section = sheet.sections.find((s) => s.id === id)
-        if (!section) return
-        // Tuck the card into the current view's drawer, placing it on the drawer's
-        // free canvas (keep any existing spot, else stack below what's there).
-        const tucked = sheet.sections.filter((s) => s.id !== id && inDrawer(s, view) && s.drawerLayout)
-        const bottom = tucked.reduce((m, s) => Math.max(m, s.drawerLayout!.y + s.drawerLayout!.h), 0)
-        const drawerLayout = section.drawerLayout ?? {
-            x: 16,
-            y: tucked.length ? bottom + 16 : 16,
-            w: Math.min(300, Math.max(180, section.layout.w)),
-            h: Math.min(220, Math.max(80, section.layout.h)),
-        }
-        updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: true }, drawerLayout })
-        setDrawerOpen(true)
-        deselect(id)
-    }
-
     // Bulk actions on the current multi-selection (beyond the layout-only align /
     // match / distribute from useSelection): delete, duplicate, tuck into the
     // drawer, or recolour every selected card at once.
@@ -554,126 +491,6 @@ function App() {
         if (ids.length === 0) return
         recolorSections(ids, accent)
         toast(`Recoloured ${ids.length} section${ids.length > 1 ? 's' : ''}.`, 'success')
-    }
-
-    // Collapse the drawer once its last card leaves, so it doesn't linger open and
-    // empty. `removedId` is the card being taken out (still present in `sheet`).
-    const closeDrawerIfEmpty = (removedId: string) => {
-        const remaining = sheet.sections.filter((s) => s.id !== removedId && inDrawer(s, view)).length
-        if (remaining === 0) setDrawerOpen(false)
-    }
-
-    const showSection = (id: string) => {
-        const section = sheet.sections.find((s) => s.id === id)
-        if (!section) return
-        updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: false } })
-        closeDrawerIfEmpty(id)
-    }
-
-    const pointInRect = (el: HTMLElement | null, x: number, y: number): boolean => {
-        if (!el) return false
-        const r = el.getBoundingClientRect()
-        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
-    }
-
-    // Whether a screen point is over the open drawer panel / the peeking tab.
-    const isOverPanel = (x: number, y: number): boolean => drawerOpen && pointInRect(drawerPanelRef.current, x, y)
-    const isOverTab = (x: number, y: number): boolean => pointInRect(drawerTabRef.current, x, y)
-
-    // Map a screen point to a layout inside a positioned container (canvas or the
-    // drawer's scratch-pad), keeping the grabbed point under the cursor so the card
-    // lands where you release it. `dragGrab` is the grab offset in screen pixels,
-    // subtracted before dividing by the target container's zoom (canvas and drawer
-    // can have different zooms, so the offset must be applied at the target scale).
-    const pointToLayout = (
-        el: HTMLElement | null,
-        x: number,
-        y: number,
-        zoom: number,
-        w: number,
-        h: number,
-    ): SectionLayout | null => {
-        if (!el) return null
-        const r = el.getBoundingClientRect()
-        return {
-            x: Math.max(0, Math.round((x - dragGrab.x - r.left) / zoom)),
-            y: Math.max(0, Math.round((y - dragGrab.y - r.top) / zoom)),
-            w,
-            h,
-        }
-    }
-
-    // Live feedback while a card is dragged: auto-open the drawer as a canvas card
-    // approaches its tab, highlight the drop target, and drive the floating preview.
-    const onCardDragMove = (id: string, x: number, y: number) => {
-        const section = sheet.sections.find((s) => s.id === id)
-        if (!section) return
-        if (inDrawer(section, view)) {
-            // A drawer card straddling out toward the canvas needs no target hint.
-            if (dropHot) setDropHot(false)
-            dragOverDrawerRef.current = false
-            return
-        }
-        if (!drawerOpen && isOverTab(x, y)) setDrawerOpen(true)
-        const over = isOverTab(x, y) || isOverPanel(x, y)
-        setDropHot(over)
-        // Over the drawer the card is leaving the canvas, so stop reflowing the grid.
-        dragOverDrawerRef.current = over
-        // Only float a preview while the card is over the drawer (where it would
-        // otherwise be hidden behind the panel); normal canvas dragging is untouched.
-        setDragPoint(over ? { x, y } : null)
-    }
-
-    // Decide where a dragged card lands. Canvas cards released over the drawer are
-    // tucked away at the drop point; drawer cards released over the canvas are
-    // restored there. Returns true when handled so the plain move isn't committed.
-    const onCardDragEnd = (id: string, x: number, y: number, moved: boolean): boolean => {
-        setDraggingId(null)
-        setDropHot(false)
-        setDragPoint(null)
-        setGridPreview(null)
-        dragOverDrawerRef.current = false
-        const section = sheet.sections.find((s) => s.id === id)
-        if (!section) return false
-        const fromDrawer = inDrawer(section, view)
-        if (!moved) {
-            // A no-op click: if dragging a canvas card past the tab auto-opened an
-            // empty drawer, don't leave it hanging open.
-            if (!fromDrawer) closeDrawerIfEmpty(id)
-            return false
-        }
-        if (fromDrawer) {
-            // Drag out: restore to the canvas at the drop point (unless dropped back
-            // inside the panel, which just rearranges the scratch-pad).
-            if (isOverPanel(x, y)) return false
-            const drawerPatch = { drawer: { ...(section.drawer ?? {}), [view]: false } }
-            if (view === 'canvas') {
-                const layout = pointToLayout(captureRef.current, x, y, canvasZoom, section.layout.w, section.layout.h) ?? section.layout
-                updateSection(id, { ...drawerPatch, layout })
-            } else {
-                updateSection(id, drawerPatch)
-            }
-            closeDrawerIfEmpty(id)
-            return true
-        }
-        // Canvas card: tuck it into the drawer if released over the panel or tab.
-        if (isOverPanel(x, y)) {
-            const w = Math.min(300, Math.max(180, section.layout.w))
-            const h = Math.min(220, Math.max(80, section.layout.h))
-            const drawerLayout = pointToLayout(drawerCanvasRef.current, x, y, 1, w, h) ?? section.drawerLayout
-            updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: true }, drawerLayout })
-            setDrawerOpen(true)
-            deselect(id)
-            return true
-        }
-        if (isOverTab(x, y)) {
-            hideSection(id)
-            return true
-        }
-        // Dropped back on the canvas without tucking: close the drawer if dragging
-        // past its tab auto-opened it while empty.
-        closeDrawerIfEmpty(id)
-        return false
     }
 
     // Drag empty canvas background to pan (scroll) the viewport. A click that
@@ -772,20 +589,6 @@ function App() {
             return next
         })
 
-    const densityZoom = density === 'compact' ? 0.8 : density === 'comfortable' ? 1.2 : 1
-    // The free canvas zooms with density in both modes; CanvasItem divides drag
-    // deltas by this factor so moving/resizing still tracks the cursor 1:1.
-    // "Fit to width" instead scales the whole canvas so its actual content — the
-    // real left-to-right extent of the cards, not the padded scroll area — fills
-    // the current window width edge-to-edge (up- or down-scaling with the window /
-    // page zoom). The canvas is shifted left by the leftmost card so the content
-    // touches both edges with no trailing gap.
-    const fitContentWidth = Math.max(1, canvasSize.maxX - canvasSize.minX)
-    const fitZoom =
-        fitWidth && containerWidth > 0
-            ? Math.min(3, Math.max(0.3, containerWidth / fitContentWidth))
-            : 1
-    const canvasZoom = fitWidth ? fitZoom : densityZoom
     const matchesQuery = (section: (typeof sheet.sections)[number]) => {
         const q = query.trim().toLowerCase()
         if (!q) return true

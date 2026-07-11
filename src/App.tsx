@@ -616,9 +616,22 @@ function App() {
         if (stackView) stackCardEls.current.get(id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
         else fitRefs.current.get(id)?.scrollIntoView()
     }
+    // Search UX: which navigable sections match the query (title or any field),
+    // and a jump to the first match (Enter in the search box). Non-matching nav
+    // rows dim; matched title text is highlighted.
+    const queryActive = query.trim().length > 0
+    const navMatchIds = new Set(
+        sheet.sections.filter((s) => !inDrawer(s, view) && matchesQuery(s)).map((s) => s.id),
+    )
+    const jumpToFirstMatch = () => {
+        if (!queryActive) return
+        const first = (stackView ? stackSections : canvasSections)[0]
+        if (first) jumpToSection(first.id)
+    }
     // Sections tucked into the current view's drawer, plus their effective
-    // scratch-pad positions (default-placing any that lack a saved spot).
-    const drawerSections = sheet.sections.filter((s) => inDrawer(s, view))
+    // scratch-pad positions (default-placing any that lack a saved spot). The
+    // drawer list respects the search filter too.
+    const drawerSections = sheet.sections.filter((s) => inDrawer(s, view) && matchesQuery(s))
     const showDrawerTab = drawerSections.length > 0 || draggingId != null
     // A drawer card being dragged straddles out over the canvas, so the scratch-pad
     // must not clip it while that drag is in progress.
@@ -710,6 +723,10 @@ function App() {
                 navSections={navSections}
                 activeIds={selectedIds}
                 onJumpToSection={jumpToSection}
+                navMatchIds={navMatchIds}
+                searchMatchCount={navMatchIds.size}
+                onSearchSubmit={jumpToFirstMatch}
+                queryActive={queryActive}
                 addSection={addSection}
                 addTemplateSection={addTemplateSection}
                 stackView={stackView}

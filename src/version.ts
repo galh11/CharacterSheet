@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.21.0',
+        date: '2026-07-11',
+        summary: 'Search upgrades: the box now shows a match count, press Enter to jump to the first match, matched titles are highlighted (and non-matches dimmed) in the Sections navigator, and the drawer list is filtered too.',
+    },
+    {
         version: '1.20.0',
         date: '2026-07-11',
         summary: 'Added a Sections navigator to the side nav: a collapsible list of your cards — click one to scroll it into view and highlight it, so finding a card on a crammed canvas is one click.',

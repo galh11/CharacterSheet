@@ -28,7 +28,7 @@ Other agents may be working **in parallel**. For any change to the repo:
   **auto-merges** to `main` — do not approve it yourself.
 - **If your change alters the UI's appearance** (anything the visual snapshots
   capture), the visual-regression check will otherwise fail. Opt into a baseline
-  refresh by putting **`[update-visuals]`** in the PR title or body (agents can
+  refresh by putting **`[update-visuals]`** in the PR title (agents can
   always do this) **or** adding the **`update-visuals`** label (if you can apply
   labels). CI then regenerates the Linux baselines and commits them back to your
   branch automatically — no manual snapshot juggling. If you can't do either, say

@@ -321,7 +321,7 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   otherwise skips (functional `app.spec.ts` always runs).
 - **Intentional visual changes → opt in with `update-visuals`**: a PR that *means*
   to change the UI opts in either by adding the **`update-visuals`** label
-  (easiest for humans) or by putting **`[update-visuals]`** in the PR title or body
+  (easiest for humans) or by putting **`[update-visuals]`** in the PR title
   (easiest for automated agents, which often can't apply labels). CI then
   regenerates the Linux baselines (`npx playwright test e2e/visual.spec.ts
   --update-snapshots`) and **commits them back to the PR branch** instead of
@@ -394,7 +394,7 @@ git ls-remote --heads origin <type>/<slug>   # prints nothing once merged
 
 - **If your change alters the UI's appearance**, opt into a visual-baseline
   refresh so the visual-regression check doesn't fail: put **`[update-visuals]`**
-  in the PR title or body (agents can always do this), or add the
+  in the PR title (agents can always do this), or add the
   **`update-visuals`** label. CI regenerates the Linux baselines and commits them
   back to your branch automatically (see *Testing → Intentional visual changes*).
 - The `.github/workflows/automerge.yml` workflow squash-merges the PR and deletes

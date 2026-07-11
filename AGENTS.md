@@ -90,7 +90,7 @@ scripts/
 samples/                   # reference character data + import fixtures (yad, amarthon)
 public/                    # static assets (favicon, icons, PWA)
 .github/
-  workflows/               # ci.yml (lint/build/test/e2e), automerge.yml (CI-gated auto-merge), deploy.yml (Pages; runs after Auto-merge)
+  workflows/               # ci.yml (lint/build/test/e2e + conditional visual), automerge.yml (CI-gated auto-merge), deploy.yml (Pages; runs after Auto-merge), visual-baselines.yml (on-demand Linux snapshot generator)
   copilot-instructions.md  # always-on agent rules (worktree + PR + docs); points here
   prompts/task.prompt.md   # invokable /task: bootstrap a worktree task end-to-end
   skills/build-character-sheet/  # /build-character-sheet: obtain source (fetch public DDB JSON by character id/URL) → sweep to a digest (subagent) → generate + validate a sheet
@@ -302,8 +302,18 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   separate from `vite.config.ts` so the app build type-checks cleanly).
 - **End-to-end + visual** (Playwright, real Chromium): specs in `e2e/`. The
   config auto-starts the dev server. Visual baselines are committed under
-  `e2e/visual.spec.ts-snapshots/`; refresh them with `npm run test:e2e:update`
-  after an intentional UI change.
+  `e2e/visual.spec.ts-snapshots/` (per-platform: `*-chromium-win32.png` for local
+  Windows runs, `*-chromium-linux.png` for CI); refresh them with
+  `npm run test:e2e:update` after an intentional UI change.
+- **CI visual gating**: CI runs on Linux, so it only gates visual regression once
+  `*-chromium-linux.png` baselines are committed. The `ci.yml` “Visual regression
+  tests” step checks for those files and runs `e2e/visual.spec.ts` when present,
+  otherwise skips (functional `app.spec.ts` always runs). Generate the Linux
+  baselines with the **Update visual baselines** workflow
+  (`.github/workflows/visual-baselines.yml`, `workflow_dispatch`): it runs
+  `--update-snapshots` on an ubuntu runner and uploads the PNGs as the
+  `linux-visual-baselines` artifact; download them into the snapshots folder and
+  commit them in a normal PR to switch the gate on.
 - Vitest ignores `e2e/**`; Playwright only runs `e2e/`. Keep them separate.
 - Prefer role/text/label queries over CSS selectors so tests survive refactors.
 

@@ -39,10 +39,22 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      # Visual snapshots use Windows baselines, so run only the functional
-      # end-to-end specs here (see PLAN.md, Phase I).
-      - name: End-to-end tests
+      - name: End-to-end tests (functional)
         run: npx playwright test e2e/app.spec.ts
+
+      # Visual regression only runs once Linux baselines are committed (they can't
+      # be reused from the Windows baselines because font rendering differs).
+      # Generate them with the "Update visual baselines" workflow, then commit the
+      # *-chromium-linux.png files — this step then starts gating automatically.
+      - name: Visual regression tests
+        run: |
+          if ls e2e/visual.spec.ts-snapshots/*-chromium-linux.png >/dev/null 2>&1; then
+            echo "Linux baselines present — running visual regression."
+            npx playwright test e2e/visual.spec.ts
+          else
+            echo "No Linux baselines yet — skipping visual regression."
+            echo "Run the 'Update visual baselines' workflow and commit the generated *-chromium-linux.png files to enable this gate."
+          fi
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}

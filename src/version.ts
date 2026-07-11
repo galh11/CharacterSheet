@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.24.0',
+        date: '2026-07-11',
+        summary: 'Initiative modifiers are now formulas: an initiative row’s bonus can reference ability mods, proficiency, and relational effects (e.g. dex_mod + 2) instead of a frozen number, so buffs and level changes flow into the roll. Existing plain “+2” modifiers keep working.',
+    },
+    {
         version: '1.23.0',
         date: '2026-07-11',
         summary: 'Resource and counter caps can now be a formula (e.g. {wis_mod} or proficiency) instead of a frozen number, so a limited-use feature’s maximum scales with your level or ability and refills to the right value on a rest. Set it in a field’s “max formula” box in the section editor.',

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeSheet, resolveSheet, resolveFieldMax, interpolate, listReferences, listResourceReferences } from './compute'
+import { computeSheet, resolveSheet, resolveFieldMax, evalModifier, interpolate, listReferences, listResourceReferences } from './compute'
 import { createField, createSection, type CharacterSheet } from './characterSheet'
 
 // Builds a minimal sheet: one number field and one computed field that
@@ -155,6 +155,33 @@ describe('resolveFieldMax', () => {
     it('returns undefined when neither max nor a valid formula yields a number', () => {
         const field = createField({ label: 'None', type: 'resource', value: '0' })
         expect(resolveFieldMax(field, scope)).toBeUndefined()
+    })
+})
+
+describe('evalModifier', () => {
+    const scope = { dex_mod: 3, proficiency: 3 }
+
+    it('resolves a bare formula reference to a signed integer', () => {
+        expect(evalModifier('dex_mod + 2', scope)).toBe(5)
+    })
+
+    it('resolves a {expr}-braced reference', () => {
+        expect(evalModifier('{dex_mod}', { dex_mod: -1 })).toBe(-1)
+    })
+
+    it('handles a plain signed number', () => {
+        expect(evalModifier('+2', {})).toBe(2)
+        expect(evalModifier('-1', {})).toBe(-1)
+    })
+
+    it('falls back to the first signed integer for legacy noise', () => {
+        expect(evalModifier('+3 to hit', {})).toBe(3)
+    })
+
+    it('returns 0 for empty or unresolvable input', () => {
+        expect(evalModifier('', scope)).toBe(0)
+        expect(evalModifier(undefined, scope)).toBe(0)
+        expect(evalModifier('nope', scope)).toBe(0)
     })
 })
 

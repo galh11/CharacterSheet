@@ -232,6 +232,14 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   resolve the scope via `resolveSheet` first) all read the resolved cap, so a
   formula-capped resource refills to the right value on a rest. The section editor
   adds a "max formula" `FormulaInput` beside the numeric max input.
+- **Formula initiative modifiers**: an `initiative` row's bonus (`meta.mod`) is
+  resolved as a formula via `compute.evalModifier(expr, scope)` — it interpolates
+  `{expr}` braces, evaluates the result against the sheet scope, and falls back to
+  the first signed integer in the string (so a legacy `+2` still works). So an
+  initiative modifier can reference `dex_mod`, `proficiency`, or any slug a
+  relational effect folds into, and buffs/level changes flow into the d20 roll
+  instead of being a frozen number. The section editor's initiative-modifier box
+  is a `FormulaInput` (autocompletes field slugs).
 - **Portrait**: the sheet carries an optional `portrait` (an image data URL) set
   via `useSheet.setPortrait`. The side nav shows it as a circular avatar above
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled

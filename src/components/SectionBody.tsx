@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
 import { slugify, type CharacterField, type CharacterSection, type EffectOp, type ActionToggle, type CritMode } from '../model/characterSheet'
-import { interpolate, resolveFieldMax, type Contribution, type EffectTag } from '../model/compute'
+import { interpolate, resolveFieldMax, evalModifier, type Contribution, type EffectTag } from '../model/compute'
 import {
     rollD20,
     rollD20Series,
@@ -1143,7 +1143,7 @@ function SpellCards({ section, scope, onRoll, onSpend, contributions, effectTags
     )
 }
 
-function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, bonusDie, onRoll }: SectionBodyProps) {
+function Initiative({ section, scope, onUpdateField, onUpdateSection, rollMode, bonus, bonusDie, onRoll }: SectionBodyProps) {
     const turn = section.meta?.turn
     const sorted = [...section.fields].sort((a, b) => toNum(b.value) - toNum(a.value))
     const setTurn = (id: string | undefined) => onUpdateSection?.({ meta: { ...section.meta, turn: id ?? '' } })
@@ -1154,7 +1154,7 @@ function Initiative({ section, onUpdateField, onUpdateSection, rollMode, bonus, 
         setTurn(sorted[nextIdx].id)
     }
     const rollInit = (field: CharacterField) => {
-        const mod = parseModifier(field.meta?.mod)
+        const mod = evalModifier(field.meta?.mod, scope ?? {})
         const sit = bonus ?? 0
         const mode = rollMode ?? 'normal'
         const series = rollD20Series(mod + sit, mode, 1, bonusDie ?? 0)

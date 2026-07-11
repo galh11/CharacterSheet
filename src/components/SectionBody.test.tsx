@@ -341,6 +341,92 @@ describe('HpWidget death saves', () => {
     })
 })
 
+describe('HpWidget effect-driven defenses', () => {
+    const hpSection = (fields: CharacterField[]): CharacterSection => ({
+        id: 'hp',
+        title: 'Hit Points',
+        description: '',
+        accent: '#000',
+        kind: 'hp',
+        scale: 1,
+        fields,
+        layout: { x: 0, y: 0, w: 1, h: 1 },
+    })
+    const hpFields = [
+        field({ id: 'cur', label: 'Current HP', type: 'number', value: '30' }),
+        field({ id: 'max', label: 'Max HP', type: 'number', value: '30' }),
+    ]
+
+    it('surfaces an item note attached to an HP slug with its source', () => {
+        render(
+            <SectionBody
+                section={hpSection(hpFields)}
+                results={new Map()}
+                onUpdateField={() => { }}
+                effectTags={new Map([
+                    ['damage_reduction', [{ sourceId: 'armor', sourceLabel: 'Reinforced Studded Leather', op: 'note', value: 'Physical damage reduced by 3' }]],
+                ])}
+            />,
+        )
+        expect(screen.getByText('NOTE')).toBeInTheDocument()
+        expect(screen.getByText('Physical damage reduced by 3')).toBeInTheDocument()
+        expect(screen.getByText('· Reinforced Studded Leather')).toBeInTheDocument()
+    })
+
+    it('halves matching damage from a resist tag granted by a feature', () => {
+        const onUpdateField = vi.fn()
+        render(
+            <SectionBody
+                section={hpSection(hpFields)}
+                results={new Map()}
+                onUpdateField={onUpdateField}
+                effectTags={new Map([
+                    ['defenses', [{ sourceId: 'digdeep', sourceLabel: 'Dig Deep', op: 'resist', value: 'bludgeoning, piercing, slashing' }]],
+                ])}
+            />,
+        )
+        fireEvent.change(screen.getByLabelText('HP amount'), { target: { value: '10' } })
+        fireEvent.change(screen.getByLabelText('Damage type'), { target: { value: 'slashing' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Damage' }))
+        // 10 slashing, halved by resistance -> 5 taken, 30 - 5 = 25.
+        expect(onUpdateField).toHaveBeenCalledWith('cur', { value: '25' })
+    })
+
+    it('zeroes matching damage from an immune tag', () => {
+        const onUpdateField = vi.fn()
+        render(
+            <SectionBody
+                section={hpSection(hpFields)}
+                results={new Map()}
+                onUpdateField={onUpdateField}
+                effectTags={new Map([
+                    ['defenses', [{ sourceId: 'ring', sourceLabel: 'Ring of Fire Immunity', op: 'immune', value: 'fire' }]],
+                ])}
+            />,
+        )
+        fireEvent.change(screen.getByLabelText('HP amount'), { target: { value: '12' } })
+        fireEvent.change(screen.getByLabelText('Damage type'), { target: { value: 'fire' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Damage' }))
+        // Immune -> 0 taken, so Current HP is not decremented.
+        expect(onUpdateField).not.toHaveBeenCalled()
+    })
+
+    it('still honours the legacy free-text Resistances field', () => {
+        const onUpdateField = vi.fn()
+        render(
+            <SectionBody
+                section={hpSection([...hpFields, field({ id: 'res', label: 'Resistances', value: 'cold' })])}
+                results={new Map()}
+                onUpdateField={onUpdateField}
+            />,
+        )
+        fireEvent.change(screen.getByLabelText('HP amount'), { target: { value: '8' } })
+        fireEvent.change(screen.getByLabelText('Damage type'), { target: { value: 'cold' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Damage' }))
+        expect(onUpdateField).toHaveBeenCalledWith('cur', { value: '26' })
+    })
+})
+
 describe('InventoryWidget', () => {
     const inventorySection = (fields: CharacterField[]): CharacterSection => ({
         id: 'inv',

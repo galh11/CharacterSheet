@@ -385,7 +385,7 @@ function StatBlock({ section, results, contributions, effectTags }: SectionBodyP
     )
 }
 
-function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal }: SectionBodyProps) {
+function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal, contributions, effectTags }: SectionBodyProps) {
     const [amount, setAmount] = useState('')
     const [dmgType, setDmgType] = useState('')
     const [concSave, setConcSave] = useState<number | null>(null)
@@ -396,8 +396,17 @@ function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal }: S
     const reduction = section.fields.find((f) => f.label.toLowerCase() === 'damage reduction')
     const conc = byLabel('concentration')
     const parseTypes = (v?: string) => new Set((v ?? '').toLowerCase().split(/[,;]/).map((s) => s.trim()).filter(Boolean))
-    const resist = parseTypes(byLabel('resistances')?.value)
-    const vuln = parseTypes(byLabel('vulnerabilities')?.value)
+    // Defenses can be authored two ways: legacy free-text HP fields, or (preferred)
+    // resist/immune/vulnerable relational-effect tags an item/feature grants to an
+    // HP-relevant slug — each tag's value carries the damage type(s). Notes an item
+    // attaches to these slugs (op 'note', e.g. armor's flat physical reduction) are
+    // surfaced with their source via EffectTargetBadges below.
+    const HP_TAG_SLUGS = ['damage_reduction', 'defenses', 'hp', 'hit_points']
+    const hpTags = HP_TAG_SLUGS.flatMap((s) => effectTags?.get(s) ?? [])
+    const tagTypes = (op: EffectOp) => hpTags.filter((t) => t.op === op).flatMap((t) => [...parseTypes(t.value)])
+    const resist = new Set([...parseTypes(byLabel('resistances')?.value), ...tagTypes('resist')])
+    const vuln = new Set([...parseTypes(byLabel('vulnerabilities')?.value), ...tagTypes('vulnerable')])
+    const immune = new Set(tagTypes('immune'))
     const curN = cur ? toNum(cur.value) : 0
     const maxN = max ? toNum(max.value) : 0
     const tempN = temp ? toNum(temp.value) : 0
@@ -444,8 +453,11 @@ function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal }: S
             // the number you type (resistances/vulnerabilities still adjust it).
             let taken = amt
             const t = dmgType.toLowerCase()
-            if (t && vuln.has(t)) taken = taken * 2
-            if (t && resist.has(t)) taken = Math.floor(taken / 2)
+            if (t && immune.has(t)) taken = 0
+            else {
+                if (t && vuln.has(t)) taken = taken * 2
+                if (t && resist.has(t)) taken = Math.floor(taken / 2)
+            }
             let dmg = taken
             if (temp && tempN > 0) {
                 const absorbed = Math.min(tempN, dmg)
@@ -537,6 +549,13 @@ function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal }: S
                     </span>
                 </Tooltip>
             )}
+            {HP_TAG_SLUGS.some((s) => (effectTags?.get(s)?.length ?? 0) + (contributions?.get(s)?.length ?? 0) > 0) && (
+                <div className="flex flex-wrap items-center gap-1">
+                    {HP_TAG_SLUGS.map((s) => (
+                        <EffectTargetBadges key={s} slug={s} contributions={contributions} tags={effectTags} />
+                    ))}
+                </div>
+            )}
             {conc && (
                 <div className="flex items-center gap-2">
                     <button
@@ -574,7 +593,7 @@ function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal }: S
                     aria-label="HP amount"
                     className="w-20 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
                 />
-                {(resist.size > 0 || vuln.size > 0) && (
+                {(resist.size > 0 || vuln.size > 0 || immune.size > 0) && (
                     <select
                         value={dmgType}
                         onChange={(e) => setDmgType(e.target.value)}
@@ -603,13 +622,16 @@ function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal }: S
                     />
                 )}
             </div>
-            {(resist.size > 0 || vuln.size > 0) && (
+            {(resist.size > 0 || vuln.size > 0 || immune.size > 0) && (
                 <div className="flex flex-wrap gap-1 text-[10px]">
                     {[...resist].map((t) => (
                         <span key={`r-${t}`} className="rounded bg-sky-500/15 px-1 text-sky-300 ring-1 ring-sky-500/30">resist {t}</span>
                     ))}
                     {[...vuln].map((t) => (
                         <span key={`v-${t}`} className="rounded bg-rose-500/15 px-1 text-rose-300 ring-1 ring-rose-500/30">vuln {t}</span>
+                    ))}
+                    {[...immune].map((t) => (
+                        <span key={`i-${t}`} className="rounded bg-violet-500/15 px-1 text-violet-300 ring-1 ring-violet-500/30">immune {t}</span>
                     ))}
                 </div>
             )}

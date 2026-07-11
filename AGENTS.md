@@ -180,7 +180,16 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   still renders older sheets.) The **HP**
   widget also hosts **death saves** — they appear inside it (successes/failures
   pips, auto-roll, stable/dead) only while Current HP is 0, and clear on any
-  healing or long rest.
+  healing or long rest. The HP widget also **consumes relational-effect tags** an
+  item/feature grants to HP-relevant slugs (`damage_reduction`, `defenses`, `hp`,
+  `hit_points`): `note` effects (e.g. an armor's flat physical-damage reminder)
+  render as source-attributed badges via `EffectTargetBadges`, and
+  `resist`/`immune`/`vulnerable` tags (each tag's `value` carries the damage
+  type[s]) drive the Damage button's math — halving, zeroing, or doubling a
+  matching typed hit — **unioned** with the legacy free-text `Resistances` /
+  `Vulnerabilities` fields for back-compat. This lets defenses be authored *on
+  their source item/feature* (with attribution) instead of as detached HP fields.
+  Flat **damage reduction stays note-only** (informational, not subtracted).
 - Editing is **per-section** via the `SectionEditorModal` (opened by the ✎
   pencil) — there is **no global edit mode**. Every formula box (computed field
   value, effect amount, action to-hit/damage, toggle hit/damage) is a

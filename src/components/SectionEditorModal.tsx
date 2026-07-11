@@ -748,11 +748,13 @@ export function SectionEditorModal({
                                     )}
 
                                     {section.kind === 'initiative' && (
-                                        <input
+                                        <FormulaInput
                                             value={field.meta?.mod ?? ''}
-                                            onChange={(event) => setMeta(field, 'mod', event.target.value)}
-                                            placeholder="initiative modifier (e.g. +2)"
-                                            className="mt-2 w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                            onChange={(next) => setMeta(field, 'mod', next)}
+                                            references={formulaReferences}
+                                            placeholder="initiative modifier (e.g. dex_mod + 2)"
+                                            wrapperClassName="mt-2"
+                                            className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-300"
                                             aria-label="Initiative modifier"
                                         />
                                     )}

@@ -41,6 +41,23 @@ export const resolveFieldMax = (
     return field.max
 }
 
+/**
+ * Resolve a modifier expression (e.g. `dex_mod + 2`, `+3`, `{dex_mod}`) to a
+ * signed integer against the scope, so a roll modifier can be a live formula
+ * that reflects ability mods, proficiency, and relational effects instead of a
+ * frozen number. Accepts bare or `{expr}`-braced references; falls back to the
+ * first signed integer in the string (so legacy "+2 to hit" style still works),
+ * then 0.
+ */
+export const evalModifier = (expr: string | undefined, scope: Record<string, number>): number => {
+    const raw = (expr ?? '').trim()
+    if (!raw) return 0
+    const r = evaluateFormula(interpolate(raw, scope), scope)
+    if (r.ok && r.value !== null) return Math.round(r.value)
+    const m = raw.match(/-?\d+/)
+    return m ? Number(m[0]) : 0
+}
+
 /** A single numeric modifier one field grants to a target slug. */
 export interface Contribution {
     sourceId: string

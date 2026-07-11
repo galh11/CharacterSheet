@@ -183,6 +183,9 @@ function App() {
         addTemplateSection,
         deleteSection,
         duplicateSection,
+        deleteSections,
+        duplicateSections,
+        recolorSections,
         moveSection,
         rest,
         healHp,
@@ -520,6 +523,39 @@ function App() {
         updateSection(id, { drawer: { ...(section.drawer ?? {}), [view]: true }, drawerLayout })
         setDrawerOpen(true)
         deselect(id)
+    }
+
+    // Bulk actions on the current multi-selection (beyond the layout-only align /
+    // match / distribute from useSelection): delete, duplicate, tuck into the
+    // drawer, or recolour every selected card at once.
+    const bulkDelete = () => {
+        const ids = [...selectedIds]
+        if (ids.length === 0) return
+        if (!window.confirm(`Delete ${ids.length} selected section${ids.length > 1 ? 's' : ''}? This can be undone.`)) return
+        deleteSections(ids)
+        clearSelection()
+        toast(`Deleted ${ids.length} section${ids.length > 1 ? 's' : ''}.`, 'success')
+    }
+
+    const bulkDuplicate = () => {
+        const ids = [...selectedIds]
+        if (ids.length === 0) return
+        duplicateSections(ids)
+        toast(`Duplicated ${ids.length} section${ids.length > 1 ? 's' : ''}.`, 'success')
+    }
+
+    const bulkTuck = () => {
+        const ids = [...selectedIds]
+        if (ids.length === 0) return
+        for (const id of ids) hideSection(id)
+        toast(`Tucked ${ids.length} section${ids.length > 1 ? 's' : ''} into the drawer.`, 'success')
+    }
+
+    const bulkRecolor = (accent: string) => {
+        const ids = [...selectedIds]
+        if (ids.length === 0) return
+        recolorSections(ids, accent)
+        toast(`Recoloured ${ids.length} section${ids.length > 1 ? 's' : ''}.`, 'success')
     }
 
     // Collapse the drawer once its last card leaves, so it doesn't linger open and
@@ -1249,6 +1285,19 @@ function App() {
                         <button type="button" onClick={() => match('h')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Match height to first selected">Match H</button>
                         <button type="button" onClick={() => distribute('h')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Distribute horizontally (3+ selected)">Dist H</button>
                         <button type="button" onClick={() => distribute('v')} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Distribute vertically (3+ selected)">Dist V</button>
+                        <span className="mx-1 h-4 w-px bg-slate-700" aria-hidden="true" />
+                        <button type="button" onClick={bulkDuplicate} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Duplicate selected sections">Duplicate</button>
+                        <button type="button" onClick={bulkTuck} className="rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Tuck selected sections into the drawer">Tuck</button>
+                        <label className="flex cursor-pointer items-center gap-1 rounded border border-slate-600 px-2 py-1 hover:bg-slate-800" title="Recolour selected sections">
+                            <span>Recolour</span>
+                            <input
+                                type="color"
+                                onChange={(e) => bulkRecolor(e.target.value)}
+                                aria-label="Recolour selected sections"
+                                className="h-4 w-4 cursor-pointer rounded border-0 bg-transparent p-0"
+                            />
+                        </label>
+                        <button type="button" onClick={bulkDelete} className="rounded border border-rose-800/70 px-2 py-1 text-rose-300 hover:bg-rose-950/40" title="Delete selected sections">Delete</button>
                         <button type="button" onClick={() => clearSelection()} className="ml-auto rounded border border-slate-700 px-2 py-1 text-slate-400 hover:bg-slate-800">Clear</button>
                     </div>
                 )}

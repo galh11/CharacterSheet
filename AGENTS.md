@@ -70,6 +70,7 @@ src/
     share.ts               # shareable URL encode/decode
     templates.ts           # ready-made section templates
     useAppUpdate.ts        # PWA service-worker update hook (needRefresh + force-check + reload)
+    useRollLog.ts          # per-character roll log (newest-first, capped, localStorage-persisted, reloads on switch)
     usePersistentState.ts  # useState mirrored to localStorage (persisted UI prefs: fit-width, density, grid cols, sidebar)
   components/
     SectionCard.tsx        # section frame: header, ✎ pencil, collapse/pin; hosts SectionBody

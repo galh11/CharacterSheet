@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.12.1',
+        date: '2026-07-11',
+        summary: 'Fixed the roll log carrying over (and being overwritten) when you switch characters — each character now correctly keeps and reloads its own roll history.',
+    },
+    {
         version: '1.12.0',
         date: '2026-07-11',
         summary: 'Replaced the three conflicting layout buttons (Tidy up / Fit all to content / Spread across width) with one “Auto-arrange” that fits every card to its content and packs them into tidy columns — no overlaps, no cropping, and pressing it again never changes anything.',

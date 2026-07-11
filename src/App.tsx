@@ -37,8 +37,9 @@ import { pushBackup, listBackups, restoreBackup } from './state/backups'
 import { SECTION_TEMPLATES } from './state/templates'
 import { useSheet } from './state/useSheet'
 import { usePersistentState, boolCodec, type Codec } from './state/usePersistentState'
+import { useRollLog } from './state/useRollLog'
 import { rollExpr, formatRoll } from './model/dice'
-import type { D20Mode, RollLogEntry } from './model/dice'
+import type { D20Mode } from './model/dice'
 
 /** Read an image file, downscale it to fit within `max` px (keeping aspect
  *  ratio), and return a compact JPEG data URL suitable for localStorage. */
@@ -151,14 +152,6 @@ function App() {
             return '#8b5cf6'
         }
     })
-    const [rollLog, setRollLog] = useState<RollLogEntry[]>(() => {
-        try {
-            const raw = localStorage.getItem(`character-sheet:rolllog:${getActiveId()}`)
-            return raw ? (JSON.parse(raw) as RollLogEntry[]) : []
-        } catch {
-            return []
-        }
-    })
     const importRef = useRef<HTMLInputElement>(null)
     const captureRef = useRef<HTMLDivElement>(null)
     const portraitRef = useRef<HTMLInputElement>(null)
@@ -206,6 +199,8 @@ function App() {
         moveField,
     } = useSheet()
 
+    const { rollLog, setRollLog, pushRoll } = useRollLog(activeId)
+
     const resolved = useMemo(() => resolveSheet(sheet), [sheet])
     const computed = resolved.results
     const contributions = resolved.contributions
@@ -231,30 +226,11 @@ function App() {
     // stack, and vice-versa. `view` picks which view's drawer we're acting on.
     const view: 'canvas' | 'stack' = stackView ? 'stack' : 'canvas'
 
-    const pushRoll = (entry: Omit<RollLogEntry, 'id'>) =>
-        setRollLog((log) => [{ ...entry, id: crypto.randomUUID() }, ...log].slice(0, 40))
-
-    // Persist the roll log per character, and reload it when switching characters.
+    // Reload the theme when switching characters (its storage key is per-character).
     const prevActiveRef = useRef(activeId)
-    useEffect(() => {
-        try {
-            localStorage.setItem(`character-sheet:rolllog:${activeId}`, JSON.stringify(rollLog))
-        } catch {
-            /* ignore quota errors */
-        }
-    }, [rollLog, activeId])
-
     useEffect(() => {
         if (prevActiveRef.current === activeId) return
         prevActiveRef.current = activeId
-        let next: RollLogEntry[]
-        try {
-            const raw = localStorage.getItem(`character-sheet:rolllog:${activeId}`)
-            next = raw ? (JSON.parse(raw) as RollLogEntry[]) : []
-        } catch {
-            next = []
-        }
-        setRollLog(next)
         setTheme(localStorage.getItem(`character-sheet:theme:${activeId}`) || '#8b5cf6')
     }, [activeId])
 

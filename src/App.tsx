@@ -17,6 +17,7 @@ import {
 } from './model/layout'
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
+import { SectionQuickEdit } from './components/SectionQuickEdit'
 import { SectionEditorModal } from './components/SectionEditorModal'
 import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { AboutModal } from './components/AboutModal'
@@ -1355,6 +1356,14 @@ function App() {
                                     onGuidesChange={setGuides}
                                     onSelect={(additive) => handleSelect(section.id, additive)}
                                     onEdit={() => setEditingSectionId(section.id)}
+                                    quickEdit={
+                                        <SectionQuickEdit
+                                            section={section}
+                                            onUpdateSection={(patch) => updateSection(section.id, patch)}
+                                            onEdit={() => setEditingSectionId(section.id)}
+                                            className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+                                        />
+                                    }
                                     onHide={() => hideSection(section.id)}
                                     dimmed={draggingId === section.id && dropHot}
                                     onDragStart={(ox, oy) => { setDraggingId(section.id); setDragGrab({ x: ox, y: oy }) }}
@@ -1453,6 +1462,14 @@ function App() {
                                     onLayoutCommit={(l) => updateSection(section.id, { drawerLayout: l })}
                                     onScaleChange={(scale) => updateSection(section.id, { scale })}
                                     onEdit={() => setEditingSectionId(section.id)}
+                                    quickEdit={
+                                        <SectionQuickEdit
+                                            section={section}
+                                            onUpdateSection={(patch) => updateSection(section.id, patch)}
+                                            onEdit={() => setEditingSectionId(section.id)}
+                                            className="rounded px-1 text-slate-300 hover:bg-slate-700 hover:text-slate-100"
+                                        />
+                                    }
                                     onHide={() => showSection(section.id)}
                                     onDragStart={(ox, oy) => { setDraggingId(section.id); setDragGrab({ x: ox, y: oy }) }}
                                     onDragMove={(x, y) => onCardDragMove(section.id, x, y)}

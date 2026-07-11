@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.27.0',
+        date: '2026-07-11',
+        summary: 'Sidebar upgrades: the rail now has Stats / Tools tabs (no more collapse arrow + scrolling), ability tiles show your score and roll a check when clicked, the sidebar HP is the full card again (direct-edit current/temp HP, death saves at 0 HP), and the roll log can dock at the bottom of the rail — pop it back out to a floating panel from the ⚙ settings.',
+    },
+    {
         version: '1.26.0',
         date: '2026-07-11',
         summary: 'Relational effects gain two new ops — “at least” (a floor) and “at most” (a cap) — so an item or spell can, e.g., set a minimum AC (Barkskin) or cap a speed, with a ≥N/≤N badge on the target. Add them in a field’s “Grants effects” editor.',

@@ -16,6 +16,8 @@ interface RollLogProps {
     onSpendLuck: () => void
     onRollDice: (expr: string) => void
     onClear: () => void
+    /** Render inline inside the sidebar (no fixed positioning / drag / resize). */
+    docked?: boolean
 }
 
 const MODES: { value: D20Mode; label: string }[] = [
@@ -118,8 +120,10 @@ function RollRow({ e, flash }: { e: RollLogEntry; flash?: boolean }) {
  *  the header to move it anywhere (double-click the header to reset), resize from the
  *  bottom-right grip, and the roll list scrolls within a viewport-capped card so a
  *  long history never spills off-screen. Position and size are persisted. */
-export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusChange, bonusDie, onBonusDieChange, repeat, onRepeatChange, luck, onSpendLuck, onRollDice, onClear }: RollLogProps) {
-    const [open, setOpen] = useState(true)
+export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusChange, bonusDie, onBonusDieChange, repeat, onRepeatChange, luck, onSpendLuck, onRollDice, onClear, docked }: RollLogProps) {
+    // Docked in the rail it starts collapsed (just the latest-roll bar) so it
+    // doesn't crowd the core stats above it; floating it opens by default.
+    const [open, setOpen] = useState(!docked)
     const [historyOpen, setHistoryOpen] = useState(false)
     const [dice, setDice] = useState('')
     const [size, setSize] = useState(loadSize)
@@ -206,17 +210,17 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
     return (
         <div
             ref={rootRef}
-            className={clsx('fixed z-40 print:hidden', !pos && 'bottom-4 right-4 md:right-[calc(var(--sidebar-w)_+_1rem)]')}
-            style={pos ? { left: pos.x, top: pos.y, width: size.w } : { width: size.w }}
+            className={clsx('print:hidden', docked ? 'w-full' : 'fixed z-40', !docked && !pos && 'bottom-4 right-4 md:right-[calc(var(--sidebar-w)_+_1rem)]')}
+            style={docked ? undefined : pos ? { left: pos.x, top: pos.y, width: size.w } : { width: size.w }}
         >
-            <div className="relative flex max-h-[calc(100vh-1rem)] flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-950/95 shadow-xl backdrop-blur">
+            <div className={clsx('relative flex flex-col overflow-hidden rounded-xl border border-slate-700 bg-slate-950/95 shadow-xl backdrop-blur', docked ? 'max-h-[55vh]' : 'max-h-[calc(100vh-1rem)]')}>
             <div
-                onPointerDown={onMovePointerDown}
-                onPointerMove={onMovePointerMove}
-                onPointerUp={onMovePointerUp}
-                onDoubleClick={() => setPos(null)}
-                className="flex shrink-0 cursor-move touch-none select-none items-center gap-2 border-b border-slate-800 px-3 py-2"
-                title="Drag to move · double-click to reset position"
+                onPointerDown={docked ? undefined : onMovePointerDown}
+                onPointerMove={docked ? undefined : onMovePointerMove}
+                onPointerUp={docked ? undefined : onMovePointerUp}
+                onDoubleClick={docked ? undefined : () => setPos(null)}
+                className={clsx('flex shrink-0 select-none items-center gap-2 border-b border-slate-800 px-3 py-2', !docked && 'cursor-move touch-none')}
+                title={docked ? undefined : 'Drag to move · double-click to reset position'}
             >
                 <span className="text-sm font-semibold text-slate-200">🎲 Rolls</span>
                 {open ? (
@@ -388,7 +392,7 @@ export function RollLog({ entries, rollMode, onRollModeChange, bonus, onBonusCha
                 </div>
             )}
             </div>
-            {open && (
+            {open && !docked && (
                 <div
                     onPointerDown={onResizePointerDown}
                     onPointerMove={onResizePointerMove}

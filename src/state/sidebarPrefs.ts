@@ -39,6 +39,15 @@ export const portraitSizeCodec: Codec<PortraitSize> = {
     serialize: (value) => value,
 }
 
+/** Which panel the side nav shows — replaces the old collapse arrow with tabs. */
+export type SidebarTab = 'stats' | 'tools'
+
+/** Codec for the active sidebar tab, defaulting unknown values to the stats panel. */
+export const sidebarTabCodec: Codec<SidebarTab> = {
+    parse: (raw) => (raw === 'tools' ? 'tools' : 'stats'),
+    serialize: (value) => value,
+}
+
 /** The D&D-Beyond-style core stats that can be surfaced in the sidebar. */
 export type StatKey = 'abilities' | 'hp' | 'ac' | 'initiative' | 'proficiency' | 'speed' | 'inspiration'
 

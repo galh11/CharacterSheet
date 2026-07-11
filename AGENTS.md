@@ -318,12 +318,24 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 - **CI visual gating**: CI runs on Linux, so it only gates visual regression once
   `*-chromium-linux.png` baselines are committed. The `ci.yml` “Visual regression
   tests” step checks for those files and runs `e2e/visual.spec.ts` when present,
-  otherwise skips (functional `app.spec.ts` always runs). Generate the Linux
-  baselines with the **Update visual baselines** workflow
+  otherwise skips (functional `app.spec.ts` always runs).
+- **Intentional visual changes → the `update-visuals` label**: a PR that *means*
+  to change the UI adds the **`update-visuals`** label. CI then regenerates the
+  Linux baselines (`npx playwright test e2e/visual.spec.ts --update-snapshots`)
+  and **commits them back to the PR branch** instead of failing the pixel diff, so
+  visual-changing and visual-neutral PRs can coexist without hand-managing
+  baselines. Adding the label re-runs CI (the workflow listens for the `labeled`
+  event); the bot push uses `GITHUB_TOKEN` (so it doesn't loop CI) and auto-merge
+  squash-merges the branch head — refreshed baselines included — once the run is
+  green. Forgot the label on a UI PR? The visual step fails; just add the label
+  and CI re-runs and self-heals. (CI checks out the PR **branch head** rather than
+  the merge commit so it can push back; rebase before opening the PR as usual.)
+- **Bootstrapping baselines from scratch**: to generate the very first Linux
+  baselines (or outside a PR), run the **Update visual baselines** workflow
   (`.github/workflows/visual-baselines.yml`, `workflow_dispatch`): it runs
   `--update-snapshots` on an ubuntu runner and uploads the PNGs as the
   `linux-visual-baselines` artifact; download them into the snapshots folder and
-  commit them in a normal PR to switch the gate on.
+  commit them.
 - Vitest ignores `e2e/**`; Playwright only runs `e2e/`. Keep them separate.
 - Prefer role/text/label queries over CSS selectors so tests survive refactors.
 

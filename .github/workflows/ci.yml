@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+    # `labeled` is included so adding the `update-visuals` label to a PR re-runs
+    # CI (which then regenerates the visual baselines) without a new commit.
+    types: [opened, synchronize, reopened, labeled]
 
 # Cancel superseded runs on the same ref.
 concurrency:
@@ -13,8 +16,17 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      # `contents: write` lets a PR labeled `update-visuals` commit its refreshed
+      # Linux visual baselines back to its own branch.
+      contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Check out the PR branch head (not the ephemeral merge commit) so the
+          # baseline-refresh step below can commit and push back to the branch.
+          # Empty on push events → checkout falls back to the pushed ref.
+          ref: ${{ github.head_ref }}
 
       - uses: actions/setup-node@v5
         with:
@@ -42,18 +54,38 @@ jobs:
       - name: End-to-end tests (functional)
         run: npx playwright test e2e/app.spec.ts
 
-      # Visual regression only runs once Linux baselines are committed (they can't
-      # be reused from the Windows baselines because font rendering differs).
-      # Generate them with the "Update visual baselines" workflow, then commit the
-      # *-chromium-linux.png files — this step then starts gating automatically.
+      # Visual regression gates on the committed Linux baselines
+      # (`*-chromium-linux.png`; font rendering differs from the Windows ones, so
+      # they can't be shared). A PR that *intends* to change the UI adds the
+      # `update-visuals` label: CI then regenerates those baselines with
+      # `--update-snapshots` and commits them back to the branch instead of
+      # failing the pixel diff. Unlabeled PRs keep gating; the push of refreshed
+      # baselines uses GITHUB_TOKEN (so it doesn't re-trigger CI), and auto-merge
+      # merges the branch head — baselines included — once this run succeeds.
       - name: Visual regression tests
+        env:
+          UPDATE_VISUALS: ${{ contains(github.event.pull_request.labels.*.name, 'update-visuals') && github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
-          if ls e2e/visual.spec.ts-snapshots/*-chromium-linux.png >/dev/null 2>&1; then
+          set -euo pipefail
+          if [ "${UPDATE_VISUALS}" = "true" ]; then
+            echo "Label 'update-visuals' present — regenerating Linux baselines."
+            npx playwright test e2e/visual.spec.ts --update-snapshots
+            if [ -n "$(git status --porcelain e2e/visual.spec.ts-snapshots)" ]; then
+              git config user.name 'github-actions[bot]'
+              git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+              git add e2e/visual.spec.ts-snapshots
+              git commit -m 'test(visual): refresh Linux baselines [skip ci]'
+              git push origin "HEAD:${{ github.head_ref }}"
+              echo "Committed refreshed baselines back to ${{ github.head_ref }}."
+            else
+              echo "Baselines already match — nothing to update."
+            fi
+          elif ls e2e/visual.spec.ts-snapshots/*-chromium-linux.png >/dev/null 2>&1; then
             echo "Linux baselines present — running visual regression."
             npx playwright test e2e/visual.spec.ts
           else
             echo "No Linux baselines yet — skipping visual regression."
-            echo "Run the 'Update visual baselines' workflow and commit the generated *-chromium-linux.png files to enable this gate."
+            echo "Add the 'update-visuals' label (or run the 'Update visual baselines' workflow) to generate them."
           fi
 
       - name: Upload Playwright report

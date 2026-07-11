@@ -8,6 +8,8 @@
 
 - [ ] `npm run lint`, `npm run build`, and `npm run test:run` pass locally
 - [ ] `npm run test:e2e` passes (if you touched UI)
+- [ ] If this PR intentionally changes the UI, add the **`update-visuals`** label
+      so CI refreshes the Linux visual baselines instead of failing the diff
 - [ ] `npm run check:docs` passes
 - [ ] Docs updated when behaviour/architecture changed — **AGENTS.md** (project
       structure + architecture notes), **README.md** (features/architecture),

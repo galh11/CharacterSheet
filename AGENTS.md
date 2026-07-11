@@ -72,6 +72,7 @@ src/
     useAppUpdate.ts        # PWA service-worker update hook (needRefresh + force-check + reload)
     useRollLog.ts          # per-character roll log (newest-first, capped, localStorage-persisted, reloads on switch)
     useSelection.ts        # canvas multi-select + align / match-size / distribute over the selection
+    usePresets.ts          # named canvas layout presets (save/apply a snapshot of every card's position)
     usePersistentState.ts  # useState mirrored to localStorage (persisted UI prefs: fit-width, density, grid cols, sidebar)
   components/
     SectionCard.tsx        # section frame: header, ✎ pencil, collapse/pin; hosts SectionBody

@@ -1,6 +1,5 @@
 import { clsx } from 'clsx'
-import { useState, type Dispatch, type SetStateAction } from 'react'
-import type { CharacterSheet } from '../model/characterSheet'
+import { type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import { Popover } from './Popover'
 import {
     ABILITY_MODS,
@@ -14,18 +13,20 @@ import {
 
 interface SidebarStatsProps {
     scope: Record<string, number>
-    sheet: CharacterSheet
     stats: SidebarStatsPrefs
     setStats: Dispatch<SetStateAction<SidebarStatsPrefs>>
     portraitSize: PortraitSize
     setPortraitSize: Dispatch<SetStateAction<PortraitSize>>
+    rollLogDocked: boolean
+    setRollLogDocked: Dispatch<SetStateAction<boolean>>
     theme: string
     hasInspiration: boolean
     inspirationOn: boolean
     toggleInspiration: () => void
-    onDamage: (amount: number) => void
-    onHeal: (amount: number) => void
-    onTempHp: (amount: number) => void
+    /** The full HP card widget (or null when there's no HP section / it's hidden). */
+    hpWidget: ReactNode
+    /** Roll a d20 + the ability's modifier as an ability check. */
+    onRollAbility: (label: string, mod: number) => void
     onRollInitiative: (mod: number) => void
 }
 
@@ -43,60 +44,42 @@ function StatBadge({ label, value, title }: { label: string; value: string; titl
 }
 
 /**
- * The D&D-Beyond-style "core stats" panel that lives at the top of the side nav:
- * ability modifiers, HP (interactive damage/heal/temp), AC, Initiative (roll),
- * Proficiency, Speed and Inspiration. Values are read live from the resolved
- * compute `scope` (conventional slugs) and the sheet's HP section. A gear opens a
- * popover that toggles which stats show and picks the portrait size.
+ * The D&D-Beyond-style "core stats" panel at the top of the side nav: ability
+ * tiles (score + modifier, click to roll a check), the full interactive HP card,
+ * AC, Initiative (roll), Proficiency, Speed and Inspiration. Field-backed values
+ * are read live from the resolved compute `scope` by conventional slug. A ⚙
+ * popover toggles which stats show, picks the portrait size, and docks / pops out
+ * the roll log.
  */
 export function SidebarStats({
     scope,
-    sheet,
     stats,
     setStats,
     portraitSize,
     setPortraitSize,
+    rollLogDocked,
+    setRollLogDocked,
     theme,
     hasInspiration,
     inspirationOn,
     toggleInspiration,
-    onDamage,
-    onHeal,
-    onTempHp,
+    hpWidget,
+    onRollAbility,
     onRollInitiative,
 }: SidebarStatsProps) {
-    const [hpAmount, setHpAmount] = useState('')
-
-    // Interactive HP is sourced from the section that owns current + max HP.
-    const hpSection = sheet.sections.find(
-        (s) =>
-            s.fields.some((f) => f.label.toLowerCase() === 'current hp') &&
-            s.fields.some((f) => f.label.toLowerCase() === 'max hp'),
-    )
-    const hpField = (label: string) => hpSection?.fields.find((f) => f.label.toLowerCase() === label)
-    const curN = Number(hpField('current hp')?.value) || 0
-    const maxN = Number(hpField('max hp')?.value) || 0
-    const tempN = Number(hpField('temp hp')?.value) || 0
-    const hpPct = maxN > 0 ? Math.max(0, Math.min(100, (curN / maxN) * 100)) : 0
-
     // Field-backed badge values (undefined → the badge is hidden entirely).
     const ac = pickScope(scope, 'ac', 'armor_class')
     const init = pickScope(scope, 'initiative', 'dex_mod')
     const prof = pickScope(scope, 'proficiency', 'proficiency_bonus', 'prof')
     const speed = pickScope(scope, 'speed', 'walking_speed')
-    const mods = ABILITY_MODS.map((m) => ({ ...m, value: pickScope(scope, m.slug) })).filter(
-        (m) => m.value !== undefined,
-    )
+    const abilities = ABILITY_MODS.map((m) => ({
+        ...m,
+        mod: pickScope(scope, m.slug),
+        score: pickScope(scope, m.slug.replace(/_mod$/, '')),
+    })).filter((m) => m.mod !== undefined)
 
-    const applyHp = (fn: (n: number) => void) => {
-        const n = Math.abs(Math.trunc(Number(hpAmount)))
-        if (!n) return
-        fn(n)
-        setHpAmount('')
-    }
-
-    const showAbilities = stats.abilities && mods.length > 0
-    const showHp = stats.hp && !!hpSection
+    const showAbilities = stats.abilities && abilities.length > 0
+    const showHp = stats.hp && !!hpWidget
     const showAc = stats.ac && ac !== undefined
     const showInit = stats.initiative && init !== undefined
     const showProf = stats.proficiency && prof !== undefined
@@ -112,7 +95,7 @@ export function SidebarStats({
                 <Popover
                     trigger="⚙"
                     ariaLabel="Sidebar stats settings"
-                    title="Choose which stats show + portrait size"
+                    title="Choose which stats show, portrait size + roll-log location"
                     align="right"
                     triggerClassName="rounded-md border border-slate-700 px-1.5 py-0.5 text-xs leading-none text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                 >
@@ -159,6 +142,15 @@ export function SidebarStats({
                                     ))}
                                 </div>
                             </div>
+                            <label className="mt-1 flex items-center gap-2 border-t border-slate-800 pt-2 text-sm text-slate-200">
+                                <input
+                                    type="checkbox"
+                                    checked={rollLogDocked}
+                                    onChange={(e) => setRollLogDocked(e.target.checked)}
+                                    aria-label="Dock roll log to sidebar"
+                                />
+                                Dock roll log here
+                            </label>
                         </div>
                     )}
                 </Popover>
@@ -172,71 +164,27 @@ export function SidebarStats({
 
             {showAbilities && (
                 <div className="grid grid-cols-3 gap-1">
-                    {mods.map((m) => (
-                        <div
+                    {abilities.map((m) => (
+                        <button
                             key={m.slug}
-                            className="flex flex-col items-center rounded-md border border-slate-700 bg-slate-900/60 py-1"
-                            title={`${m.label} modifier`}
+                            type="button"
+                            onClick={() => onRollAbility(m.label, m.mod!)}
+                            className="flex flex-col items-center rounded-md border border-slate-700 bg-slate-900/60 py-1 hover:border-violet-500/60 hover:bg-slate-800"
+                            title={`Roll a ${m.label} check (d20 ${fmtSigned(m.mod!)})`}
                         >
                             <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{m.label}</span>
-                            <span className="font-mono text-base font-bold leading-tight text-slate-100">{fmtSigned(m.value!)}</span>
-                        </div>
+                            <span className="font-mono text-lg font-bold leading-tight text-slate-100">
+                                {m.score !== undefined ? m.score : fmtSigned(m.mod!)}
+                            </span>
+                            <span className="rounded-full bg-slate-800 px-1.5 text-[11px] font-mono leading-tight text-slate-300">
+                                {fmtSigned(m.mod!)}
+                            </span>
+                        </button>
                     ))}
                 </div>
             )}
 
-            {showHp && (
-                <div className="flex flex-col gap-1.5 rounded-md border border-slate-700 bg-slate-900/60 p-2">
-                    <div className="flex items-baseline justify-between">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">HP</span>
-                        <span className="font-mono text-sm text-slate-200">
-                            <span className="text-lg font-bold text-slate-100">{curN}</span>
-                            <span className="text-slate-500"> / {maxN}</span>
-                            {tempN > 0 && <span className="ml-1 text-cyan-300">+{tempN}</span>}
-                        </span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
-                        <div
-                            className={clsx('h-full rounded-full transition-all', hpPct > 50 ? 'bg-emerald-500' : hpPct > 25 ? 'bg-amber-500' : 'bg-rose-500')}
-                            style={{ width: `${hpPct}%` }}
-                        />
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <input
-                            value={hpAmount}
-                            onChange={(e) => setHpAmount(e.target.value.replace(/[^0-9]/g, ''))}
-                            inputMode="numeric"
-                            placeholder="0"
-                            aria-label="HP amount"
-                            className="w-12 rounded border border-slate-700 bg-slate-950 px-1.5 py-1 text-center font-mono text-sm text-slate-100 outline-none focus:ring-1 focus:ring-slate-500"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => applyHp(onDamage)}
-                            className="flex-1 rounded border border-rose-500/40 bg-rose-500/15 px-1 py-1 text-xs font-medium text-rose-300 hover:bg-rose-500/25"
-                            title="Take damage"
-                        >
-                            − Dmg
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => applyHp(onHeal)}
-                            className="flex-1 rounded border border-emerald-500/40 bg-emerald-500/15 px-1 py-1 text-xs font-medium text-emerald-300 hover:bg-emerald-500/25"
-                            title="Heal"
-                        >
-                            + Heal
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => applyHp(onTempHp)}
-                            className="rounded border border-cyan-500/40 bg-cyan-500/15 px-1.5 py-1 text-xs font-medium text-cyan-300 hover:bg-cyan-500/25"
-                            title="Set temporary HP"
-                        >
-                            Temp
-                        </button>
-                    </div>
-                </div>
-            )}
+            {showHp && <div className="rounded-md border border-slate-700 bg-slate-900/60 p-2">{hpWidget}</div>}
 
             {badges && (
                 <div className="grid grid-cols-2 gap-1">

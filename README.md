@@ -54,15 +54,20 @@ one hover away.
   Cast-and-spend-a-slot button, and a D&D-Beyond-style
   inventory whose coin purse and items share one card…).
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
-- **Side-nav dashboard** — all persistent controls live in a collapsible
-  right-hand sidebar so the canvas keeps the full height of the window; it folds
-  to a hamburger overlay on narrow screens. Drag its left edge to resize it
+- **Side-nav dashboard** — all persistent controls live in a
+  right-hand sidebar so the canvas keeps the full height of the window; **Stats /
+  Tools tabs** swap the panel (no collapse-and-scroll), it folds to a hamburger
+  overlay on narrow screens, and you can drag its left edge to resize it
   (double-click to reset).
-- **Sidebar core stats** — a D&D-Beyond-style panel at the top of the rail shows
-  your ability modifiers, interactive HP (damage / heal / temp), AC, initiative
-  (with a roll button), proficiency, speed and inspiration — read live from your
-  sheet. A ⚙ popover chooses which stats appear; turning HP or Abilities on makes
-  the sidebar their home and tucks the matching canvas card away.
+- **Sidebar core stats** — a D&D-Beyond-style panel in the Stats tab shows
+  clickable ability tiles (score + modifier, click to roll a check), the full
+  interactive HP card (direct-edit current/temp HP, death saves at 0 HP), AC,
+  initiative (roll), proficiency, speed and inspiration — read live from your
+  sheet. A ⚙ popover chooses which stats appear, sizes the portrait, and docks the
+  roll log; turning HP or Abilities on makes the sidebar their home and tucks the
+  matching canvas card away.
+- **Roll log, docked or floating** — the dice log can sit at the bottom of the
+  rail (collapsed until you need it) or pop out to a draggable, resizable panel.
 - **Character portrait** — add a D&D-Beyond-style circular avatar in the side nav;
   click to upload or replace an image (auto-downscaled), hover to remove it, and
   size it S / M / L from the sidebar-stats ⚙ popover.

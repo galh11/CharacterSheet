@@ -24,6 +24,7 @@ test('drag handles and the section editor are available without an edit mode', a
 
 test('adding a section increases the section count', async ({ page }) => {
     await expect(page.locator('article')).toHaveCount(3)
+    await page.getByRole('tab', { name: 'Tools' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
     await expect(page.locator('article')).toHaveCount(4)
 })
@@ -50,6 +51,7 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
 })
 
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {
+    await page.getByRole('tab', { name: 'Tools' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
     await expect(page.locator('article')).toHaveCount(4)
 

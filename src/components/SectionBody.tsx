@@ -396,7 +396,7 @@ function StatBlock({ section, results, contributions, effectTags }: SectionBodyP
     )
 }
 
-function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal, contributions, effectTags }: SectionBodyProps) {
+export function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHeal, contributions, effectTags }: SectionBodyProps) {
     const [amount, setAmount] = useState('')
     const [dmgType, setDmgType] = useState('')
     const [concSave, setConcSave] = useState<number | null>(null)

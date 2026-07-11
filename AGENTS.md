@@ -74,21 +74,21 @@ src/
     useSelection.ts        # canvas multi-select + align / match-size / distribute over the selection
     usePresets.ts          # named canvas layout presets (save/apply a snapshot of every card's position)
     usePersistentState.ts  # useState mirrored to localStorage (persisted UI prefs: fit-width, density, grid cols, sidebar)
-    sidebarPrefs.ts        # per-user sidebar prefs: draggable width + portrait-size (S/M/L) + core-stat visibility codecs/consts + scope-value helpers (pickScope/fmtSigned)
+    sidebarPrefs.ts        # per-user sidebar prefs: draggable width + portrait-size (S/M/L) + Stats/Tools tab + core-stat visibility codecs/consts + scope-value helpers (pickScope/fmtSigned)
     useCanvasGridLayout.ts # dashboard grid geometry + zoom + drop/reflow/auto-arrange handlers (extracted from App)
     useDrawerDrag.ts       # drawer + canvas card drag/tuck/restore state + handlers; exports inDrawer (extracted from App)
   components/
-    HeaderToolbar.tsx      # the right-hand side nav (rail): profile/portrait, the SidebarStats core-stats panel, character switcher, undo/redo, search, add + View/⋯ More menus, theme swatch, plus the drag-to-resize left edge (double-click resets) and the narrow-width hamburger + overlay (extracted from App.tsx)
-    SidebarStats.tsx       # D&D-Beyond-style core-stats panel in the rail: ability mods, interactive HP (damage/heal/temp), AC, Initiative (roll), Proficiency, Speed, Inspiration — read live from the resolved scope; a ⚙ Popover toggles which stats show + picks portrait size
+    HeaderToolbar.tsx      # the right-hand side nav (rail): pinned profile/portrait + Stats/Tools tabs (Stats hosts the SidebarStats panel + Rest; Tools hosts character switcher, undo/redo, search, add + View/⋯ More menus, theme swatch) + an optional docked RollLog at the bottom, the drag-to-resize left edge (double-click resets) and the narrow-width hamburger + overlay (extracted from App.tsx)
+    SidebarStats.tsx       # D&D-Beyond-style core-stats panel in the rail: clickable ability tiles (score + mod → roll a check), the full interactive HP card (via the exported HpWidget node), AC, Initiative (roll), Proficiency, Speed, Inspiration — read live from the resolved scope; a ⚙ Popover toggles which stats show, picks portrait size + docks/pops-out the roll log
     SectionCard.tsx        # section frame: header, ✎ edit button, collapse/pin; hosts SectionBody
-    SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
+    SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges; exports HpWidget (reused in the sidebar core-stats panel)
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened from the ✎ popover's "More settings…"
     SectionQuickEdit.tsx   # the ✎ edit button: a non-blocking Popover for fast rename / accent colour / layout kind (+ "More settings…" opens the full editor)
     SectionNav.tsx         # sidebar "Sections" navigator: collapsible list of the current view's cards; click a row to scroll it into view + select it; highlights the active (selected) card
     Popover.tsx            # lightweight, non-blocking floating panel anchored to a trigger (no backdrop/focus-trap); closes on outside click / Escape; used by SectionQuickEdit
     FormulaInput.tsx       # formula box with inline, section-grouped field autocomplete (completes the slug token at the caret)
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper + handle bar
-    RollLog.tsx            # floating roll panel: colour-coded rows, flash on new roll, collapsed latest-roll summary, expandable history, adv/dis, drag-to-move + resizable, viewport-capped scroll
+    RollLog.tsx            # roll panel: colour-coded rows, flash on new roll, collapsed latest-roll summary, expandable history, adv/dis; floats (drag-to-move + resizable, viewport-capped) or `docked` inline at the bottom of the rail (no drag/resize, starts collapsed)
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
     HitDiceModal.tsx       # spend hit dice on a short rest
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
@@ -257,22 +257,26 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   default M) chosen in the SidebarStats ⚙ settings popover (`PORTRAIT_SIZE_CLASSES`
   in `state/sidebarPrefs.ts`).
 - **Sidebar core stats**: `components/SidebarStats.tsx` renders a D&D-Beyond-style
-  "top bar" set of stats at the top of the rail (below the name): the six ability
-  **modifiers** (`str_mod`…`cha_mod`), an interactive **HP** control
-  (damage/heal/temp via `useSheet.damageHp`/`healHp`/`applyTempHp`), **AC**
-  (`ac`/`armor_class`), **Initiative** (a roll button → d20 + mod → roll log),
-  **Proficiency** (`proficiency`/`proficiency_bonus`/`prof`), **Speed**
-  (`speed`/`walking_speed`) and the **Inspiration** toggle (moved here from the
-  profile block). Values are read live from the resolved compute `scope` by
-  conventional slug (a badge is hidden if its slug is absent — hybrid auto-detect).
-  Which stats show is a per-user global pref (`character-sheet:sidebar-stats`, a
-  JSON `Record<StatKey,boolean>` in `state/sidebarPrefs.ts`, all on by default),
-  toggled — alongside the portrait size — in a ⚙ `Popover` on the panel. Because the
-  sidebar is the default home for the two **section-backed** stats, `App`'s
-  `hiddenByStat` filter removes the `hp` and `abilities` sections from the
-  canvas/stack/nav while those stats are enabled (toggling the stat off returns
-  the card); the field-backed badges (AC/init/prof/speed) are additive reads and
-  do **not** hide their source field's card.
+  "top bar" set of stats in the rail's **Stats** tab: clickable **ability tiles**
+  (each shows the score prominently with its `str_mod`…`cha_mod` modifier below,
+  and clicking rolls a d20 + mod **ability check** to the log), the **full HP card**
+  (the `SectionBody` `HpWidget` is exported and rendered here as a node built by
+  `App` for the section that owns Current+Max HP — so direct-edit current/temp HP,
+  the bar, resist/vuln typing and the **death-saves** UI at 0 HP all live in the
+  rail, no weaker duplicate control), **AC** (`ac`/`armor_class`), **Initiative**
+  (a roll button → d20 + mod → roll log), **Proficiency**
+  (`proficiency`/`proficiency_bonus`/`prof`), **Speed** (`speed`/`walking_speed`)
+  and the **Inspiration** toggle. Field-backed values are read live from the
+  resolved compute `scope` by conventional slug (a badge is hidden if its slug is
+  absent — hybrid auto-detect). Which stats show is a per-user global pref
+  (`character-sheet:sidebar-stats`, a JSON `Record<StatKey,boolean>` in
+  `state/sidebarPrefs.ts`, all on by default), toggled — alongside the portrait
+  size and the roll-log dock — in a ⚙ `Popover` on the panel. Because the sidebar
+  is the default home for the two **section-backed** stats, `App`'s `hiddenByStat`
+  filter removes the `hp` and `abilities` sections from the canvas/stack/nav while
+  those stats are enabled (toggling the stat off returns the card); the
+  field-backed badges (AC/init/prof/speed) are additive reads and do **not** hide
+  their source field's card.
 - **Side nav**: the app's persistent controls live in a **right-hand vertical
   sidebar** (`<header>` styled as a rail; `md:sticky md:top-0 md:h-screen`, width
   `md:w-[var(--sidebar-w)]`) so the canvas reclaims the full top of the window
@@ -283,11 +287,13 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `document.documentElement` from `App`) so anything anchored beside the rail can
   offset by the live width. `App` renders it as the `order-2` flex child of a
   `flex` `<main>`; the canvas/modals sit in an `order-1 flex-1` content column to
-  its left. Top-to-bottom it mirrors the video's sidebar anatomy: **profile**
-  (portrait avatar, editable name, the **SidebarStats** core-stats panel incl.
-  ★ Inspiration, **Rest ▾**, the ✓ Autosaved
-  indicator + a ▴/▾ collapse toggle), then a **tools** group separated by thin
-  horizontal rules — **Character** (switcher `<select>` + **Character ▾**),
+  its left. Top-to-bottom the rail is: a **pinned profile** (portrait avatar +
+  editable name), a **Stats / Tools tab bar** (persisted as
+  `character-sheet:sidebar-tab`), the active tab's scrollable content, and — when
+  docked — the **RollLog** pinned at the bottom. The **Stats** tab hosts the
+  **SidebarStats** core-stats panel (incl. ★ Inspiration), **Rest ▾** and the
+  ✓ Autosaved indicator; the **Tools** tab hosts a **tools** group separated by
+  thin horizontal rules — **Character** (switcher `<select>` + **Character ▾**),
   **history** (undo/redo), a **search** box with an inline magnifier icon (it
   filters the visible cards + fields *and* the drawer list, shows a live match
   count, and Enter jumps to the first match), a **Sections** navigator
@@ -295,13 +301,17 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   scroll it into view + select it, with the active card highlighted and, while
   searching, matched titles highlighted / non-matches dimmed), **add**
   (the violet **+ Section** button + a **+ Template ▾** menu), a single **View ▾**
-  menu, then **⋯ More** and the theme-colour swatch. The ▴/▾ toggle hides the
-  tools group (persisted as `character-sheet:sidebar-collapsed`), leaving just the
-  profile; on narrow (`< md`) widths the rail is hidden and a fixed **≡ hamburger**
+  menu, then **⋯ More** and the theme-colour swatch. The tabs replaced the old
+  ▴/▾ collapse arrow (so tools are one click away, not hidden behind a scroll);
+  on narrow (`< md`) widths the rail is hidden and a fixed **≡ hamburger**
   opens it as a right-side overlay (with a backdrop, dismissed by a ✕/tap).
   Dropdown `Menu`s open `align="right"` and auto-nudge back on-screen. The
-  floating `RollLog` default anchor shifts left of the rail
-  (`md:right-[calc(var(--sidebar-w)_+_1rem)]`) so they don't overlap at any width. **View ▾** consolidates what used to be a row of
+  **RollLog** can either **dock** at the bottom of the rail (default, persisted as
+  `character-sheet:rolllog-docked`; rendered inline, no drag/resize, starts
+  collapsed so it doesn't crowd the stats) or **float** as a movable panel whose
+  default anchor shifts left of the rail
+  (`md:right-[calc(var(--sidebar-w)_+_1rem)]`) so they don't overlap at any width;
+  the ⚙ settings popover toggles between the two. **View ▾** consolidates what used to be a row of
   standalone buttons: the Canvas/Stack view mode (with a ✓ on the active
   one), **Zoom** (Compact 80% / Normal 100% / Comfortable 120%, ✓-marked — a
   persisted whole-sheet CSS-`zoom` preset; disabled in canvas view while **Fit to

@@ -1,5 +1,5 @@
 import { clsx } from 'clsx'
-import { useRef, type Dispatch, type PointerEvent as ReactPointerEvent, type RefObject, type SetStateAction } from 'react'
+import { useRef, type Dispatch, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction } from 'react'
 import type { CharacterSheet, CharacterSection } from '../model/characterSheet'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './Menu'
 import { SectionNav } from './SectionNav'
@@ -11,6 +11,7 @@ import {
     SIDEBAR_MIN_W,
     type PortraitSize,
     type SidebarStatsPrefs,
+    type SidebarTab,
 } from '../state/sidebarPrefs'
 import { SECTION_TEMPLATES, type SectionTemplate } from '../state/templates'
 import { exportSheetToFile } from '../state/transfer'
@@ -25,8 +26,8 @@ interface HeaderToolbarProps {
     setTheme: Dispatch<SetStateAction<string>>
     mobileNavOpen: boolean
     setMobileNavOpen: Dispatch<SetStateAction<boolean>>
-    sidebarCollapsed: boolean
-    setSidebarCollapsed: Dispatch<SetStateAction<boolean>>
+    sidebarTab: SidebarTab
+    setSidebarTab: Dispatch<SetStateAction<SidebarTab>>
     sidebarWidth: number
     setSidebarWidth: Dispatch<SetStateAction<number>>
     portraitRef: RefObject<HTMLInputElement | null>
@@ -40,11 +41,13 @@ interface HeaderToolbarProps {
     setPortraitSize: Dispatch<SetStateAction<PortraitSize>>
     sidebarStats: SidebarStatsPrefs
     setSidebarStats: Dispatch<SetStateAction<SidebarStatsPrefs>>
+    rollLogDocked: boolean
+    setRollLogDocked: Dispatch<SetStateAction<boolean>>
     scope: Record<string, number>
-    onDamageHp: (amount: number) => void
-    onHealHp: (amount: number) => void
-    onTempHp: (amount: number) => void
+    hpWidget: ReactNode
+    onRollAbility: (label: string, mod: number) => void
     onRollInitiative: (mod: number) => void
+    rollLog: ReactNode
     startShortRest: () => void
     doRest: (kind: 'short' | 'long') => void
     activeId: string
@@ -109,8 +112,8 @@ export function HeaderToolbar({
     setTheme,
     mobileNavOpen,
     setMobileNavOpen,
-    sidebarCollapsed,
-    setSidebarCollapsed,
+    sidebarTab,
+    setSidebarTab,
     sidebarWidth,
     setSidebarWidth,
     portraitRef,
@@ -124,11 +127,13 @@ export function HeaderToolbar({
     setPortraitSize,
     sidebarStats,
     setSidebarStats,
+    rollLogDocked,
+    setRollLogDocked,
     scope,
-    onDamageHp,
-    onHealHp,
-    onTempHp,
+    hpWidget,
+    onRollAbility,
     onRollInitiative,
+    rollLog,
     startShortRest,
     doRest,
     activeId,
@@ -222,7 +227,7 @@ export function HeaderToolbar({
             )}
             <header
                 className={clsx(
-                    'relative order-2 flex flex-col gap-2 overflow-y-auto border-l-2 bg-slate-950/85 p-3 backdrop-blur print:hidden',
+                    'relative order-2 flex flex-col gap-2 overflow-hidden border-l-2 bg-slate-950/85 p-3 backdrop-blur print:hidden',
                     'md:sticky md:top-0 md:h-screen md:max-h-screen md:self-start md:z-30 md:w-[var(--sidebar-w)]',
                     mobileNavOpen ? 'fixed inset-y-0 right-0 z-50 flex w-72 shadow-2xl' : 'hidden md:flex',
                 )}
@@ -239,7 +244,7 @@ export function HeaderToolbar({
                     title="Drag to resize · double-click to reset"
                     className="absolute inset-y-0 left-0 z-40 hidden w-1.5 cursor-col-resize touch-none hover:bg-slate-600/40 md:block"
                 />
-                <div className="flex flex-col items-stretch gap-2">
+                <div className="flex shrink-0 flex-col items-stretch gap-2">
                     <div className="group relative shrink-0 self-center">
                         <button
                             type="button"
@@ -289,61 +294,72 @@ export function HeaderToolbar({
                         title="Click to rename this character"
                         className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1 text-xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
                     />
-                    <SidebarStats
-                        scope={scope}
-                        sheet={sheet}
-                        stats={sidebarStats}
-                        setStats={setSidebarStats}
-                        portraitSize={portraitSize}
-                        setPortraitSize={setPortraitSize}
-                        theme={theme}
-                        hasInspiration={!!inspirationField}
-                        inspirationOn={inspirationField?.field.value === 'true'}
-                        toggleInspiration={toggleInspiration}
-                        onDamage={onDamageHp}
-                        onHeal={onHealHp}
-                        onTempHp={onTempHp}
-                        onRollInitiative={onRollInitiative}
-                    />
-                    <Menu label="Rest ▾" title="Take a short or long rest" align="right" className="w-full text-left">
-                        {(close) => (
-                            <>
-                                <MenuItem onClick={() => { startShortRest(); close() }} title="Refill short-rest resources and spend hit dice">
-                                    Short rest…
-                                </MenuItem>
-                                <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
-                                    Long rest
-                                </MenuItem>
-                            </>
-                        )}
-                    </Menu>
-                    <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
-                        <span title="Your sheet is saved automatically in this browser">
-                            ✓ Autosaved
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                onClick={() => setSidebarCollapsed((c) => !c)}
-                                className="hidden rounded-md border border-slate-600 px-2 py-1 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:inline-flex"
-                                aria-label={sidebarCollapsed ? 'Show tools' : 'Hide tools'}
-                                title={sidebarCollapsed ? 'Show tools' : 'Hide tools'}
-                            >
-                                {sidebarCollapsed ? '▾' : '▴'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMobileNavOpen(false)}
-                                className="rounded-md border border-slate-600 px-2 py-1 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:hidden"
-                                aria-label="Close menu"
-                                title="Close menu"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
                 </div>
-                {(!sidebarCollapsed || mobileNavOpen) && (
+                <div className="flex shrink-0 items-center gap-1">
+                    <div role="tablist" aria-label="Sidebar panels" className="flex flex-1 overflow-hidden rounded-md border border-slate-700">
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={sidebarTab === 'stats'}
+                            onClick={() => setSidebarTab('stats')}
+                            className={clsx('flex-1 px-2 py-1.5 text-sm font-medium', sidebarTab === 'stats' ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-800')}
+                        >
+                            Stats
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={sidebarTab === 'tools'}
+                            onClick={() => setSidebarTab('tools')}
+                            className={clsx('flex-1 px-2 py-1.5 text-sm font-medium', sidebarTab === 'tools' ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-800')}
+                        >
+                            Tools
+                        </button>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setMobileNavOpen(false)}
+                        className="shrink-0 rounded-md border border-slate-600 px-2 py-1.5 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:hidden"
+                        aria-label="Close menu"
+                        title="Close menu"
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+                {sidebarTab === 'stats' ? (
+                    <div className="flex flex-col items-stretch gap-2">
+                        <SidebarStats
+                            scope={scope}
+                            stats={sidebarStats}
+                            setStats={setSidebarStats}
+                            portraitSize={portraitSize}
+                            setPortraitSize={setPortraitSize}
+                            rollLogDocked={rollLogDocked}
+                            setRollLogDocked={setRollLogDocked}
+                            theme={theme}
+                            hasInspiration={!!inspirationField}
+                            inspirationOn={inspirationField?.field.value === 'true'}
+                            toggleInspiration={toggleInspiration}
+                            hpWidget={hpWidget}
+                            onRollAbility={onRollAbility}
+                            onRollInitiative={onRollInitiative}
+                        />
+                        <Menu label="Rest ▾" title="Take a short or long rest" align="right" className="w-full text-left">
+                            {(close) => (
+                                <>
+                                    <MenuItem onClick={() => { startShortRest(); close() }} title="Refill short-rest resources and spend hit dice">
+                                        Short rest…
+                                    </MenuItem>
+                                    <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
+                                        Long rest
+                                    </MenuItem>
+                                </>
+                            )}
+                        </Menu>
+                        <span className="text-xs text-slate-500" title="Your sheet is saved automatically in this browser">✓ Autosaved</span>
+                    </div>
+                ) : (
                     <div className="flex flex-col items-stretch gap-1.5">
                         {/* Character group: switch between saved characters + manage them. */}
                         <select
@@ -631,6 +647,10 @@ export function HeaderToolbar({
                             />
                         </label>
                     </div>
+                )}
+                </div>
+                {rollLog && (
+                    <div className="mt-1 shrink-0 border-t border-slate-800 pt-2">{rollLog}</div>
                 )}
             </header>
         </>

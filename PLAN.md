@@ -247,6 +247,20 @@ D&D extras
       the live width is published as the `--sidebar-w` CSS var (used by the rail
       and the floating RollLog offset).
 
+### Phase S — Sidebar tabs, roll log & core-stat depth  [x]
+- [x] **Stats / Tools tabs** replace the ▴/▾ collapse arrow: a tab bar under the
+      pinned profile swaps the panel (`character-sheet:sidebar-tab`) so tools are
+      one click away instead of hidden behind a scroll.
+- [x] **Clickable ability tiles**: each shows the score prominently with its
+      modifier below and rolls a d20 + mod ability check when clicked.
+- [x] **Full HP in the rail**: the sidebar renders the exported `SectionBody`
+      `HpWidget` (direct-edit current/temp HP, the bar, resist/vuln typing, and
+      the death-saves UI at 0 HP) instead of a weaker compact control.
+- [x] **Dockable roll log**: `RollLog` gains a `docked` mode (inline at the bottom
+      of the rail, no drag/resize, starts collapsed); a ⚙ toggle
+      (`character-sheet:rolllog-docked`, default docked) pops it back out to the
+      floating panel.
+
 ## Notes
 
 - Keep changes scoped per phase; commit at each phase boundary.

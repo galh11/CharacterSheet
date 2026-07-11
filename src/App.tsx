@@ -9,6 +9,7 @@ import {
 import { resolveSheet, listReferences, listResourceReferences } from './model/compute'
 import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/CanvasItem'
 import { SectionCard } from './components/SectionCard'
+import { HpWidget } from './components/SectionBody'
 import { SectionQuickEdit } from './components/SectionQuickEdit'
 import { SectionEditorModal } from './components/SectionEditorModal'
 import { HeaderToolbar } from './components/HeaderToolbar'
@@ -31,9 +32,11 @@ import {
     sidebarWidthCodec,
     portraitSizeCodec,
     sidebarStatsCodec,
+    sidebarTabCodec,
     DEFAULT_SIDEBAR_STATS,
     type PortraitSize,
     type SidebarStatsPrefs,
+    type SidebarTab,
 } from './state/sidebarPrefs'
 import { useRollLog } from './state/useRollLog'
 import { useSelection } from './state/useSelection'
@@ -99,7 +102,10 @@ const gridColsCodec: Codec<number> = {
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
     // Collapse the side nav down to a slim icon rail (persisted, desktop only).
-    const [sidebarCollapsed, setSidebarCollapsed] = usePersistentState('character-sheet:sidebar-collapsed', false, boolCodec)
+    // Which panel the side nav shows (replaces the old collapse arrow) + whether
+    // the roll log is docked in the rail or floats as a movable panel.
+    const [sidebarTab, setSidebarTab] = usePersistentState<SidebarTab>('character-sheet:sidebar-tab', 'stats', sidebarTabCodec)
+    const [rollLogDocked, setRollLogDocked] = usePersistentState('character-sheet:rolllog-docked', true, boolCodec)
     // Open the side nav as an overlay on narrow (mobile) widths.
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
     const [showHitDice, setShowHitDice] = useState(false)
@@ -181,7 +187,6 @@ function App() {
         moveSection,
         rest,
         healHp,
-        damageHp,
         spendResource,
         toggleField,
         restoreResource,
@@ -417,6 +422,12 @@ function App() {
     const rollInitiative = (mod: number) => {
         const r = rollExpr(`1d20 + ${mod}`)
         pushRoll({ title: 'Initiative', detail: formatRoll(r), total: r.total, kind: 'check' })
+    }
+
+    // Roll a d20 + ability modifier as an ability check from the sidebar tiles.
+    const rollAbilityCheck = (label: string, mod: number) => {
+        const r = rollExpr(`1d20 + ${mod}`)
+        pushRoll({ title: `${label} check`, detail: formatRoll(r), total: r.total, kind: 'check' })
     }
 
     const handleImport = async (file: File | undefined) => {
@@ -724,6 +735,48 @@ function App() {
         />
     )
 
+    // The section that owns the HP tracker (current + max HP). The sidebar renders
+    // the full HP card widget for it, so all its capabilities (direct-edit current /
+    // temp HP, the bar, resist/vuln typing, and the death-saves UI at 0 HP) live in
+    // the rail without a second, weaker control.
+    const hpHostSection = sheet.sections.find(
+        (s) =>
+            s.fields.some((f) => f.label.toLowerCase() === 'current hp') &&
+            s.fields.some((f) => f.label.toLowerCase() === 'max hp'),
+    )
+    const sidebarHpWidget =
+        sidebarStats.hp && hpHostSection ? (
+            <HpWidget
+                section={hpHostSection}
+                results={computed}
+                contributions={contributions}
+                effectTags={effectTags}
+                onRoll={pushRoll}
+                onHeal={healHp}
+                onUpdateField={(fieldId, patch) => updateField(hpHostSection.id, fieldId, patch)}
+                onUpdateSection={(patch) => updateSection(hpHostSection.id, patch)}
+            />
+        ) : null
+
+    const rollLogNode = (
+        <RollLog
+            entries={rollLog}
+            rollMode={rollMode}
+            onRollModeChange={setRollMode}
+            bonus={situational}
+            onBonusChange={setSituational}
+            bonusDie={bonusDie}
+            onBonusDieChange={setBonusDie}
+            repeat={repeat}
+            onRepeatChange={setRepeat}
+            luck={scope['luck_points']}
+            onSpendLuck={spendLuck}
+            onRollDice={rollFreeDice}
+            onClear={() => setRollLog([])}
+            docked={rollLogDocked}
+        />
+    )
+
     return (
         <main className="flex min-h-screen w-full">
             <HeaderToolbar
@@ -731,8 +784,8 @@ function App() {
                 setTheme={setTheme}
                 mobileNavOpen={mobileNavOpen}
                 setMobileNavOpen={setMobileNavOpen}
-                sidebarCollapsed={sidebarCollapsed}
-                setSidebarCollapsed={setSidebarCollapsed}
+                sidebarTab={sidebarTab}
+                setSidebarTab={setSidebarTab}
                 sidebarWidth={sidebarWidth}
                 setSidebarWidth={setSidebarWidth}
                 portraitRef={portraitRef}
@@ -746,11 +799,13 @@ function App() {
                 setPortraitSize={setPortraitSize}
                 sidebarStats={sidebarStats}
                 setSidebarStats={setSidebarStats}
+                rollLogDocked={rollLogDocked}
+                setRollLogDocked={setRollLogDocked}
                 scope={scope}
-                onDamageHp={damageHp}
-                onHealHp={healHp}
-                onTempHp={applyTempHp}
+                hpWidget={sidebarHpWidget}
+                onRollAbility={rollAbilityCheck}
                 onRollInitiative={rollInitiative}
+                rollLog={rollLogDocked ? rollLogNode : null}
                 startShortRest={startShortRest}
                 doRest={doRest}
                 activeId={activeId}
@@ -1144,21 +1199,7 @@ function App() {
                 />
             )}
 
-            <RollLog
-                entries={rollLog}
-                rollMode={rollMode}
-                onRollModeChange={setRollMode}
-                bonus={situational}
-                onBonusChange={setSituational}
-                bonusDie={bonusDie}
-                onBonusDieChange={setBonusDie}
-                repeat={repeat}
-                onRepeatChange={setRepeat}
-                luck={scope['luck_points']}
-                onSpendLuck={spendLuck}
-                onRollDice={rollFreeDice}
-                onClear={() => setRollLog([])}
-            />
+            {!rollLogDocked && rollLogNode}
 
             <UpdateToast
                 show={appUpdate.updateReady}

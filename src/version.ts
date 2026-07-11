@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.13.0',
+        date: '2026-07-11',
+        summary: 'A sheet with no sections now shows a friendly empty state with a “+ Section” button and quick template picks, instead of a blank canvas.',
+    },
+    {
         version: '1.12.1',
         date: '2026-07-11',
         summary: 'Fixed the roll log carrying over (and being overwritten) when you switch characters — each character now correctly keeps and reloads its own roll history.',

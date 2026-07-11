@@ -202,6 +202,25 @@ export const useSheet = () => {
         [commit],
     )
 
+    /** Reorder sections by moving `sourceId` to just before `targetId` in the
+     *  sections array (drag-to-reorder in the stack view). A null/omitted target
+     *  moves the source to the end. No-op if the source is dropped on itself. */
+    const moveSection = useCallback(
+        (sourceId: string, targetId?: string) => {
+            if (sourceId === targetId) return
+            commit((c) => {
+                const from = c.sections.findIndex((s) => s.id === sourceId)
+                if (from < 0) return c
+                const sections = [...c.sections]
+                const [moved] = sections.splice(from, 1)
+                const to = targetId ? sections.findIndex((s) => s.id === targetId) : sections.length
+                sections.splice(to < 0 ? sections.length : to, 0, moved)
+                return { ...c, sections }
+            }, 'Reorder sections')
+        },
+        [commit],
+    )
+
     /**
      * Apply a short or long rest across the whole sheet.
      * Long rest: Current HP → Max HP, Temp HP → 0, Exhaustion −1, and every
@@ -473,6 +492,7 @@ export const useSheet = () => {
         addTemplateSection,
         deleteSection,
         duplicateSection,
+        moveSection,
         rest,
         healHp,
         spendResource,

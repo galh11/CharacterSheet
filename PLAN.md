@@ -221,7 +221,10 @@ D&D extras
       the grabbed point under the cursor so cards land exactly where released; the
       drawer auto-closes once emptied; and the fixed panel docks below the header's
       live bottom so it no longer overlaps the top bar.
-- [ ] **Follow-up**: drag-to-reorder tiles in the stack view (separate PR).
+- [x] **Follow-up**: drag-to-reorder tiles in the stack view — each stack card
+      has a grip handle (⠇) you drag onto another card to reorder the underlying
+      section list (`useSheet.moveSection`, undoable). Pinned cards still float to
+      the top.
 
 ## Notes
 

@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.10.0',
+        date: '2026-07-11',
+        summary: 'Reorder sections in Stack view by dragging: hover a card to reveal a ⠿ grip at its top, then drag it onto another card to drop it into place (undoable). Pinned cards still stay on top.',
+    },
+    {
         version: '1.9.2',
         date: '2026-07-10',
         summary: 'On-hover descriptions now float above the whole page instead of being cropped to their section card — they flip above/below and stay within the window.',

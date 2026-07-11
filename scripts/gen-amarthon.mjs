@@ -105,7 +105,7 @@ S('Combat', 'default', [
     F('Passive Perception', 'computed', '10 + wis_mod + proficiency', { description: 'Proficient in Perception.' }),
     F('Spell Save DC', 'computed', '8 + proficiency + wis_mod', { description: 'Druid spellcasting (Wisdom).' }),
     F('Spell Attack', 'computed', 'proficiency + wis_mod'),
-    F('Proficiency', 'number', 3, { description: 'Proficiency bonus (level 8). Used by attacks, saves, skills and spell DC.' }),
+    F('Proficiency', 'computed', 'floor((level - 1) / 4) + 2', { description: 'Proficiency bonus, derived from your level. Used by attacks, saves, skills and spell DC.' }),
 ], '#ef4444')
 
 // 3. Hit points. The hit-dice pool lives here (tagged meta.die) and is spent via
@@ -191,8 +191,8 @@ S('Attacks', 'actions', [
         meta: { hit: '+{dex_mod + proficiency}', damage: '1d8+{dex_mod}', type: 'piercing', range: '150/600' },
     }),
     F('Poison Spray (cantrip)', 'text', '', {
-        description: 'Ranged 10 ft. Target makes a CON save vs your spell DC {8 + proficiency + wis_mod}; on a fail it takes the damage. Scales with level (2d12 at level 8).',
-        meta: { damage: '2d12', type: 'poison', range: '10 ft' },
+        description: 'Ranged 10 ft. Target makes a CON save vs your spell DC {8 + proficiency + wis_mod}; on a fail it takes the damage. Damage dice scale with your cantrip tier (from level).',
+        meta: { damage: '{1 + floor((level + 1) / 6)}d12', type: 'poison', range: '10 ft' },
     }),
 ], '#f59e0b')
 
@@ -218,7 +218,7 @@ S('Cantrips', 'default', [
     F('Guidance', 'text', 'Druid', { description: 'Concentration, 1 min. Touch a willing creature; add 1d4 to one ability check of its choice.' }),
     F('Message', 'text', 'Druid', { description: 'Whisper a message to a creature within 120 ft; it can reply.' }),
     F('Shillelagh', 'text', 'Druid', { description: 'Bonus Action: your club/quarterstaff uses your spellcasting ability, deals 1d8, and counts as magical for 1 min.' }),
-    F('Poison Spray', 'text', 'Druid', { description: 'CON save or take 2d12 poison (at level 8). Range 10 ft.' }),
+    F('Poison Spray', 'text', 'Druid', { description: 'CON save or take poison damage (scales with your cantrip tier). Range 10 ft.' }),
     F('Minor Illusion', 'text', 'Magic Initiate (Wizard)', { description: 'Create a sound or image for 1 min.' }),
     F('Booming Blade', 'text', 'Magic Initiate (Wizard)', { description: 'Melee spell attack via a weapon; the target is sheathed in booming energy and takes thunder damage if it moves.' }),
 ], '#06b6d4')
@@ -287,7 +287,7 @@ S('Conditions', 'conditions', [
         description: 'Whale-Oil Lantern lit: Advantage on sight Perception in snow/fog/freezing rain.',
         effects: [{ target: 'perception', op: 'advantage', value: 'lit lantern in snow/fog' }],
     }),
-    F('Bloodied', 'boolean', 'false', { description: 'At or below half HP (33). Auto-set by the HP tracker.' }),
+    F('Bloodied', 'boolean', 'false', { description: 'At or below half your Max HP. Auto-set by the HP tracker.' }),
     F('Prone', 'boolean', 'false'),
     F('Grappled', 'boolean', 'false'),
     F('Frightened', 'boolean', 'false'),

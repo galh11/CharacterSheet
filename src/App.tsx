@@ -26,7 +26,6 @@ import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
 import { APP_VERSION } from './version'
 import { useAppUpdate } from './state/useAppUpdate'
 import { exportSheetToFile, importSheetFromFile } from './state/transfer'
-import { loadPresets, savePresets, type Presets } from './state/presets'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
 import { getActiveId } from './state/roster'
 import { pushBackup, listBackups, restoreBackup } from './state/backups'
@@ -35,6 +34,7 @@ import { useSheet } from './state/useSheet'
 import { usePersistentState, boolCodec, type Codec } from './state/usePersistentState'
 import { useRollLog } from './state/useRollLog'
 import { useSelection } from './state/useSelection'
+import { usePresets } from './state/usePresets'
 import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode } from './model/dice'
 
@@ -113,7 +113,6 @@ function App() {
         if (!found) setNotice("You're on the latest version.")
     }
     const [guides, setGuides] = useState<SnapGuide[]>([])
-    const [presets, setPresets] = useState<Presets>(() => loadPresets())
     const [rollMode, setRollMode] = useState<D20Mode>('normal')
     const [situational, setSituational] = useState(0)
     const [bonusDie, setBonusDie] = useState(0)
@@ -197,6 +196,7 @@ function App() {
 
     const { rollLog, setRollLog, pushRoll } = useRollLog(activeId)
     const { selectedIds, clearSelection, handleSelect, deselect, align, match, distribute } = useSelection(sheet, setSectionLayout)
+    const { presets, savePreset, applyPreset } = usePresets(sheet, updateSection, setNotice)
 
     const resolved = useMemo(() => resolveSheet(sheet), [sheet])
     const computed = resolved.results
@@ -672,31 +672,6 @@ function App() {
         if (!pan || pan.pointerId !== e.pointerId) return
         panRef.current = null
         if (!pan.moved) clearSelection()
-    }
-
-    const savePreset = () => {
-        const name = window.prompt('Save current layout as:')?.trim()
-        if (!name) return
-        const entries = sheet.sections.map((s) => ({ title: s.title, ...s.layout, scale: s.scale }))
-        const next = { ...presets, [name]: entries }
-        setPresets(next)
-        savePresets(next)
-        setNotice(`Layout "${name}" saved.`)
-    }
-
-    const applyPreset = (name: string) => {
-        const preset = presets[name]
-        if (!preset) return
-        for (const s of sheet.sections) {
-            const entry = preset.find((e) => e.title === s.title)
-            if (entry) {
-                updateSection(s.id, {
-                    layout: { x: entry.x, y: entry.y, w: entry.w, h: entry.h },
-                    scale: entry.scale,
-                })
-            }
-        }
-        setNotice(`Layout "${name}" applied.`)
     }
 
     useEffect(() => {

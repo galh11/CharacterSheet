@@ -36,6 +36,7 @@ import { getActiveId } from './state/roster'
 import { pushBackup, listBackups, restoreBackup } from './state/backups'
 import { SECTION_TEMPLATES } from './state/templates'
 import { useSheet } from './state/useSheet'
+import { usePersistentState, boolCodec, type Codec } from './state/usePersistentState'
 import { rollExpr, formatRoll } from './model/dice'
 import type { D20Mode, RollLogEntry } from './model/dice'
 
@@ -80,16 +81,28 @@ const DRAWER_W = 'min(440px, 92vw)'
 /** Column-count presets for the dashboard grid (chosen in the View menu). */
 const GRID_COL_OPTIONS = [6, 8, 12] as const
 
+/** Whole-sheet zoom preset (persisted). */
+type Density = 'compact' | 'normal' | 'comfortable'
+
+/** Codec for the density preset, validating unknown stored values back to normal. */
+const densityCodec: Codec<Density> = {
+    parse: (raw) => (raw === 'compact' || raw === 'comfortable' ? raw : 'normal'),
+    serialize: (value) => value,
+}
+
+/** Codec for the grid column count, clamped to the allowed presets. */
+const gridColsCodec: Codec<number> = {
+    parse: (raw) => {
+        const n = Number(raw)
+        return (GRID_COL_OPTIONS as readonly number[]).includes(n) ? n : 12
+    },
+    serialize: (value) => String(value),
+}
+
 function App() {
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
     // Collapse the side nav down to a slim icon rail (persisted, desktop only).
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-        try {
-            return localStorage.getItem('character-sheet:sidebar-collapsed') === '1'
-        } catch {
-            return false
-        }
-    })
+    const [sidebarCollapsed, setSidebarCollapsed] = usePersistentState('character-sheet:sidebar-collapsed', false, boolCodec)
     // Open the side nav as an overlay on narrow (mobile) widths.
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
     const [showHitDice, setShowHitDice] = useState(false)
@@ -127,29 +140,9 @@ function App() {
     // and the floating drag preview align the card under the cursor.
     const [dragGrab, setDragGrab] = useState({ x: 0, y: 0 })
     const [containerWidth, setContainerWidth] = useState(0)
-    const [fitWidth, setFitWidth] = useState(() => {
-        try {
-            return localStorage.getItem('character-sheet:fit-width') === '1'
-        } catch {
-            return false
-        }
-    })
-    const [density, setDensity] = useState<'compact' | 'normal' | 'comfortable'>(() => {
-        try {
-            const saved = localStorage.getItem('character-sheet:density')
-            return saved === 'compact' || saved === 'comfortable' ? saved : 'normal'
-        } catch {
-            return 'normal'
-        }
-    })
-    const [gridCols, setGridCols] = useState<number>(() => {
-        try {
-            const n = Number(localStorage.getItem('character-sheet:grid-cols'))
-            return (GRID_COL_OPTIONS as readonly number[]).includes(n) ? n : 12
-        } catch {
-            return 12
-        }
-    })
+    const [fitWidth, setFitWidth] = usePersistentState('character-sheet:fit-width', false, boolCodec)
+    const [density, setDensity] = usePersistentState<Density>('character-sheet:density', 'normal', densityCodec)
+    const [gridCols, setGridCols] = usePersistentState('character-sheet:grid-cols', 12, gridColsCodec)
     const [query, setQuery] = useState('')
     const [theme, setTheme] = useState<string>(() => {
         try {
@@ -532,7 +525,6 @@ function App() {
     // Change the grid's column count (persisted) and re-pack the canvas onto it.
     const changeGridCols = (n: number) => {
         setGridCols(n)
-        try { localStorage.setItem('character-sheet:grid-cols', String(n)) } catch { /* ignore */ }
         const items = sheet.sections
             .filter((s) => !inDrawer(s, 'canvas'))
             .map((s) => ({ id: s.id, layout: s.layout }))
@@ -823,30 +815,6 @@ function App() {
         ro.observe(el)
         return () => ro.disconnect()
     }, [stackView])
-
-    useEffect(() => {
-        try {
-            localStorage.setItem('character-sheet:sidebar-collapsed', sidebarCollapsed ? '1' : '0')
-        } catch {
-            // ignore storage failures (private mode, quota)
-        }
-    }, [sidebarCollapsed])
-
-    useEffect(() => {
-        try {
-            localStorage.setItem('character-sheet:fit-width', fitWidth ? '1' : '0')
-        } catch {
-            // ignore storage failures (private mode, quota)
-        }
-    }, [fitWidth])
-
-    useEffect(() => {
-        try {
-            localStorage.setItem('character-sheet:density', density)
-        } catch {
-            // ignore storage failures (private mode, quota)
-        }
-    }, [density])
 
     const toggleCollapse = (id: string) =>
         setCollapsed((prev) => {

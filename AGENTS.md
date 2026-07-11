@@ -75,6 +75,7 @@ src/
     usePresets.ts          # named canvas layout presets (save/apply a snapshot of every card's position)
     usePersistentState.ts  # useState mirrored to localStorage (persisted UI prefs: fit-width, density, grid cols, sidebar)
   components/
+    HeaderToolbar.tsx      # the right-hand side nav (rail): profile/portrait, character switcher, undo/redo, search, add + View/⋯ More menus, theme swatch, plus the narrow-width hamburger + overlay (extracted from App.tsx)
     SectionCard.tsx        # section frame: header, ✎ edit button, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened from the ✎ popover's "More settings…"

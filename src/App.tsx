@@ -19,20 +19,18 @@ import { CanvasItem, type SnapGuide, type CanvasItemHandle } from './components/
 import { SectionCard } from './components/SectionCard'
 import { SectionQuickEdit } from './components/SectionQuickEdit'
 import { SectionEditorModal } from './components/SectionEditorModal'
+import { HeaderToolbar } from './components/HeaderToolbar'
 import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { AboutModal } from './components/AboutModal'
 import { UpdateToast } from './components/UpdateToast'
 import { useToast } from './components/toastContext'
 import { RollLog } from './components/RollLog'
 import { EmptyCanvas } from './components/EmptyCanvas'
-import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
-import { APP_VERSION } from './version'
 import { useAppUpdate } from './state/useAppUpdate'
-import { exportSheetToFile, importSheetFromFile } from './state/transfer'
+import { importSheetFromFile } from './state/transfer'
 import { buildShareUrl, readSharedSheet, clearShareHash } from './state/share'
 import { getActiveId } from './state/roster'
-import { pushBackup, listBackups, restoreBackup } from './state/backups'
-import { SECTION_TEMPLATES } from './state/templates'
+import { pushBackup, restoreBackup } from './state/backups'
 import { useSheet } from './state/useSheet'
 import { usePersistentState, boolCodec, type Codec } from './state/usePersistentState'
 import { useRollLog } from './state/useRollLog'
@@ -860,401 +858,66 @@ function App() {
 
     return (
         <main className="flex min-h-screen w-full">
-            <button
-                type="button"
-                onClick={() => setMobileNavOpen(true)}
-                className="fixed right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-lg border border-slate-600 bg-slate-950/85 text-2xl leading-none text-slate-200 shadow-lg backdrop-blur hover:bg-slate-800 md:hidden print:hidden"
-                aria-label="Open menu"
-                title="Open menu"
-            >
-                ≡
-            </button>
-            {mobileNavOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/50 md:hidden"
-                    onClick={() => setMobileNavOpen(false)}
-                    aria-hidden="true"
-                />
-            )}
-            <header
-                className={clsx(
-                    'order-2 flex flex-col gap-2 overflow-y-auto border-l-2 bg-slate-950/85 p-3 backdrop-blur print:hidden',
-                    'md:sticky md:top-0 md:h-screen md:max-h-screen md:self-start md:z-30 md:w-64',
-                    mobileNavOpen ? 'fixed inset-y-0 right-0 z-50 flex w-72 shadow-2xl' : 'hidden md:flex',
-                )}
-                style={{ borderLeftColor: theme }}
-            >
-                <div className="flex flex-col items-stretch gap-2">
-                    <div className="group relative shrink-0 self-center">
-                        <button
-                            type="button"
-                            onClick={() => portraitRef.current?.click()}
-                            className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 bg-slate-900 text-slate-500 hover:text-slate-200"
-                            style={{ borderColor: theme }}
-                            aria-label={sheet.portrait ? 'Change character portrait' : 'Add character portrait'}
-                            title={sheet.portrait ? 'Change portrait' : 'Add a character portrait'}
-                        >
-                            {sheet.portrait ? (
-                                <img src={sheet.portrait} alt="Character portrait" className="h-full w-full object-cover" />
-                            ) : (
-                                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
-                                    <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
-                                </svg>
-                            )}
-                        </button>
-                        {sheet.portrait && (
-                            <button
-                                type="button"
-                                onClick={() => setPortrait(undefined)}
-                                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xs leading-none text-slate-300 hover:bg-slate-700 hover:text-white group-hover:flex"
-                                aria-label="Remove character portrait"
-                                title="Remove portrait"
-                            >
-                                ×
-                            </button>
-                        )}
-                    </div>
-                    <input
-                        ref={portraitRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(event) => {
-                            void handlePortrait(event.target.files?.[0])
-                            event.target.value = ''
-                        }}
-                    />
-                    <input
-                        value={sheet.name}
-                        onChange={(event) => renameSheet(event.target.value)}
-                        aria-label="Character name"
-                        title="Click to rename this character"
-                        className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1 text-xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
-                    />
-                    {inspirationField && (
-                        <button
-                            type="button"
-                            onClick={toggleInspiration}
-                            className={clsx(
-                                'rounded-md border px-2.5 py-1.5 text-sm font-medium',
-                                inspirationField.field.value === 'true'
-                                    ? 'border-amber-400 bg-amber-400/20 text-amber-200'
-                                    : 'border-slate-600 text-slate-400 hover:bg-slate-800',
-                            )}
-                            title="Toggle Inspiration"
-                        >
-                            ★ Insp.
-                        </button>
-                    )}
-                    <Menu label="Rest ▾" title="Take a short or long rest" align="right" className="w-full text-left">
-                        {(close) => (
-                            <>
-                                <MenuItem onClick={() => { startShortRest(); close() }} title="Refill short-rest resources and spend hit dice">
-                                    Short rest…
-                                </MenuItem>
-                                <MenuItem onClick={() => { doRest('long'); close() }} title="Restore HP, clear temp HP, reduce exhaustion, refill resources">
-                                    Long rest
-                                </MenuItem>
-                            </>
-                        )}
-                    </Menu>
-                    <div className="flex items-center justify-between gap-3 text-xs text-slate-500">
-                        <span title="Your sheet is saved automatically in this browser">
-                            ✓ Autosaved
-                        </span>
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                onClick={() => setSidebarCollapsed((c) => !c)}
-                                className="hidden rounded-md border border-slate-600 px-2 py-1 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:inline-flex"
-                                aria-label={sidebarCollapsed ? 'Show tools' : 'Hide tools'}
-                                title={sidebarCollapsed ? 'Show tools' : 'Hide tools'}
-                            >
-                                {sidebarCollapsed ? '▾' : '▴'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMobileNavOpen(false)}
-                                className="rounded-md border border-slate-600 px-2 py-1 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:hidden"
-                                aria-label="Close menu"
-                                title="Close menu"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                {(!sidebarCollapsed || mobileNavOpen) && (
-                    <div className="flex flex-col items-stretch gap-1.5">
-                        {/* Character group: switch between saved characters + manage them. */}
-                        <select
-                            value={activeId}
-                            onChange={(event) => switchCharacter(event.target.value)}
-                            className="w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-slate-200"
-                            aria-label="Active character"
-                            title="Switch character"
-                        >
-                            {characters.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                    {(c.id === activeId ? sheet.name : c.name) || 'Unnamed'}
-                                </option>
-                            ))}
-                        </select>
-                        <Menu label="Character ▾" title="Character actions" align="right" className="w-full text-left">
-                            {(close) => (
-                                <>
-                                    <MenuItem onClick={() => { newCharacter(); close() }}>+ New character</MenuItem>
-                                    <MenuItem onClick={() => { duplicateCharacter(); close() }}>Duplicate character</MenuItem>
-                                    {listBackups(activeId).length > 0 && (
-                                        <>
-                                            <MenuDivider />
-                                            <MenuLabel>Restore earlier version</MenuLabel>
-                                            {listBackups(activeId).map((b) => (
-                                                <MenuItem key={b.ts} onClick={() => { handleRestore(b.ts); close() }}>
-                                                    {new Date(b.ts).toLocaleString()}
-                                                </MenuItem>
-                                            ))}
-                                        </>
-                                    )}
-                                    <MenuDivider />
-                                    <MenuItem danger onClick={() => { handleReset(); close() }}>Reset to starter sheet</MenuItem>
-                                    <MenuItem danger onClick={() => { handleDeleteCharacter(); close() }}>Delete character</MenuItem>
-                                </>
-                            )}
-                        </Menu>
-
-                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
-
-                        {/* History group: undo / redo. */}
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                onClick={undo}
-                                disabled={!canUndo}
-                                className={clsx(
-                                    'flex-1 rounded-md border border-slate-600 px-3 py-2 text-sm',
-                                    canUndo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
-                                )}
-                                title={undoLabel ? `Undo: ${undoLabel} (Ctrl+Z)` : 'Undo (Ctrl+Z)'}
-                                aria-label="Undo"
-                            >
-                                ↶
-                            </button>
-                            <button
-                                type="button"
-                                onClick={redo}
-                                disabled={!canRedo}
-                                className={clsx(
-                                    'flex-1 rounded-md border border-slate-600 px-3 py-2 text-sm',
-                                    canRedo ? 'text-slate-200 hover:bg-slate-800' : 'cursor-not-allowed text-slate-600',
-                                )}
-                                title={redoLabel ? `Redo: ${redoLabel} (Ctrl+Shift+Z)` : 'Redo (Ctrl+Shift+Z)'}
-                                aria-label="Redo"
-                            >
-                                ↷
-                            </button>
-                        </div>
-
-                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
-
-                        {/* Search: filters visible sections and fields. */}
-                        <div className="relative">
-                            <svg
-                                viewBox="0 0 24 24"
-                                className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                aria-hidden="true"
-                            >
-                                <circle cx="11" cy="11" r="7" />
-                                <path d="m21 21-4.3-4.3" strokeLinecap="round" />
-                            </svg>
-                            <input
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search…"
-                                aria-label="Search"
-                                className="w-full rounded-md border border-slate-600 bg-slate-900 py-2 pl-8 pr-7 text-sm text-slate-200"
-                            />
-                            {query && (
-                                <button
-                                    type="button"
-                                    onClick={() => setQuery('')}
-                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-200"
-                                    title="Clear search"
-                                    aria-label="Clear search"
-                                >
-                                    ✕
-                                </button>
-                            )}
-                        </div>
-
-                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
-
-                        {/* Add group: a new blank section or one from a template. */}
-                        <button
-                            type="button"
-                            onClick={addSection}
-                            className="w-full rounded-md bg-violet-500 px-3 py-2 text-sm font-medium text-white hover:bg-violet-400"
-                        >
-                            + Section
-                        </button>
-                        <Menu label="+ Template ▾" title="Add a section from a ready-made template" align="right" className="w-full text-left">
-                            {(close) => (
-                                <>
-                                    {SECTION_TEMPLATES.map((t) => (
-                                        <MenuItem key={t.id} onClick={() => { addTemplateSection(t); close() }}>
-                                            {t.label}
-                                        </MenuItem>
-                                    ))}
-                                </>
-                            )}
-                        </Menu>
-
-                        {/* View group: display mode, density, canvas layout tools, and the drawer. */}
-                        <Menu label="View ▾" title="Display mode and layout options" align="right" className="w-full text-left">
-                            {(close) => (
-                                <>
-                                    <MenuLabel>Layout</MenuLabel>
-                                    <MenuItem onClick={() => { setStackView(false); close() }} title="Free-form draggable canvas">
-                                        <span className="flex items-center gap-2">
-                                            <span className="w-3 text-cyan-300">{!stackView ? '✓' : ''}</span>Canvas view
-                                        </span>
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { setStackView(true); close() }} title="Responsive stacked columns">
-                                        <span className="flex items-center gap-2">
-                                            <span className="w-3 text-cyan-300">{stackView ? '✓' : ''}</span>Stack view
-                                        </span>
-                                    </MenuItem>
-                                    <MenuDivider />
-                                    <MenuLabel>Zoom</MenuLabel>
-                                    {([['compact', '80%'], ['normal', '100%'], ['comfortable', '120%']] as const).map(([d, pct]) => (
-                                        <MenuItem
-                                            key={d}
-                                            onClick={() => { setDensity(d); close() }}
-                                            disabled={fitWidth && !stackView}
-                                            title={fitWidth && !stackView ? 'Turn off “Fit to width” to set the zoom manually' : `Scale the whole sheet to ${pct}`}
-                                        >
-                                            <span className="flex items-center gap-2 capitalize">
-                                                <span className="w-3 text-cyan-300">{density === d ? '✓' : ''}</span>{d}
-                                                <span className="ml-auto pl-3 text-xs text-slate-500">{pct}</span>
-                                            </span>
-                                        </MenuItem>
-                                    ))}
-                                    {fitWidth && !stackView && (
-                                        <div className="px-3 pb-1 pt-0.5 text-[10px] text-slate-500">Overridden by “Fit to width”.</div>
-                                    )}
-                                    {!stackView && (
-                                        <>
-                                            <MenuDivider />
-                                            <MenuLabel>Canvas</MenuLabel>
-                                            <MenuItem onClick={() => { handleOrganize(); close() }} title="Fit every card to its content and pack them into tidy columns — no overlaps, no gaps">
-                                                Auto-arrange
-                                            </MenuItem>
-                                            <MenuItem onClick={() => { setFitWidth((v) => !v); close() }} title="Scale the whole canvas so its content fills the window width">
-                                                <span className="flex items-center gap-2">
-                                                    <span className="w-3 text-cyan-300">{fitWidth ? '✓' : ''}</span>Fit to width
-                                                </span>
-                                            </MenuItem>
-                                            <MenuDivider />
-                                            <MenuLabel>Grid columns</MenuLabel>
-                                            {GRID_COL_OPTIONS.map((n) => (
-                                                <MenuItem key={n} onClick={() => { changeGridCols(n); close() }} title={`Snap cards to a ${n}-column grid`}>
-                                                    <span className="flex items-center gap-2">
-                                                        <span className="w-3 text-cyan-300">{gridCols === n ? '✓' : ''}</span>{n} columns
-                                                    </span>
-                                                </MenuItem>
-                                            ))}
-                                            <MenuDivider />
-                                            <MenuItem onClick={() => { savePreset(); close() }} title="Save the current arrangement as a named layout">
-                                                Save this layout…
-                                            </MenuItem>
-                                            {Object.keys(presets).length > 0 && (
-                                                <>
-                                                    <MenuLabel>Apply saved layout</MenuLabel>
-                                                    {Object.keys(presets).map((name) => (
-                                                        <MenuItem key={name} onClick={() => { applyPreset(name); close() }}>
-                                                            {name}
-                                                        </MenuItem>
-                                                    ))}
-                                                </>
-                                            )}
-                                        </>
-                                    )}
-                                    <MenuDivider />
-                                    <MenuItem onClick={() => { setDrawerOpen((v) => !v); close() }} title={`Open the ${view} drawer of tucked-away sections`}>
-                                        {drawerOpen ? 'Close drawer' : 'Open drawer'}{drawerSections.length > 0 ? ` (${drawerSections.length})` : ''}
-                                    </MenuItem>
-                                </>
-                            )}
-                        </Menu>
-
-                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
-
-                        <Menu label="⋯ More" title="Import, export, and share" align="right" className="w-full text-left">
-                            {(close) => (
-                                <>
-                                    {levelField && (
-                                        <>
-                                            <MenuLabel>Play</MenuLabel>
-                                            <MenuItem onClick={() => { handleLevelUp(); close() }} title="Increase your level by one">
-                                                Level up
-                                            </MenuItem>
-                                            <MenuDivider />
-                                        </>
-                                    )}
-                                    <MenuLabel>Data</MenuLabel>
-                                    <MenuItem onClick={() => { exportSheetToFile(sheet); close() }} title="Download this sheet as JSON">
-                                        Export JSON
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { importRef.current?.click(); close() }} title="Load a sheet from a JSON file">
-                                        Import JSON…
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { void handleShare(); close() }} title="Copy a shareable link that contains this whole sheet">
-                                        Copy share link
-                                    </MenuItem>
-                                    <MenuDivider />
-                                    <MenuLabel>Export image</MenuLabel>
-                                    <MenuItem onClick={() => { window.print(); close() }} title="Print or save the sheet as a PDF">
-                                        Print / PDF
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { void handleExportPng(); close() }} title="Export the canvas as a PNG image">
-                                        Export PNG
-                                    </MenuItem>
-                                    <MenuDivider />
-                                    <MenuLabel>About</MenuLabel>
-                                    <MenuItem onClick={() => { void handleCheckUpdate(); close() }} title="Force a check for a newly deployed version and reload onto it">
-                                        Check for updates
-                                    </MenuItem>
-                                    <MenuItem onClick={() => { setShowAbout(true); close() }} title="Show the app version and changelog">
-                                        What's new · v{APP_VERSION}
-                                    </MenuItem>
-                                </>
-                            )}
-                        </Menu>
-                        <input
-                            ref={importRef}
-                            type="file"
-                            accept="application/json"
-                            className="hidden"
-                            onChange={(event) => {
-                                void handleImport(event.target.files?.[0])
-                                event.target.value = ''
-                            }}
-                        />
-                        <label className="flex w-full items-center justify-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
-                            <input
-                                type="color"
-                                value={theme}
-                                onChange={(e) => setTheme(e.target.value)}
-                                aria-label="Theme colour"
-                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-                            />
-                        </label>
-                    </div>
-                )}
-            </header>
+            <HeaderToolbar
+                theme={theme}
+                setTheme={setTheme}
+                mobileNavOpen={mobileNavOpen}
+                setMobileNavOpen={setMobileNavOpen}
+                sidebarCollapsed={sidebarCollapsed}
+                setSidebarCollapsed={setSidebarCollapsed}
+                portraitRef={portraitRef}
+                sheet={sheet}
+                setPortrait={setPortrait}
+                handlePortrait={handlePortrait}
+                renameSheet={renameSheet}
+                inspirationField={inspirationField}
+                toggleInspiration={toggleInspiration}
+                startShortRest={startShortRest}
+                doRest={doRest}
+                activeId={activeId}
+                characters={characters}
+                switchCharacter={switchCharacter}
+                newCharacter={newCharacter}
+                duplicateCharacter={duplicateCharacter}
+                handleRestore={handleRestore}
+                handleReset={handleReset}
+                handleDeleteCharacter={handleDeleteCharacter}
+                undo={undo}
+                redo={redo}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                undoLabel={undoLabel}
+                redoLabel={redoLabel}
+                query={query}
+                setQuery={setQuery}
+                addSection={addSection}
+                addTemplateSection={addTemplateSection}
+                stackView={stackView}
+                setStackView={setStackView}
+                density={density}
+                setDensity={setDensity}
+                fitWidth={fitWidth}
+                setFitWidth={setFitWidth}
+                handleOrganize={handleOrganize}
+                gridColOptions={GRID_COL_OPTIONS}
+                changeGridCols={changeGridCols}
+                gridCols={gridCols}
+                savePreset={savePreset}
+                presets={presets}
+                applyPreset={applyPreset}
+                drawerOpen={drawerOpen}
+                setDrawerOpen={setDrawerOpen}
+                view={view}
+                drawerSections={drawerSections}
+                levelField={levelField}
+                handleLevelUp={handleLevelUp}
+                importRef={importRef}
+                handleImport={handleImport}
+                handleShare={handleShare}
+                handleExportPng={handleExportPng}
+                handleCheckUpdate={handleCheckUpdate}
+                setShowAbout={setShowAbout}
+            />
 
             <div className="order-1 flex min-w-0 flex-1 flex-col gap-3 p-4 md:px-8">
             <section className={clsx('w-full', !fitWidth && 'mx-auto max-w-7xl')}>

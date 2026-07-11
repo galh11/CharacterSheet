@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.19.1',
+        date: '2026-07-11',
+        summary: 'Internal: extracted the side-nav rail into a dedicated HeaderToolbar component so the toolbar lives in one place — no change to how the app looks or behaves.',
+    },
+    {
         version: '1.19.0',
         date: '2026-07-11',
         summary: 'Merged each section\u2019s two edit buttons into one: the \u270e button now opens the quick-edit popover (rename, colour, layout), and its \u201cMore settings\u2026\u201d link opens the full editor \u2014 no more redundant pencil.',

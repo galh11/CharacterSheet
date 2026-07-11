@@ -130,6 +130,9 @@ function App() {
     const canvasScrollRef = useRef<HTMLDivElement>(null)
     const panRef = useRef<{ pointerId: number; startX: number; startY: number; left: number; top: number; moved: boolean } | null>(null)
     const fitRefs = useRef(new Map<string, CanvasItemHandle>())
+    // DOM nodes of stack-view section cards, so the sidebar navigator can scroll
+    // one into view (canvas cards scroll via their CanvasItem handle in fitRefs).
+    const stackCardEls = useRef(new Map<string, HTMLElement>())
     const {
         sheet,
         characters,
@@ -602,6 +605,17 @@ function App() {
     const stackSections = [...stackVisible].sort(
         (a, b) => (pinned.has(a.id) ? 0 : 1) - (pinned.has(b.id) ? 0 : 1),
     )
+    // The sidebar section navigator lists the cards visible in the current view
+    // (ignoring the search filter so you can always jump to any card). Clicking a
+    // row scrolls that card into view and selects it.
+    const navSections = sheet.sections
+        .filter((s) => !inDrawer(s, view))
+        .map((s) => ({ id: s.id, title: s.title, accent: s.accent }))
+    const jumpToSection = (id: string) => {
+        handleSelect(id, false)
+        if (stackView) stackCardEls.current.get(id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        else fitRefs.current.get(id)?.scrollIntoView()
+    }
     // Sections tucked into the current view's drawer, plus their effective
     // scratch-pad positions (default-placing any that lack a saved spot).
     const drawerSections = sheet.sections.filter((s) => inDrawer(s, view))
@@ -693,6 +707,9 @@ function App() {
                 redoLabel={redoLabel}
                 query={query}
                 setQuery={setQuery}
+                navSections={navSections}
+                activeIds={selectedIds}
+                onJumpToSection={jumpToSection}
                 addSection={addSection}
                 addTemplateSection={addTemplateSection}
                 stackView={stackView}
@@ -777,6 +794,10 @@ function App() {
                             return (
                                 <div
                                     key={section.id}
+                                    ref={(el) => {
+                                        if (el) stackCardEls.current.set(section.id, el)
+                                        else stackCardEls.current.delete(section.id)
+                                    }}
                                     className="mb-4 break-inside-avoid"
                                     onDragOver={
                                         stackDragId

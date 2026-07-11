@@ -82,6 +82,7 @@ src/
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened from the ✎ popover's "More settings…"
     SectionQuickEdit.tsx   # the ✎ edit button: a non-blocking Popover for fast rename / accent colour / layout kind (+ "More settings…" opens the full editor)
+    SectionNav.tsx         # sidebar "Sections" navigator: collapsible list of the current view's cards; click a row to scroll it into view + select it; highlights the active (selected) card
     Popover.tsx            # lightweight, non-blocking floating panel anchored to a trigger (no backdrop/focus-trap); closes on outside click / Escape; used by SectionQuickEdit
     FormulaInput.tsx       # formula box with inline, section-grouped field autocomplete (completes the slug token at the caret)
     CanvasItem.tsx         # drag-to-move / drag-to-resize wrapper + handle bar

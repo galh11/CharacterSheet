@@ -3,6 +3,8 @@
  * RNG so every roll is deterministically testable.
  */
 
+import type { CritMode } from './characterSheet'
+
 /** A source of randomness in the half-open range [0, 1). Defaults to Math.random. */
 export type Rng = () => number
 
@@ -159,6 +161,27 @@ export const rollDamage = (
         .filter((p) => p.expr && p.expr.trim() !== '')
         .map((p) => ({ type: p.type, result: rollExpr(p.expr, rng) }))
     return { parts: rolled, total: rolled.reduce((sum, p) => sum + p.result.total, 0) }
+}
+
+/** Double each NdM dice count in an expression (RAW crit), leaving flat bonuses. */
+const doubleDice = (expr: string): string =>
+    expr.replace(/(\d*)d(\d+)/gi, (_, count: string, sides: string) => `${(count === '' ? 1 : Number(count)) * 2}d${sides}`)
+
+/**
+ * Transform a damage expression for a critical hit per the chosen crit mode.
+ * `double-dice` (RAW) doubles the dice counts; `max-plus-roll` keeps the normal
+ * dice and adds a flat bonus equal to their maximum (so you roll once and add
+ * the maximised dice). Flat modifiers are untouched either way. Callers pass an
+ * already-interpolated expression (no `{expr}` left).
+ */
+export const critDamage = (expr: string, mode: CritMode = 'double-dice'): string => {
+    if (!expr) return expr
+    if (mode === 'max-plus-roll') {
+        const maxExtra = parseRoll(expr).dice.reduce((sum, t) => sum + t.count * t.sides, 0)
+        if (maxExtra === 0) return expr
+        return maxExtra > 0 ? `${expr}+${maxExtra}` : `${expr}${maxExtra}`
+    }
+    return doubleDice(expr)
 }
 
 const signStr = (n: number): string => (n > 0 ? ` + ${n}` : n < 0 ? ` − ${Math.abs(n)}` : '')

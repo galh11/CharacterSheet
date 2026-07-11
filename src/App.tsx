@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
     createStarterSheet,
     slugify,
+    DEFAULT_CRIT_MODE,
     type SectionLayout,
 } from './model/characterSheet'
 import { resolveSheet, listReferences, listResourceReferences } from './model/compute'
@@ -13,6 +14,7 @@ import { SectionEditorModal } from './components/SectionEditorModal'
 import { HeaderToolbar } from './components/HeaderToolbar'
 import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { AboutModal } from './components/AboutModal'
+import { GameMechanicsModal } from './components/GameMechanicsModal'
 import { UpdateToast } from './components/UpdateToast'
 import { useToast } from './components/toastContext'
 import { RollLog } from './components/RollLog'
@@ -93,6 +95,7 @@ function App() {
     const [mobileNavOpen, setMobileNavOpen] = useState(false)
     const [showHitDice, setShowHitDice] = useState(false)
     const [showAbout, setShowAbout] = useState(false)
+    const [showMechanics, setShowMechanics] = useState(false)
     const toast = useToast()
     const appUpdate = useAppUpdate()
     const handleCheckUpdate = async () => {
@@ -150,6 +153,7 @@ function App() {
         replaceSheet,
         renameSheet,
         setPortrait,
+        setCritMode,
         updateSection,
         setSectionLayout,
         setSectionLayouts,
@@ -668,6 +672,7 @@ function App() {
             bonus={situational}
             bonusDie={bonusDie}
             repeat={repeat}
+            critMode={sheet.rules?.critMode ?? DEFAULT_CRIT_MODE}
             onRoll={pushRoll}
             onHeal={healHp}
             onSpend={spendResource}
@@ -754,6 +759,7 @@ function App() {
                 handleExportPng={handleExportPng}
                 handleCheckUpdate={handleCheckUpdate}
                 setShowAbout={setShowAbout}
+                setShowMechanics={setShowMechanics}
             />
 
             <div className="order-1 flex min-w-0 flex-1 flex-col gap-3 p-4 md:px-8">
@@ -1066,6 +1072,14 @@ function App() {
             })()}
 
             {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+
+            {showMechanics && (
+                <GameMechanicsModal
+                    critMode={sheet.rules?.critMode ?? DEFAULT_CRIT_MODE}
+                    onSetCritMode={setCritMode}
+                    onClose={() => setShowMechanics(false)}
+                />
+            )}
 
             {editingSection && (
                 <SectionEditorModal

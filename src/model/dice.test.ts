@@ -5,6 +5,7 @@ import {
     rollD20,
     rollD20Series,
     rollDamage,
+    critDamage,
     parseModifier,
     formatRoll,
     type Rng,
@@ -94,6 +95,34 @@ describe('rollDamage', () => {
     it('skips blank expressions', () => {
         const dmg = rollDamage([{ expr: '', type: 'fire' }, { expr: '1d4' }], max)
         expect(dmg.parts).toHaveLength(1)
+    })
+})
+
+describe('critDamage', () => {
+    it('doubles the dice but not the flat modifier in RAW mode', () => {
+        expect(critDamage('2d6+3', 'double-dice')).toBe('4d6+3')
+        expect(critDamage('1d10', 'double-dice')).toBe('2d10')
+        expect(critDamage('d8+1', 'double-dice')).toBe('2d8+1')
+    })
+
+    it('adds the maximised dice as a flat bonus in max-plus-roll mode', () => {
+        // 2d6 max = 12 -> keep the dice, add +12 on top of the existing +3.
+        expect(critDamage('2d6+3', 'max-plus-roll')).toBe('2d6+3+12')
+        expect(critDamage('1d10', 'max-plus-roll')).toBe('1d10+10')
+    })
+
+    it('max-plus-roll totals to max dice + a rolled set + the modifier', () => {
+        // 2d6+3 crit: 12 (maxed) + rolled 2d6 (min here = 2) + 3 = 17.
+        const r = rollExpr(critDamage('2d6+3', 'max-plus-roll'), min)
+        expect(r.total).toBe(12 + 2 + 3)
+    })
+
+    it('leaves a flat-only expression unchanged in max-plus-roll mode', () => {
+        expect(critDamage('5', 'max-plus-roll')).toBe('5')
+    })
+
+    it('defaults to RAW double-dice', () => {
+        expect(critDamage('2d6+3')).toBe('4d6+3')
     })
 })
 

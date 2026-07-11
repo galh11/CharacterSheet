@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
 import type { FormulaResult } from '../model/formula'
-import { slugify, type CharacterField, type CharacterSection, type EffectOp, type ActionToggle } from '../model/characterSheet'
+import { slugify, type CharacterField, type CharacterSection, type EffectOp, type ActionToggle, type CritMode } from '../model/characterSheet'
 import { interpolate, type Contribution, type EffectTag } from '../model/compute'
 import {
     rollD20,
     rollD20Series,
     rollExpr,
     rollDamage,
+    critDamage,
     parseModifier,
     formatRoll,
     type D20Mode,
@@ -46,6 +47,8 @@ interface SectionBodyProps {
     contributions?: Map<string, Contribution[]>
     /** Target slug -> annotation tags from relational effects. */
     effectTags?: Map<string, EffectTag[]>
+    /** How critical-hit damage is rolled (per-sheet house rule). */
+    critMode?: CritMode
 }
 
 const toNum = (v: string): number => {
@@ -54,9 +57,6 @@ const toNum = (v: string): number => {
 }
 const signed = (n: number): string => (n >= 0 ? `+${n}` : String(n))
 const abilityMod = (score: number): number => Math.floor((score - 10) / 2)
-/** Double each NdM dice count in an expression (crit hits), leaving flat bonuses. */
-const doubleDice = (expr: string): string =>
-    expr.replace(/(\d*)d(\d+)/gi, (_, count: string, sides: string) => `${(count === '' ? 1 : Number(count)) * 2}d${sides}`)
 
 /** Format a d20 series into a roll-log detail/total/crit (handles grouped rolls + bonus die). */
 const d20Detail = (series: D20Series, mod: number, sit: number, bonusDie: number, mode: D20Mode) => {
@@ -710,7 +710,7 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, 
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onToggleFlag, onTempHp, contributions, effectTags }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onToggleFlag, onTempHp, contributions, effectTags, critMode }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     /** A toggle is on either from its own `active` flag or, when it's bound to a
@@ -779,7 +779,7 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
     }
     const rollFieldDamage = (field: CharacterField, crit: boolean) => {
         const parts = effectiveParts(field).map((p) => ({
-            expr: crit ? doubleDice(val(p.expr)) : val(p.expr),
+            expr: crit ? critDamage(val(p.expr), critMode) : val(p.expr),
             type: p.type,
         }))
         const dmg = rollDamage(parts)
@@ -1064,7 +1064,7 @@ function SpellSlots({ section, onUpdateField }: SectionBodyProps) {
  *  Cast button spends the linked spell-slot resource (via `onSpend`) and logs the
  *  cast; a Damage button rolls the spell's damage dice. All numeric bits accept
  *  `{expr}` interpolation, so a save DC or damage can reference other fields. */
-function SpellCards({ section, scope, onRoll, onSpend, contributions, effectTags }: SectionBodyProps) {
+function SpellCards({ section, scope, onRoll, onSpend, contributions, effectTags, critMode }: SectionBodyProps) {
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     const cast = (field: CharacterField) => {
         const m = field.meta ?? {}
@@ -1080,7 +1080,7 @@ function SpellCards({ section, scope, onRoll, onSpend, contributions, effectTags
     const rollSpellDamage = (field: CharacterField, crit: boolean) => {
         const m = field.meta ?? {}
         if (!m.damage) return
-        const dmg = rollDamage([{ expr: crit ? doubleDice(val(m.damage)) : val(m.damage), type: m.type || '' }])
+        const dmg = rollDamage([{ expr: crit ? critDamage(val(m.damage), critMode) : val(m.damage), type: m.type || '' }])
         if (dmg.parts.length === 0) return
         const detail = dmg.parts.map((p) => `${p.result.total}${p.type ? ` ${p.type}` : ''}`).join(' + ')
         onRoll?.({ title: `${field.label} — damage${crit ? ' (crit)' : ''}`, detail, total: dmg.total, kind: 'damage' })

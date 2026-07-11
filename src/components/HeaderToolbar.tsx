@@ -77,6 +77,7 @@ interface HeaderToolbarProps {
     handleExportPng: () => void
     handleCheckUpdate: () => void
     setShowAbout: Dispatch<SetStateAction<boolean>>
+    setShowMechanics: Dispatch<SetStateAction<boolean>>
 }
 
 /** The right-hand vertical side nav (rail): profile, character switcher, history,
@@ -149,7 +150,7 @@ export function HeaderToolbar({
     handleExportPng,
     handleCheckUpdate,
     setShowAbout,
-}: HeaderToolbarProps) {
+    setShowMechanics,}: HeaderToolbarProps) {
     return (
         <>
             <button
@@ -519,6 +520,11 @@ export function HeaderToolbar({
                                     </MenuItem>
                                     <MenuItem onClick={() => { void handleShare(); close() }} title="Copy a shareable link that contains this whole sheet">
                                         Copy share link
+                                    </MenuItem>
+                                    <MenuDivider />
+                                    <MenuLabel>Settings</MenuLabel>
+                                    <MenuItem onClick={() => { setShowMechanics(true); close() }} title="Configure house rules like the critical-hit damage rule">
+                                        Game mechanics…
                                     </MenuItem>
                                     <MenuDivider />
                                     <MenuLabel>Export image</MenuLabel>

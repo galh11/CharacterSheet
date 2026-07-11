@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.22.0',
+        date: '2026-07-11',
+        summary: 'New “Game mechanics” pane (⋯ More → Settings) for table house rules: choose how critical hits roll damage — the default “double the dice”, or “max dice + a regular roll” — and the Crit buttons follow your choice.',
+    },
+    {
         version: '1.21.0',
         date: '2026-07-11',
         summary: 'Search upgrades: the box now shows a match count, press Enter to jump to the first match, matched titles are highlighted (and non-matches dimmed) in the Sections navigator, and the drawer list is filtered too.',

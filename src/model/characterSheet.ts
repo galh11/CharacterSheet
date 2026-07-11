@@ -309,11 +309,27 @@ const foldLegacyHidden = (input: unknown): unknown => {
 const foldLegacy = (input: unknown): unknown =>
     foldLegacyActionExtras(foldLegacyDeathSaves(foldLegacyHidden(input)))
 
+/** How a critical hit's damage is rolled. `double-dice` (RAW) rolls twice the
+ *  dice; `max-plus-roll` maximizes the normal dice and adds a rolled set on top
+ *  (a common house rule). Flat modifiers are added once either way. */
+export const critModeSchema = z.enum(['double-dice', 'max-plus-roll'])
+export type CritMode = z.infer<typeof critModeSchema>
+
+export const DEFAULT_CRIT_MODE: CritMode = 'double-dice'
+
+/** Per-sheet house-rule settings, edited in the "Game Mechanics" pane. */
+export const rulesSchema = z.object({
+    critMode: critModeSchema.default(DEFAULT_CRIT_MODE),
+})
+export type SheetRules = z.infer<typeof rulesSchema>
+
 const sheetObjectSchema = z.object({
     id: z.string().min(1),
     name: z.string(),
     /** Optional character portrait as an image data URL, shown in the top bar. */
     portrait: z.string().optional(),
+    /** Optional per-sheet house-rule settings (crit mode, …). */
+    rules: rulesSchema.optional(),
     sections: z.array(sectionSchema),
 })
 

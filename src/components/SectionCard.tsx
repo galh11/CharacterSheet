@@ -4,7 +4,7 @@ import type { Contribution, EffectTag } from '../model/compute'
 import type { D20Mode, RollLogEntry } from '../model/dice'
 import { SectionBody } from './SectionBody'
 import { SectionQuickEdit } from './SectionQuickEdit'
-import { type CharacterField, type CharacterSection } from '../model/characterSheet'
+import { type CharacterField, type CharacterSection, type CritMode } from '../model/characterSheet'
 
 interface SectionCardProps {
     section: CharacterSection
@@ -16,6 +16,7 @@ interface SectionCardProps {
     bonus?: number
     bonusDie?: number
     repeat?: number
+    critMode?: CritMode
     onRoll?: (entry: Omit<RollLogEntry, 'id'>) => void
     onHeal?: (amount: number) => void
     onSpend?: (slug: string, amount: number) => void
@@ -47,6 +48,7 @@ export function SectionCard({
     bonus,
     bonusDie,
     repeat,
+    critMode,
     onRoll,
     onHeal,
     onSpend,
@@ -129,6 +131,7 @@ export function SectionCard({
                         bonus={bonus}
                         bonusDie={bonusDie}
                         repeat={repeat}
+                        critMode={critMode}
                         onRoll={onRoll}
                         onHeal={onHeal}
                         onSpend={onSpend}

@@ -12,6 +12,8 @@ export interface CanvasItemHandle {
     measureHeight: () => number
     measureWidth: () => number
     measureHeightAtWidth: (w: number) => number
+    /** Scroll this card into view (used by the sidebar section navigator). */
+    scrollIntoView: () => void
 }
 
 interface CanvasItemProps {
@@ -203,7 +205,10 @@ export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, select
         return h
     }
 
-    useImperativeHandle(handleRef, () => ({ measureHeight, measureWidth, measureHeightAtWidth }))
+    const scrollIntoView = () =>
+        rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+
+    useImperativeHandle(handleRef, () => ({ measureHeight, measureWidth, measureHeightAtWidth, scrollIntoView }))
 
     const fitHeight = () => onLayoutCommit({ ...layout, h: measureHeight() })
     const fitWidth = () => onLayoutCommit({ ...layout, w: measureWidth() })

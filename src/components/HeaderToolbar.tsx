@@ -2,6 +2,7 @@ import { clsx } from 'clsx'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import type { CharacterSheet, CharacterSection } from '../model/characterSheet'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './Menu'
+import { SectionNav } from './SectionNav'
 import { SECTION_TEMPLATES, type SectionTemplate } from '../state/templates'
 import { exportSheetToFile } from '../state/transfer'
 import { listBackups } from '../state/backups'
@@ -42,6 +43,9 @@ interface HeaderToolbarProps {
     redoLabel: string | null
     query: string
     setQuery: Dispatch<SetStateAction<string>>
+    navSections: { id: string; title: string; accent?: string }[]
+    activeIds: Set<string>
+    onJumpToSection: (id: string) => void
     addSection: () => void
     addTemplateSection: (template: SectionTemplate) => void
     stackView: boolean
@@ -107,6 +111,9 @@ export function HeaderToolbar({
     redoLabel,
     query,
     setQuery,
+    navSections,
+    activeIds,
+    onJumpToSection,
     addSection,
     addTemplateSection,
     stackView,
@@ -366,6 +373,11 @@ export function HeaderToolbar({
                                 </button>
                             )}
                         </div>
+
+                        <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
+
+                        {/* Section navigator: jump to a card and highlight the active one. */}
+                        <SectionNav sections={navSections} activeIds={activeIds} onJump={onJumpToSection} />
 
                         <span className="my-1 h-px w-full bg-slate-700" aria-hidden="true" />
 

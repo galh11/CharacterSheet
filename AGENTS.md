@@ -74,7 +74,7 @@ src/
     Menu.tsx               # dropdown menu primitives (Menu / MenuItem / MenuDivider / MenuLabel)
     HitDiceModal.tsx       # spend hit dice on a short rest
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
-    Tooltip.tsx            # hover/focus description bubble
+    Tooltip.tsx            # hover/focus description bubble (portaled to body, fixed-positioned so it's never clipped by a card's overflow)
     UpdateToast.tsx        # "new version available" reload prompt (fed by useAppUpdate)
   test/
     setup.ts               # Vitest setup: jest-dom matchers + in-memory localStorage mock

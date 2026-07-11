@@ -7,7 +7,6 @@ import {
 } from './model/characterSheet'
 import { resolveSheet, listReferences, listResourceReferences } from './model/compute'
 import {
-    tidyLayouts,
     alignEdge,
     matchDimension,
     distribute as distributeLayout,
@@ -16,6 +15,7 @@ import {
     compactGrid,
     placeInGrid,
     toCell,
+    fromCell,
     type Placed,
     type AlignEdge,
 } from './model/layout'
@@ -499,48 +499,33 @@ function App() {
         setGridPreview(new Map(reflowed.map((p) => [p.id, p.layout])))
     }
 
-    /** Measure every card's natural content size (width clamped so text cards don't
-     *  blow out). Best run in play mode — edit mode renders bulky field editors.
-     *  Pass heightOnly to keep each card's current width (used by Tidy so it
-     *  preserves the column widths you set instead of re-narrowing every card). */
-    const fittedItems = (heightOnly = false): Placed[] =>
+    /** Fit every canvas card to its content on the grid: measure each card's
+     *  natural content width, snap it to a whole number of columns, then measure
+     *  its height AT that snapped width (so a narrowed card isn't cropped). Best
+     *  run in play mode — edit mode renders bulky field editors. */
+    const organizeItems = (m = grid): Placed[] =>
         sheet.sections
             .filter((s) => !inDrawer(s, 'canvas'))
             .map((s) => {
                 const handle = fitRefs.current.get(s.id)
-                const w = heightOnly
-                    ? s.layout.w
-                    : handle ? Math.min(340, handle.measureWidth()) : s.layout.w
-                const h = handle ? handle.measureHeight() : s.layout.h
+                if (!handle) return { id: s.id, layout: s.layout }
+                const cw = toCell({ x: 0, y: 0, w: handle.measureWidth(), h: 1 }, m).cw
+                const w = fromCell({ cx: 0, cy: 0, cw, ch: 1 }, m).w
+                const h = handle.measureHeightAtWidth(w)
                 return { id: s.id, layout: { ...s.layout, w, h } }
             })
 
-    const handleTidy = () => {
-        // Keep each card's width, fit its height, then snap + compact onto the
-        // column grid — closing gaps and aligning columns without reflowing a card
-        // out of its column.
-        setSectionLayouts(compactGrid(fittedItems(true), grid))
+    // The one “organize this” action: fit every card to its content and pack them
+    // into tidy columns — no overlaps, no gaps, no cropping. Idempotent.
+    const handleOrganize = () => {
+        setSectionLayouts(compactGrid(organizeItems(), grid))
     }
 
-    // Change the grid's column count (persisted) and re-pack the canvas onto it.
+    // Change the grid's column count (persisted) and re-organize onto the new grid.
     const changeGridCols = (n: number) => {
         setGridCols(n)
-        const items = sheet.sections
-            .filter((s) => !inDrawer(s, 'canvas'))
-            .map((s) => ({ id: s.id, layout: s.layout }))
-        setSectionLayouts(compactGrid(items, gridMetrics(n)))
-    }
-
-    const handleFitAll = () => {
-        // Resize each card to its content in place, keeping the current arrangement.
-        setSectionLayouts(fittedItems())
-    }
-
-    const handleFillWidth = () => {
-        // Fit each card to its content, then skyline-pack across the available
-        // window width so tiles spread out to the edges instead of stacking narrow.
-        const width = containerWidth || canvasScrollRef.current?.clientWidth || canvasSize.width
-        setSectionLayouts(tidyLayouts(fittedItems(), width))
+        const m = gridMetrics(n)
+        setSectionLayouts(compactGrid(organizeItems(m), m))
     }
 
     const hideSection = (id: string) => {
@@ -1207,19 +1192,13 @@ function App() {
                                         <>
                                             <MenuDivider />
                                             <MenuLabel>Canvas</MenuLabel>
-                                            <MenuItem onClick={() => { handleTidy(); close() }} title="Fit every card to its content and pack them into tidy columns">
-                                                Tidy up
+                                            <MenuItem onClick={() => { handleOrganize(); close() }} title="Fit every card to its content and pack them into tidy columns — no overlaps, no gaps">
+                                                Auto-arrange
                                             </MenuItem>
                                             <MenuItem onClick={() => { setFitWidth((v) => !v); close() }} title="Scale the whole canvas so its content fills the window width">
                                                 <span className="flex items-center gap-2">
                                                     <span className="w-3 text-cyan-300">{fitWidth ? '✓' : ''}</span>Fit to width
                                                 </span>
-                                            </MenuItem>
-                                            <MenuItem onClick={() => { handleFitAll(); close() }} title="Resize each card to its content, keeping its position">
-                                                Fit all to content
-                                            </MenuItem>
-                                            <MenuItem onClick={() => { handleFillWidth(); close() }} title="Fit cards to content and spread them across the full window width">
-                                                Spread across width
                                             </MenuItem>
                                             <MenuDivider />
                                             <MenuLabel>Grid columns</MenuLabel>

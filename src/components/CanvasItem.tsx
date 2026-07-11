@@ -11,6 +11,7 @@ export interface SnapGuide {
 export interface CanvasItemHandle {
     measureHeight: () => number
     measureWidth: () => number
+    measureHeightAtWidth: (w: number) => number
 }
 
 interface CanvasItemProps {
@@ -182,7 +183,26 @@ export function CanvasItem({ layout, siblings, grid, scale = 1, zoom = 1, select
         return w
     }
 
-    useImperativeHandle(handleRef, () => ({ measureHeight, measureWidth }))
+    /** Measure the content's natural height at a specific width, so a card fitted
+     *  to a narrower grid column isn't cropped (height depends on width). */
+    const measureHeightAtWidth = (w: number): number => {
+        const root = rootRef.current
+        const content = contentRef.current
+        if (!root || !content) return layout.h
+        const prh = root.style.height
+        const prw = root.style.width
+        const pch = content.style.height
+        root.style.width = `${w}px`
+        root.style.height = 'auto'
+        content.style.height = 'auto'
+        const h = Math.max(MIN_H, Math.round(root.offsetHeight) + 2)
+        root.style.height = prh
+        root.style.width = prw
+        content.style.height = pch
+        return h
+    }
+
+    useImperativeHandle(handleRef, () => ({ measureHeight, measureWidth, measureHeightAtWidth }))
 
     const fitHeight = () => onLayoutCommit({ ...layout, h: measureHeight() })
     const fitWidth = () => onLayoutCommit({ ...layout, w: measureWidth() })

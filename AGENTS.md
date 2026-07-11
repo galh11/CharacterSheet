@@ -214,8 +214,9 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   one), **Zoom** (Compact 80% / Normal 100% / Comfortable 120%, ✓-marked — a
   persisted whole-sheet CSS-`zoom` preset; disabled in canvas view while **Fit to
   width** overrides it), the canvas-only layout
-  tools (Tidy up, Fit to width, Fit all to content, Spread across width, Save
-  this layout…, Apply saved layout), and Open/Close drawer (with its tucked-card
+  tools (**Auto-arrange** — fit every card to its content and pack it into tidy
+  columns — plus Fit to width, Save this layout…, Apply saved layout), and
+  Open/Close drawer (with its tucked-card
   count). Keep the `Character name` input's aria-label and the **+ Section**
   button's exact label — the e2e specs query them.
 - **Save / load**: a sheet is portable as JSON via `state/transfer.ts`
@@ -262,18 +263,23 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   snapped layout to `App.onGridDrag`, which runs the same `placeInGrid` into
   `gridPreview` and re-renders the *other* cards at their reflowed spots (they
   slide out of the way via a short CSS transition; the dragged card tracks the
-  cursor). **Tidy** (`App.handleTidy`) fits each card's height then
-  `compactGrid`s (full upward compaction). The **column count** is a persisted
+  cursor). **Auto-arrange** (`App.handleOrganize` → `App.organizeItems`) is the
+  single layout button: for each card it measures the natural content width, snaps
+  it to whole columns, then measures the height **at that snapped width** (via
+  `CanvasItem.measureHeightAtWidth`, so a narrowed card is never cropped) and
+  `compactGrid`s — no overlaps, no gaps, idempotent. (It replaced the three
+  conflicting Tidy / Fit-all / Spread buttons that fought each other.) The
+  **column count** is a persisted
   per-user preference (`character-sheet:grid-cols`, one of **6 / 8 / 12**, chosen
   under **View ▾ → Grid columns**); `App` builds `grid = gridMetrics(gridCols)`
   and `App.changeGridCols` re-packs the canvas (`compactGrid`) onto the new grid.
   While a card is being dragged, faint **column guides** (one strip per column,
   from `grid`) render behind the cards so you can see where they'll snap. The
   canvas div is at least `gridWidth(grid)` wide so all columns are reachable.
-  (Existing pixel sheets keep their stored positions until the first drag/Tidy
-  snaps them onto the grid.) Other `layout.ts` helpers handle
-  alignment/distribution; `compactLayouts`/`tidyLayouts` remain for **Spread
-  across width** (`layout.tidyLayouts`, the reflow-everything skyline pack).
+  (Existing pixel sheets keep their stored positions until the first
+  drag/Auto-arrange snaps them onto the grid.) Other `layout.ts` helpers handle
+  alignment/distribution (`compactLayouts`/`tidyLayouts` are retained legacy
+  packers, no longer surfaced in the UI).
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the
   viewport (a non-moving click clears the selection). **Fit to width** scales the
   whole canvas so its content fills the current window width edge-to-edge: it
@@ -283,9 +289,8 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   it's on, the whole app drops its `max-w-7xl` cap so `main` spans the **full
   viewport** (otherwise the fill would stop at 1280px on wide screens). It can
   up-scale narrow sheets too (clamped 0.3–3×) and adapts to window resize /
-  browser page zoom via the container's `clientWidth`. **Spread across
-  width** (`layout.tidyLayouts`) fits cards to content then skyline-packs them
-  across the measured window width. A section's per-view `drawer` flags (zod
+  browser page zoom via the container's `clientWidth`. A section's per-view
+  `drawer` flags (zod
   schema: `{ canvas?, stack? }`) tuck it into that view's **drawer** — an
   independent, free-canvas scratch-pad — so tucking a card in the canvas doesn't
   affect the stack, and vice-versa (the legacy shared `hidden` boolean migrates

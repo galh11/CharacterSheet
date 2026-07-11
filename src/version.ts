@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.12.0',
+        date: '2026-07-11',
+        summary: 'Replaced the three conflicting layout buttons (Tidy up / Fit all to content / Spread across width) with one “Auto-arrange” that fits every card to its content and packs them into tidy columns — no overlaps, no cropping, and pressing it again never changes anything.',
+    },
+    {
         version: '1.11.0',
         date: '2026-07-11',
         summary: 'Moved the top toolbar into a right-hand sidebar so the canvas gets the full height of the window. Collapse the tools with the ▴ toggle, or open it as a hamburger overlay on small screens.',

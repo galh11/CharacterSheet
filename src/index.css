@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Live width of the right-hand side nav (overwritten in px by App from the
+   persisted, drag-resizable width). Default 16rem = the historical w-64 rail. */
+:root {
+    --sidebar-w: 16rem;
+}
+
 html,
 body,
 #root {

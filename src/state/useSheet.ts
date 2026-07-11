@@ -367,6 +367,53 @@ export const useSheet = () => {
         [commit],
     )
 
+    /**
+     * Apply `amount` of (plain, untyped) damage to the HP tracker: temp HP
+     * absorbs first, Current HP floors at 0, and taking a hit while already at 0
+     * records a death-save failure. Type-based resist/vuln math stays in the HP
+     * card's own control; this is the quick sidebar/back-end damage path.
+     */
+    const damageHp = useCallback(
+        (amount: number) => {
+            if (amount <= 0) return
+            commit((c) => ({
+                ...c,
+                sections: c.sections.map((section) => {
+                    const cur = section.fields.find((f) => f.label.toLowerCase() === 'current hp')
+                    if (!cur) return section
+                    const temp = section.fields.find((f) => f.label.toLowerCase() === 'temp hp')
+                    const curN = Number(cur.value) || 0
+                    const tempN = temp ? Number(temp.value) || 0 : 0
+                    let dmg = amount
+                    let nextTemp = tempN
+                    if (temp && tempN > 0) {
+                        const absorbed = Math.min(tempN, dmg)
+                        nextTemp = tempN - absorbed
+                        dmg -= absorbed
+                    }
+                    const nextCur = Math.max(0, curN - dmg)
+                    const failN = Number(section.meta?.deathFailures) || 0
+                    const meta =
+                        curN <= 0 && failN < 3
+                            ? { ...section.meta, deathFailures: String(Math.min(3, failN + 1)) }
+                            : section.meta
+                    return {
+                        ...section,
+                        meta,
+                        fields: section.fields.map((f) =>
+                            f.id === cur.id
+                                ? { ...f, value: String(nextCur) }
+                                : temp && f.id === temp.id
+                                  ? { ...f, value: String(nextTemp) }
+                                  : f,
+                        ),
+                    }
+                }),
+            }))
+        },
+        [commit],
+    )
+
     /** Spend `amount` from the first resource/counter field whose slug matches. */
     const spendResource = useCallback(
         (slug: string, amount = 1) => {
@@ -565,6 +612,7 @@ export const useSheet = () => {
         moveSection,
         rest,
         healHp,
+        damageHp,
         spendResource,
         toggleField,
         restoreResource,

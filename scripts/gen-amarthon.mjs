@@ -99,7 +99,7 @@ S('Ability Scores', 'abilities', [
 
 // 2. Combat — AC, initiative, speed, passives, and spellcasting derived numbers.
 S('Combat', 'default', [
-    F('AC', 'computed', '12 + dex_mod + 2', { description: 'Studded Leather (base 12) + DEX mod + Shield (+2). Barkskin sets a floor of 16.' }),
+    F('AC', 'computed', 'max(barkskin * 16, 12 + dex_mod)', { description: 'Studded Leather (base 12) + DEX mod; the Shield’s +2 comes from the Shield item’s effect, and Barkskin floors the armor AC to 16 while active.' }),
     F('Initiative', 'computed', 'dex_mod'),
     F('Speed', 'number', 30),
     F('Passive Perception', 'computed', '10 + wis_mod + proficiency', { description: 'Proficient in Perception.' }),
@@ -141,7 +141,7 @@ S('Skills', 'skills', [
     skill('Intimidation', 'CHA', 'none'),
     skill('Investigation', 'INT', 'none'),
     skill('Medicine', 'WIS', 'none'),
-    skill('Nature', 'INT', 'proficient', { description: 'Magician: add your WIS mod (+4) to Arcana and Nature checks.' }),
+    skill('Nature', 'INT', 'proficient'),
     skill('Perception', 'WIS', 'proficient'),
     skill('Performance', 'CHA', 'none'),
     skill('Persuasion', 'CHA', 'none'),
@@ -251,7 +251,13 @@ S('Prepared Spells', 'default', [
 // 13. Features & traits (Druid 8 + Circle of the Moon + feats).
 S('Features & Traits', 'actions', [
     F('Druidic', 'text', '', { description: 'You know Druidic, the secret language of druids, and can leave hidden messages. You automatically spot such messages and can decipher them.' }),
-    F('Primal Order — Magician', 'text', '', { description: 'You know one extra Druid cantrip (Poison Spray). Add your WIS mod (min +1) to your Intelligence (Arcana or Nature) checks.' }),
+    F('Primal Order — Magician', 'text', '', {
+        description: 'You know one extra Druid cantrip (Poison Spray). Add your WIS mod (min +1) to your Intelligence (Arcana or Nature) checks.',
+        effects: [
+            { target: 'arcana', op: 'add', value: 'wis_mod' },
+            { target: 'nature', op: 'add', value: 'wis_mod' },
+        ],
+    }),
     F('Wild Shape (3/rest)', 'text', '', { description: 'Bonus Action: transform into a known Beast form (max CR 1, no Fly Speed until — from level 8 you may take a form with a Fly Speed). Lasts hours = half your level. 3 uses at level 8; regain one on a Short Rest, all on a Long Rest.' }),
     F('Wild Companion', 'text', '', { description: 'Magic action: expend a spell slot or a Wild Shape use to cast Find Familiar without Materials; the familiar is Fey and lasts until your next Long Rest.' }),
     F('Circle Forms', 'text', '', { description: 'Circle of the Moon: while in Wild Shape you can use a Magic action to expend a spell slot and regain 1d8 HP per slot level; your beast forms may have higher CR. (See the subclass table for the CR cap.)' }),
@@ -276,7 +282,11 @@ S('Resources', 'default', [
 S('Conditions', 'conditions', [
     F('Wild Shaped', 'boolean', 'false', { description: 'Currently in a Beast form.' }),
     F('Concentrating', 'boolean', 'false', { description: 'War Caster: Advantage on CON saves to keep Concentration.' }),
-    F('Barkskin', 'boolean', 'false', { description: 'AC floor 16 while active.' }),
+    F('Barkskin', 'boolean', 'false', { description: 'AC floor 16 while active (the AC formula reads this).' }),
+    F('Lantern Lit', 'boolean', 'false', {
+        description: 'Whale-Oil Lantern lit: Advantage on sight Perception in snow/fog/freezing rain.',
+        effects: [{ target: 'perception', op: 'advantage', value: 'lit lantern in snow/fog' }],
+    }),
     F('Bloodied', 'boolean', 'false', { description: 'At or below half HP (33). Auto-set by the HP tracker.' }),
     F('Prone', 'boolean', 'false'),
     F('Grappled', 'boolean', 'false'),
@@ -299,18 +309,34 @@ S('Inventory', 'inventory', [
     F('GP', 'number', 346, { meta: { coin: 'gp' } }),
     F('SP', 'number', 0, { meta: { coin: 'sp' } }),
     F('CP', 'number', 0, { meta: { coin: 'cp' } }),
-    F('Ring of Quick Recovery', 'text', 'worn', { description: 'Adventurer’s Ring: when you regain hit points, regain an additional 3 (once per turn). Also sheds a cold, fuel-free flame (Bright Light 20 ft).' }),
-    F('Amulet — Beast Whisper', 'text', 'worn', { description: 'Holy-symbol amulet: Advantage on Wisdom (Animal Handling) checks.' }),
+    F('Ring of Quick Recovery', 'text', 'worn', {
+        description: 'Adventurer’s Ring: when you regain hit points, regain an additional 3 (once per turn). Also sheds a cold, fuel-free flame (Bright Light 20 ft).',
+        effects: [{ target: 'hp', op: 'note', value: 'When you regain HP, regain +3 more (1/turn)' }],
+    }),
+    F('Amulet — Beast Whisper', 'text', 'worn', {
+        description: 'Holy-symbol amulet: Advantage on Wisdom (Animal Handling) checks.',
+        effects: [{ target: 'animal_handling', op: 'advantage', value: 'with beasts' }],
+    }),
     F('Quarterstaff — True Strike Echo', 'text', 'equipped', { description: '1/Long Rest, gain Advantage on one attack roll.' }),
     F('Spell Scroll — Fire Ball ×2', 'text', 'carried', { description: 'Scroll casts Fire Ball (8d6). Save DC 13 / attack +5.' }),
     F('Spell Scroll — Counterspell ×2', 'text', 'carried'),
     F('Spell Scroll — Slow ×2', 'text', 'carried'),
     F('Potion of Healing (Greater) ×3', 'text', 'carried', { description: 'Regain 4d4 + 4 HP.' }),
     F('Potion of Healing (Superior) ×4', 'text', 'carried', { description: 'Regain 8d4 + 8 HP.' }),
-    F('Deep North Expedition Cloak', 'text', 'worn', { description: 'Resistance to environmental cold damage; Advantage on Survival checks to navigate/track/avoid getting lost in arctic terrain.' }),
-    F('Storm Hood of Kaldweave', 'text', 'worn', { description: 'See through nonmagical blowing snow/fog/freezing rain; ranged attacks against you in such conditions take −2 to hit.' }),
-    F('Whale-Oil Lantern Kit', 'text', 'carried', { description: 'Flame can’t be extinguished by nonmagical wind/snow/rain; Advantage on sight Perception in snow/fog/freezing rain while lit.' }),
-    F('Studded Leather (worn), Shield (worn)', 'text', 'equipped'),
+    F('Deep North Expedition Cloak', 'text', 'worn', {
+        description: 'Resistance to environmental cold damage; Advantage on Survival checks to navigate/track/avoid getting lost in arctic terrain.',
+        effects: [
+            { target: 'defenses', op: 'resist', value: 'cold' },
+            { target: 'survival', op: 'advantage', value: 'arctic terrain' },
+        ],
+    }),
+    F('Storm Hood of Kaldweave', 'text', 'worn', {
+        description: 'See through nonmagical blowing snow/fog/freezing rain; ranged attacks against you in such conditions take −2 to hit.',
+        effects: [{ target: 'ac', op: 'note', value: 'Ranged attacks vs you take −2 in snow/fog/freezing rain' }],
+    }),
+    F('Whale-Oil Lantern Kit', 'text', 'carried', { description: 'Flame can’t be extinguished by nonmagical wind/snow/rain; while lit, Advantage on sight Perception in snow/fog/freezing rain — toggle “Lantern Lit” to apply it.' }),
+    F('Studded Leather', 'text', 'worn', { description: 'Light armor — base AC 12 + DEX mod.' }),
+    F('Shield', 'text', 'worn', { description: '+2 AC.', effects: [{ target: 'ac', op: 'add', value: '2' }] }),
     F('Longbow + Arrows ×20', 'text', 'equipped'),
     F('Leather Armor (spare), Sickle', 'text', 'carried'),
     F('Staff (arcane focus), Component Pouch', 'text', 'carried'),

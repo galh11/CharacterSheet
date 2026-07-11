@@ -141,13 +141,20 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   the legacy single-sheet key `character-sheet:v1` is migrated in on load.
 - **Computed fields** reference other fields by slugified label. `compute.ts`
   `resolveSheet` folds them over a numeric scope across multiple passes and also
-  applies **relational effects**: a field's `effects` (add/sub/set, or typed tags
-  like advantage/resist plus a freeform reason in `value`) contribute to a target
-  slug, returning `contributions` and `tags` for bidirectional attribution in the
-  UI. `EffectTargetBadges` renders those tags — abbreviation, reason, and granting
+  applies **relational effects**: a field's `effects` (add/sub/set/min/max, or
+  typed tags like advantage/resist plus a freeform reason in `value`) contribute
+  to a target slug, returning `contributions` and `tags` for bidirectional
+  attribution in the UI. Numeric ops fold in this order per slug: `set` (override)
+  or the natural value, then `add`/`sub`, then the value is clamped by any `min`
+  (a floor — the highest wins) and `max` (a cap — the lowest wins). So a Barkskin
+  boolean can carry `min ac 16` to floor AC at 16 while active (no more baking
+  `max(barkskin*16, …)` into the AC formula), and a shield's `add 2` still
+  composes on top before the floor. `EffectTargetBadges` renders those tags —
+  abbreviation, reason, and granting
   source inline — next to the target across **default lists, abilities, skills,
   saves, and actions** (e.g. "ADV to end grappled · Grappler" beside Athletics),
-  while `FieldGrantChips` shows the reverse (what the source grants, and on what).
+  and shows `min`/`max` as a `≥N`/`≤N` chip, while `FieldGrantChips` shows the
+  reverse (what the source grants, and on what).
   A **numeric** effect (add/sub) granted to a **skill/save** slug also folds into
   that row's auto-calculated modifier (`SkillRows.skillMod`), so e.g. Primal Order
   Magician's +wis_mod to Arcana reaches the roll — not just the badge.

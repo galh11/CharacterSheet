@@ -21,13 +21,16 @@ export const fieldTypeSchema = z.enum([
 ])
 export type FieldType = z.infer<typeof fieldTypeSchema>
 
-/** How an effect changes its target. `add`/`sub`/`set` are numeric and fold into
- *  the compute scope; the rest are annotation-only tags (advantage, resistances,
- *  or a freeform note) surfaced next to the target without touching arithmetic. */
+/** How an effect changes its target. `add`/`sub`/`set`/`min`/`max` are numeric
+ *  and fold into the compute scope (`min` raises the target to a floor, `max`
+ *  caps it); the rest are annotation-only tags (advantage, resistances, or a
+ *  freeform note) surfaced next to the target without touching arithmetic. */
 export const effectOpSchema = z.enum([
     'add',
     'sub',
     'set',
+    'min',
+    'max',
     'advantage',
     'disadvantage',
     'resist',
@@ -37,7 +40,7 @@ export const effectOpSchema = z.enum([
 ])
 export type EffectOp = z.infer<typeof effectOpSchema>
 
-export const NUMERIC_EFFECT_OPS: readonly EffectOp[] = ['add', 'sub', 'set']
+export const NUMERIC_EFFECT_OPS: readonly EffectOp[] = ['add', 'sub', 'set', 'min', 'max']
 
 /** A modifier one field grants to another, addressed by the target's slug. */
 export const effectSchema = z.object({

@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.26.0',
+        date: '2026-07-11',
+        summary: 'Relational effects gain two new ops — “at least” (a floor) and “at most” (a cap) — so an item or spell can, e.g., set a minimum AC (Barkskin) or cap a speed, with a ≥N/≤N badge on the target. Add them in a field’s “Grants effects” editor.',
+    },
+    {
         version: '1.25.0',
         date: '2026-07-11',
         summary: 'The side nav now carries a D&D-Beyond-style core-stats panel — ability modifiers, interactive HP (damage/heal/temp), AC, Initiative (roll), Proficiency, Speed and Inspiration — read live from your sheet. The portrait is bigger and sizeable (S/M/L), the rail is drag-resizable (double-click to reset), and a ⚙ popover chooses which stats show; turning HP or Abilities on tucks its canvas card away since the sidebar is now its home.',

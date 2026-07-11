@@ -105,6 +105,59 @@ describe('resolveSheet effects', () => {
         expect(resolveSheet(sheet).results.get(save.id)?.value).toBe(4)
     })
 
+    it('raises a computed target to a floor with a min effect and attributes it', () => {
+        const ac = createField({ label: 'AC', type: 'computed', value: '13' })
+        const barkskin = createField({
+            label: 'Barkskin',
+            type: 'boolean',
+            value: 'false',
+            effects: [{ target: 'ac', op: 'min', value: '16' }],
+        })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [createSection(0, { fields: [ac, barkskin] })],
+        }
+        // Off: the floor is inactive, so AC stays at its natural 13.
+        expect(resolveSheet(sheet).results.get(ac.id)?.value).toBe(13)
+        barkskin.value = 'true'
+        const { results, contributions } = resolveSheet(sheet)
+        expect(results.get(ac.id)?.value).toBe(16)
+        expect(contributions.get('ac')?.[0]).toMatchObject({ op: 'min', amount: 16, sourceLabel: 'Barkskin' })
+    })
+
+    it('does not lower a value already above a min floor', () => {
+        const ac = createField({ label: 'AC', type: 'computed', value: '18' })
+        const barkskin = createField({
+            label: 'Barkskin',
+            type: 'boolean',
+            value: 'true',
+            effects: [{ target: 'ac', op: 'min', value: '16' }],
+        })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [createSection(0, { fields: [ac, barkskin] })],
+        }
+        expect(resolveSheet(sheet).results.get(ac.id)?.value).toBe(18)
+    })
+
+    it('caps a computed target with a max effect', () => {
+        const speed = createField({ label: 'Speed', type: 'computed', value: '40' })
+        const slow = createField({
+            label: 'Slowed',
+            type: 'boolean',
+            value: 'true',
+            effects: [{ target: 'speed', op: 'max', value: '30' }],
+        })
+        const sheet: CharacterSheet = {
+            id: 's',
+            name: 'T',
+            sections: [createSection(0, { fields: [speed, slow] })],
+        }
+        expect(resolveSheet(sheet).results.get(speed.id)?.value).toBe(30)
+    })
+
     it('collects non-numeric effects as tags', () => {
         const save = createField({ label: 'DEX Save', type: 'computed', value: '1' })
         const spell = createField({

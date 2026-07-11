@@ -104,21 +104,22 @@ S('Movement & Physique', 'default', [
     F('Climb Speed', 'computed', 'speed', { description: 'Athlete: equal to your Speed.' }),
     F('Long Jump', 'computed', 'str', { description: 'Feet, with only a 5 ft run-up (Athlete).' }),
     F('High Jump', 'computed', '3 + str_mod', { description: 'Feet, with only a 5 ft run-up (Athlete).' }),
-    F('Carrying Capacity', 'computed', 'str * 15 * 2', { description: 'lb — Powerful Build counts you as one size larger.' }),
+        F('Carrying Capacity', 'computed', 'str * 15', { description: 'lb. Powerful Build doubles this (it counts you as one size larger) — the doubling is granted by the Powerful Build trait.' }),
     F('Carried Weight', 'number', 0, { description: 'Total weight you are carrying (lb).' }),
     F('Load %', 'computed', 'floor(carried_weight / carrying_capacity * 100)', { description: 'Of carrying capacity. You are encumbered past 100%.' }),
 ], '#10b981')
 
-// 4. Hit points + the flat damage reduction from the reinforced armor. The
-// hit-dice pool lives here (tagged meta.die) and is spent via the Hit Dice
-// popup rather than a section of its own; the HP widget doesn't render it.
+// 4. Hit points. The Reinforced Studded Leather's flat physical-damage
+// reduction is authored as a `note` effect ON THAT ARMOR ITEM (see Inventory)
+// and surfaces here via the HP tracker, so the benefit stays attached to its
+// source. The hit-dice pool lives here (tagged meta.die) and is spent via the
+// Hit Dice popup rather than a section of its own; the HP widget doesn't render it.
 S('Hit Points', 'hp', [
     F('Current HP', 'number', 76),
     F('Max HP', 'number', 76),
     F('Temp HP', 'number', 0),
-    F('Damage Reduction', 'number', 3, { description: 'Reinforced Studded Leather: reduce every hit taken by 3.' }),
     F('Concentration', 'boolean', 'false', { description: 'Toggle on when concentrating. Taking damage prompts a CON save (DC = half the damage, minimum 10).' }),
-    F('Resistances', 'text', '', { description: 'Comma-separated damage types halved on the Damage button. Add bludgeoning, piercing, slashing while Dig Deep is active.' }),
+    F('Resistances', 'text', '', { description: 'Comma-separated damage types halved on the Damage button (manual override). Dig Deep adds bludgeoning/piercing/slashing automatically while active; the Reinforced Studded Leather’s flat −3 to physical damage shows here as a reminder note.' }),
     F('Vulnerabilities', 'text', '', { description: 'Comma-separated damage types doubled on the Damage button.' }),
     F('Hit Dice (d10)', 'resource', 8, { max: 8, meta: { die: 'd10', recharge: 'long' } }),
 ], '#10b981')
@@ -262,7 +263,10 @@ S('Features & Traits', 'actions', [
     F('Meat Shield (Squared Circle)', 'text', '', { description: 'While grappling: Half Cover vs others. Reaction + 1 Moxie: redirect a creature’s miss onto a creature you are Grappling.' }),
     F('Giant Ancestry — Hill’s Tumble', 'text', '', { description: 'On a hit that damages a Large-or-smaller creature: knock it Prone. Uses = proficiency (3) per Long Rest.' }),
     F('Large Form (1/Long)', 'text', '', { description: 'Bonus Action: become Large for 10 min — Advantage on STR checks, +10 ft Speed.' }),
-    F('Powerful Build', 'text', '', { description: 'Advantage on checks to end the Grappled condition; count as one size larger for carrying capacity.' }),
+    F('Powerful Build', 'text', '', {
+        description: 'Advantage on checks to end the Grappled condition; count as one size larger for carrying capacity.',
+        effects: [{ target: 'carrying_capacity', op: 'set', value: 'str * 15 * 2' }],
+    }),
     F('Lucky (feat)', 'text', '', { description: 'Spend a Luck Point for Advantage, or impose Disadvantage on an attack against you (3/Long).' }),
     F('Athlete (feat)', 'text', '', { description: 'Climb Speed = Speed; stand from Prone with 5 ft; run-up jumps after 5 ft.' }),
 ])
@@ -284,8 +288,18 @@ S('Resources', 'default', [
 S('Buffs & States', 'conditions', [
     F('Flame Tongue', 'boolean', 'false', { description: 'Handaxe ignited (Bonus Action): sheds Bright Light 40 ft and its attack adds +2d6 fire. Toggle it here, from the 🔥 button on the Handaxe attack, or the Ignite Flame Tongue bonus action — all stay in sync.' }),
     F('Down But Not Out', 'boolean', 'false', { description: 'While active, your Unarmed/Pugilist-weapon damage gains +CON mod + exhaustion levels (auto-added to attack damage).' }),
-    F('Large Form', 'boolean', 'false', { description: 'Large: advantage on STR checks, +10 ft Speed.' }),
-    F('Dig Deep', 'boolean', 'false', { description: 'Resistance to B/P/S; ignore exhaustion < 6. Add b/p/s to HP Resistances while active.' }),
+    F('Large Form', 'boolean', 'false', {
+        description: 'Large: advantage on STR checks, +10 ft Speed.',
+        effects: [{ target: 'speed', op: 'add', value: '10' }],
+    }),
+    F('Dig Deep', 'boolean', 'false', {
+        description: 'Resistance to Bludgeoning/Piercing/Slashing; ignore exhaustion < 6.',
+        effects: [
+            { target: 'defenses', op: 'resist', value: 'bludgeoning' },
+            { target: 'defenses', op: 'resist', value: 'piercing' },
+            { target: 'defenses', op: 'resist', value: 'slashing' },
+        ],
+    }),
     F('Grappling', 'boolean', 'false', { description: 'Compression Lock hits grappled foes each turn.' }),
 ], '#f97316')
 
@@ -320,8 +334,14 @@ S('Inventory', 'inventory', [
     F('Bone Marks', 'number', 108, { description: 'Homebrew currency.', meta: { coin: 'bones' } }),
     F('GP', 'number', 0, { meta: { coin: 'gp' } }),
     F('Flame Tongue Handaxe', 'text', 'equipped', { description: '+2d6 fire while ablaze (Bonus Action to ignite). Sheds Bright Light 40 ft.' }),
-    F('Reinforced Studded Leather', 'text', 'worn', { description: 'Reduce all damage taken by 3 (applied in the HP tracker).' }),
-    F('Dark Adaptation Helmet', 'text', 'worn', { description: 'Grants Darkvision 15 ft.' }),
+    F('Reinforced Studded Leather', 'text', 'worn', {
+        description: 'Reduce physical (bludgeoning/piercing/slashing) damage you take by 3. Shown as a reminder note on the HP tracker; unequip (toggle its effect off) to drop it.',
+        effects: [{ target: 'damage_reduction', op: 'note', value: 'Physical damage taken reduced by 3' }],
+    }),
+    F('Dark Adaptation Helmet', 'text', 'worn', {
+        description: 'Grants Darkvision 15 ft.',
+        effects: [{ target: 'darkvision', op: 'note', value: 'Darkvision 15 ft' }],
+    }),
     F('Snow-Shell Boots', 'text', 'worn', { description: 'Snow/ice isn’t difficult terrain; Advantage on checks/saves vs slipping, falling Prone, or forced movement on ice.' }),
     F('Layered Cold Cloak', 'text', 'worn', { description: 'Advantage on saves vs extreme cold; on gaining cold Exhaustion, roll d6 — on a 6 you don’t gain it.' }),
     F('Horizon Society Salvage Harness', 'text', 'worn', { description: 'Carrying capacity doubled; 1/Long Rest, negate a level of Exhaustion from travel, marching, climbing, or environment.' }),

@@ -245,7 +245,7 @@ const TAG_META: Record<string, { abbr: string; cls: string; title: string }> = {
 }
 
 const OP_LABEL: Record<EffectOp, string> = {
-    add: '+', sub: '−', set: '=',
+    add: '+', sub: '−', set: '=', min: '≥', max: '≤',
     advantage: 'advantage', disadvantage: 'disadvantage', resist: 'resist',
     immune: 'immune to', vulnerable: 'vulnerable to', note: 'note',
 }
@@ -260,10 +260,11 @@ function EffectTargetBadges({ slug, contributions, tags }: {
     const contribs = contributions?.get(slug) ?? []
     const tagList = tags?.get(slug) ?? []
     if (contribs.length === 0 && tagList.length === 0) return null
-    const net = contribs.filter((c) => c.op !== 'set').reduce((sum, c) => sum + c.amount, 0)
+    const net = contribs.filter((c) => c.op === 'add' || c.op === 'sub').reduce((sum, c) => sum + c.amount, 0)
     const hasSet = contribs.some((c) => c.op === 'set')
+    const clamps = contribs.filter((c) => c.op === 'min' || c.op === 'max')
     const numTitle = contribs
-        .map((c) => `${c.op === 'set' ? '=' : signed(c.amount)} from ${c.sourceLabel}`)
+        .map((c) => `${c.op === 'set' ? '=' : c.op === 'min' ? '≥' : c.op === 'max' ? '≤' : signed(c.amount)} from ${c.sourceLabel}`)
         .join('\n')
     return (
         <span className="ml-1 inline-flex flex-wrap items-center gap-1 align-middle">
@@ -275,6 +276,15 @@ function EffectTargetBadges({ slug, contributions, tags }: {
                     {hasSet ? '±' : signed(net)}
                 </span>
             )}
+            {clamps.map((c, i) => (
+                <span
+                    key={`clamp-${c.sourceId}-${i}`}
+                    className="rounded bg-sky-500/20 px-1 text-[10px] font-semibold text-sky-200 ring-1 ring-sky-500/40"
+                    title={`${c.op === 'min' ? 'at least' : 'at most'} ${c.amount} — from ${c.sourceLabel}`}
+                >
+                    {c.op === 'min' ? '≥' : '≤'}{c.amount}
+                </span>
+            ))}
             {tagList.map((t, i) => {
                 const meta = TAG_META[t.op] ?? TAG_META.note
                 return (
@@ -301,7 +311,7 @@ function FieldGrantChips({ field }: { field: CharacterField }) {
     return (
         <div className={clsx('mt-0.5 flex flex-wrap gap-1', !active && 'opacity-40')}>
             {effects.map((e, i) => {
-                const numeric = e.op === 'add' || e.op === 'sub' || e.op === 'set'
+                const numeric = e.op === 'add' || e.op === 'sub' || e.op === 'set' || e.op === 'min' || e.op === 'max'
                 const label = numeric
                     ? `${OP_LABEL[e.op]}${e.value || '0'} ${e.target}`
                     : `${OP_LABEL[e.op]} ${e.target}${e.value ? `: ${e.value}` : ''}`.trim()

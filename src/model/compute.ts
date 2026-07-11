@@ -154,6 +154,8 @@ export const resolveSheet = (sheet: CharacterSheet): ResolvedSheet => {
         const contrib = new Map<string, Contribution[]>()
         const adds: Record<string, number> = {}
         const setVal: Record<string, number> = {}
+        const minVal: Record<string, number> = {}
+        const maxVal: Record<string, number> = {}
 
         for (const source of sources) {
             for (const effect of source.effects ?? []) {
@@ -162,15 +164,25 @@ export const resolveSheet = (sheet: CharacterSheet): ResolvedSheet => {
                 const amt = r.ok && r.value !== null ? r.value : 0
                 const signedAmt = effect.op === 'sub' ? -amt : amt
                 if (effect.op === 'set') setVal[effect.target] = amt
+                else if (effect.op === 'min') minVal[effect.target] = Math.max(minVal[effect.target] ?? -Infinity, amt)
+                else if (effect.op === 'max') maxVal[effect.target] = Math.min(maxVal[effect.target] ?? Infinity, amt)
                 else adds[effect.target] = (adds[effect.target] ?? 0) + signedAmt
                 pushMap(contrib, effect.target, {
                     sourceId: source.id,
                     sourceLabel: source.label,
                     op: effect.op,
-                    amount: effect.op === 'set' ? amt : signedAmt,
+                    amount: effect.op === 'set' || effect.op === 'min' || effect.op === 'max' ? amt : signedAmt,
                     value: effect.value,
                 })
             }
+        }
+
+        // Clamp a folded value to any min (floor) / max (cap) effects on its slug.
+        const clamp = (slug: string, value: number): number => {
+            let v = value
+            if (slug in minVal) v = Math.max(v, minVal[slug])
+            if (slug in maxVal) v = Math.min(v, maxVal[slug])
+            return v
         }
 
         // Computed fields: evaluate the formula, then fold in contributions.
@@ -178,7 +190,7 @@ export const resolveSheet = (sheet: CharacterSheet): ResolvedSheet => {
             const base = evaluateFormula(field.value, scope)
             const slug = slugify(field.label)
             if (base.ok && base.value !== null) {
-                const effective = (slug in setVal ? setVal[slug] : base.value) + (slug in adds ? adds[slug] : 0)
+                const effective = clamp(slug, (slug in setVal ? setVal[slug] : base.value) + (slug in adds ? adds[slug] : 0))
                 results.set(field.id, { ...base, value: effective })
                 if (slug && scope[slug] !== effective) {
                     scope[slug] = effective
@@ -190,10 +202,10 @@ export const resolveSheet = (sheet: CharacterSheet): ResolvedSheet => {
         }
 
         // Number/boolean and virtual (field-less) targets.
-        for (const target of new Set([...Object.keys(adds), ...Object.keys(setVal)])) {
+        for (const target of new Set([...Object.keys(adds), ...Object.keys(setVal), ...Object.keys(minVal), ...Object.keys(maxVal)])) {
             if (computedSlugs.has(target)) continue
             const base = target in setVal ? setVal[target] : (raw[target] ?? 0)
-            const effective = base + (target in adds ? adds[target] : 0)
+            const effective = clamp(target, base + (target in adds ? adds[target] : 0))
             if (scope[target] !== effective) {
                 scope[target] = effective
                 changed = true

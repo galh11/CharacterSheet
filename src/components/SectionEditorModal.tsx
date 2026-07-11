@@ -60,6 +60,8 @@ const EFFECT_OPS: { value: EffectOp; label: string }[] = [
     { value: 'add', label: '+ add' },
     { value: 'sub', label: '− subtract' },
     { value: 'set', label: '= set to' },
+    { value: 'min', label: '≥ at least (floor)' },
+    { value: 'max', label: '≤ at most (cap)' },
     { value: 'advantage', label: 'advantage' },
     { value: 'disadvantage', label: 'disadvantage' },
     { value: 'resist', label: 'resistance' },
@@ -68,7 +70,7 @@ const EFFECT_OPS: { value: EffectOp; label: string }[] = [
     { value: 'note', label: 'note' },
 ]
 
-const isNumericOp = (op: EffectOp): boolean => op === 'add' || op === 'sub' || op === 'set'
+const isNumericOp = (op: EffectOp): boolean => op === 'add' || op === 'sub' || op === 'set' || op === 'min' || op === 'max'
 
 /** Editor for the modifiers a field grants to other fields. Numeric effects fold
  *  into the target's value; the rest are annotation tags shown by the target. */

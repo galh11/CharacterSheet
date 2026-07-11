@@ -26,6 +26,15 @@ import { getActiveId } from './state/roster'
 import { pushBackup, restoreBackup } from './state/backups'
 import { useSheet } from './state/useSheet'
 import { usePersistentState, boolCodec, type Codec } from './state/usePersistentState'
+import {
+    SIDEBAR_DEFAULT_W,
+    sidebarWidthCodec,
+    portraitSizeCodec,
+    sidebarStatsCodec,
+    DEFAULT_SIDEBAR_STATS,
+    type PortraitSize,
+    type SidebarStatsPrefs,
+} from './state/sidebarPrefs'
 import { useRollLog } from './state/useRollLog'
 import { useSelection } from './state/useSelection'
 import { usePresets } from './state/usePresets'
@@ -119,6 +128,11 @@ function App() {
     const [fitWidth, setFitWidth] = usePersistentState('character-sheet:fit-width', false, boolCodec)
     const [density, setDensity] = usePersistentState<Density>('character-sheet:density', 'normal', densityCodec)
     const [gridCols, setGridCols] = usePersistentState('character-sheet:grid-cols', 12, gridColsCodec)
+    // Drag-resizable side-nav width + configurable portrait size + which DDB-style
+    // core stats surface in the sidebar (all per-user global prefs).
+    const [sidebarWidth, setSidebarWidth] = usePersistentState('character-sheet:sidebar-width', SIDEBAR_DEFAULT_W, sidebarWidthCodec)
+    const [portraitSize, setPortraitSize] = usePersistentState<PortraitSize>('character-sheet:portrait-size', 'md', portraitSizeCodec)
+    const [sidebarStats, setSidebarStats] = usePersistentState<SidebarStatsPrefs>('character-sheet:sidebar-stats', DEFAULT_SIDEBAR_STATS, sidebarStatsCodec)
     const [query, setQuery] = useState('')
     const [theme, setTheme] = useState<string>(() => {
         try {
@@ -167,6 +181,7 @@ function App() {
         moveSection,
         rest,
         healHp,
+        damageHp,
         spendResource,
         toggleField,
         restoreResource,
@@ -277,6 +292,12 @@ function App() {
             /* ignore */
         }
     }, [theme, activeId])
+
+    // Publish the side-nav width as a CSS var so anything anchored beside the rail
+    // (e.g. the floating RollLog) can offset itself by the live, draggable width.
+    useEffect(() => {
+        document.documentElement.style.setProperty('--sidebar-w', `${sidebarWidth}px`)
+    }, [sidebarWidth])
 
     // Periodic local version history (throttled internally to ~1/min).
     useEffect(() => {
@@ -390,6 +411,12 @@ function App() {
                 value: inspirationField.field.value === 'true' ? 'false' : 'true',
             })
         }
+    }
+
+    // Roll initiative (d20 + the sidebar's resolved modifier) and log it.
+    const rollInitiative = (mod: number) => {
+        const r = rollExpr(`1d20 + ${mod}`)
+        pushRoll({ title: 'Initiative', detail: formatRoll(r), total: r.total, kind: 'check' })
     }
 
     const handleImport = async (file: File | undefined) => {
@@ -604,8 +631,14 @@ function App() {
             (f) => f.label.toLowerCase().includes(q) || (f.description ?? '').toLowerCase().includes(q),
         )
     }
-    const canvasSections = sheet.sections.filter((s) => !inDrawer(s, 'canvas') && matchesQuery(s))
-    const stackVisible = sheet.sections.filter((s) => !inDrawer(s, 'stack') && matchesQuery(s))
+    // A core stat surfaced in the sidebar is the default home for its section, so
+    // its matching canvas/stack card is hidden (whole-section kinds only: HP and
+    // Abilities). Toggling the stat off in the sidebar returns the card.
+    const hiddenByStat = (s: (typeof sheet.sections)[number]) =>
+        (sidebarStats.hp && s.kind === 'hp') || (sidebarStats.abilities && s.kind === 'abilities')
+
+    const canvasSections = sheet.sections.filter((s) => !hiddenByStat(s) && !inDrawer(s, 'canvas') && matchesQuery(s))
+    const stackVisible = sheet.sections.filter((s) => !hiddenByStat(s) && !inDrawer(s, 'stack') && matchesQuery(s))
     const stackSections = [...stackVisible].sort(
         (a, b) => (pinned.has(a.id) ? 0 : 1) - (pinned.has(b.id) ? 0 : 1),
     )
@@ -613,7 +646,7 @@ function App() {
     // (ignoring the search filter so you can always jump to any card). Clicking a
     // row scrolls that card into view and selects it.
     const navSections = sheet.sections
-        .filter((s) => !inDrawer(s, view))
+        .filter((s) => !hiddenByStat(s) && !inDrawer(s, view))
         .map((s) => ({ id: s.id, title: s.title, accent: s.accent }))
     const jumpToSection = (id: string) => {
         handleSelect(id, false)
@@ -625,7 +658,7 @@ function App() {
     // rows dim; matched title text is highlighted.
     const queryActive = query.trim().length > 0
     const navMatchIds = new Set(
-        sheet.sections.filter((s) => !inDrawer(s, view) && matchesQuery(s)).map((s) => s.id),
+        sheet.sections.filter((s) => !hiddenByStat(s) && !inDrawer(s, view) && matchesQuery(s)).map((s) => s.id),
     )
     const jumpToFirstMatch = () => {
         if (!queryActive) return
@@ -635,7 +668,7 @@ function App() {
     // Sections tucked into the current view's drawer, plus their effective
     // scratch-pad positions (default-placing any that lack a saved spot). The
     // drawer list respects the search filter too.
-    const drawerSections = sheet.sections.filter((s) => inDrawer(s, view) && matchesQuery(s))
+    const drawerSections = sheet.sections.filter((s) => !hiddenByStat(s) && inDrawer(s, view) && matchesQuery(s))
     const showDrawerTab = drawerSections.length > 0 || draggingId != null
     // A drawer card being dragged straddles out over the canvas, so the scratch-pad
     // must not clip it while that drag is in progress.
@@ -700,6 +733,8 @@ function App() {
                 setMobileNavOpen={setMobileNavOpen}
                 sidebarCollapsed={sidebarCollapsed}
                 setSidebarCollapsed={setSidebarCollapsed}
+                sidebarWidth={sidebarWidth}
+                setSidebarWidth={setSidebarWidth}
                 portraitRef={portraitRef}
                 sheet={sheet}
                 setPortrait={setPortrait}
@@ -707,6 +742,15 @@ function App() {
                 renameSheet={renameSheet}
                 inspirationField={inspirationField}
                 toggleInspiration={toggleInspiration}
+                portraitSize={portraitSize}
+                setPortraitSize={setPortraitSize}
+                sidebarStats={sidebarStats}
+                setSidebarStats={setSidebarStats}
+                scope={scope}
+                onDamageHp={damageHp}
+                onHealHp={healHp}
+                onTempHp={applyTempHp}
+                onRollInitiative={rollInitiative}
                 startShortRest={startShortRest}
                 doRest={doRest}
                 activeId={activeId}

@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.25.0',
+        date: '2026-07-11',
+        summary: 'The side nav now carries a D&D-Beyond-style core-stats panel — ability modifiers, interactive HP (damage/heal/temp), AC, Initiative (roll), Proficiency, Speed and Inspiration — read live from your sheet. The portrait is bigger and sizeable (S/M/L), the rail is drag-resizable (double-click to reset), and a ⚙ popover chooses which stats show; turning HP or Abilities on tucks its canvas card away since the sidebar is now its home.',
+    },
+    {
         version: '1.24.0',
         date: '2026-07-11',
         summary: 'Initiative modifiers are now formulas: an initiative row’s bonus can reference ability mods, proficiency, and relational effects (e.g. dex_mod + 2) instead of a frozen number, so buffs and level changes flow into the roll. Existing plain “+2” modifiers keep working.',

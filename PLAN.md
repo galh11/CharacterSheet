@@ -229,6 +229,24 @@ D&D extras
       section list (`useSheet.moveSection`, undoable). Pinned cards still float to
       the top.
 
+### Phase R — Sidebar core stats + resizable rail  [x]
+- [x] **Core-stats panel** (`components/SidebarStats.tsx`): a D&D-Beyond-style set
+      of stats at the top of the rail — ability modifiers, interactive HP
+      (damage/heal/temp via `useSheet.damageHp`/`healHp`/`applyTempHp`), AC,
+      Initiative (roll → log), Proficiency, Speed and the Inspiration toggle —
+      read live from the resolved compute `scope` by conventional slug.
+- [x] **Hybrid visibility**: which stats show is a per-user pref
+      (`character-sheet:sidebar-stats`) toggled in a ⚙ `Popover`; a stat with no
+      matching slug simply doesn't render.
+- [x] **Sidebar is the home**: enabling the section-backed HP / Abilities stats
+      hides their canvas/stack card (`App.hiddenByStat`); toggling off restores it.
+- [x] **Configurable portrait**: bigger avatar with S/M/L presets
+      (`character-sheet:portrait-size`) chosen in the same ⚙ popover.
+- [x] **Drag-resizable rail**: a `col-resize` handle on the rail's left edge sets
+      a persisted width (`character-sheet:sidebar-width`), double-click resets, and
+      the live width is published as the `--sidebar-w` CSS var (used by the rail
+      and the floating RollLog offset).
+
 ## Notes
 
 - Keep changes scoped per phase; commit at each phase boundary.

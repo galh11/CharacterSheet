@@ -1,8 +1,17 @@
 import { clsx } from 'clsx'
-import type { Dispatch, RefObject, SetStateAction } from 'react'
+import { useRef, type Dispatch, type PointerEvent as ReactPointerEvent, type RefObject, type SetStateAction } from 'react'
 import type { CharacterSheet, CharacterSection } from '../model/characterSheet'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './Menu'
 import { SectionNav } from './SectionNav'
+import { SidebarStats } from './SidebarStats'
+import {
+    PORTRAIT_SIZE_CLASSES,
+    SIDEBAR_DEFAULT_W,
+    SIDEBAR_MAX_W,
+    SIDEBAR_MIN_W,
+    type PortraitSize,
+    type SidebarStatsPrefs,
+} from '../state/sidebarPrefs'
 import { SECTION_TEMPLATES, type SectionTemplate } from '../state/templates'
 import { exportSheetToFile } from '../state/transfer'
 import { listBackups } from '../state/backups'
@@ -18,6 +27,8 @@ interface HeaderToolbarProps {
     setMobileNavOpen: Dispatch<SetStateAction<boolean>>
     sidebarCollapsed: boolean
     setSidebarCollapsed: Dispatch<SetStateAction<boolean>>
+    sidebarWidth: number
+    setSidebarWidth: Dispatch<SetStateAction<number>>
     portraitRef: RefObject<HTMLInputElement | null>
     sheet: CharacterSheet
     setPortrait: (portrait?: string) => void
@@ -25,6 +36,15 @@ interface HeaderToolbarProps {
     renameSheet: (name: string) => void
     inspirationField: { field: { value: string } } | null
     toggleInspiration: () => void
+    portraitSize: PortraitSize
+    setPortraitSize: Dispatch<SetStateAction<PortraitSize>>
+    sidebarStats: SidebarStatsPrefs
+    setSidebarStats: Dispatch<SetStateAction<SidebarStatsPrefs>>
+    scope: Record<string, number>
+    onDamageHp: (amount: number) => void
+    onHealHp: (amount: number) => void
+    onTempHp: (amount: number) => void
+    onRollInitiative: (mod: number) => void
     startShortRest: () => void
     doRest: (kind: 'short' | 'long') => void
     activeId: string
@@ -91,6 +111,8 @@ export function HeaderToolbar({
     setMobileNavOpen,
     sidebarCollapsed,
     setSidebarCollapsed,
+    sidebarWidth,
+    setSidebarWidth,
     portraitRef,
     sheet,
     setPortrait,
@@ -98,6 +120,15 @@ export function HeaderToolbar({
     renameSheet,
     inspirationField,
     toggleInspiration,
+    portraitSize,
+    setPortraitSize,
+    sidebarStats,
+    setSidebarStats,
+    scope,
+    onDamageHp,
+    onHealHp,
+    onTempHp,
+    onRollInitiative,
     startShortRest,
     doRest,
     activeId,
@@ -151,6 +182,26 @@ export function HeaderToolbar({
     handleCheckUpdate,
     setShowAbout,
     setShowMechanics,}: HeaderToolbarProps) {
+    // Drag the rail's left edge to resize it (it sits on the right, so dragging
+    // left widens it); double-click resets to the default width.
+    const resizeRef = useRef<{ startX: number; startW: number } | null>(null)
+    const onResizeDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+        resizeRef.current = { startX: event.clientX, startW: sidebarWidth }
+        event.currentTarget.setPointerCapture(event.pointerId)
+        event.preventDefault()
+    }
+    const onResizeMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (!resizeRef.current) return
+        const dx = event.clientX - resizeRef.current.startX
+        const next = Math.min(SIDEBAR_MAX_W, Math.max(SIDEBAR_MIN_W, resizeRef.current.startW - dx))
+        setSidebarWidth(next)
+    }
+    const onResizeUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+        if (!resizeRef.current) return
+        resizeRef.current = null
+        event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    const portraitClasses = PORTRAIT_SIZE_CLASSES[portraitSize]
     return (
         <>
             <button
@@ -171,18 +222,32 @@ export function HeaderToolbar({
             )}
             <header
                 className={clsx(
-                    'order-2 flex flex-col gap-2 overflow-y-auto border-l-2 bg-slate-950/85 p-3 backdrop-blur print:hidden',
-                    'md:sticky md:top-0 md:h-screen md:max-h-screen md:self-start md:z-30 md:w-64',
+                    'relative order-2 flex flex-col gap-2 overflow-y-auto border-l-2 bg-slate-950/85 p-3 backdrop-blur print:hidden',
+                    'md:sticky md:top-0 md:h-screen md:max-h-screen md:self-start md:z-30 md:w-[var(--sidebar-w)]',
                     mobileNavOpen ? 'fixed inset-y-0 right-0 z-50 flex w-72 shadow-2xl' : 'hidden md:flex',
                 )}
                 style={{ borderLeftColor: theme }}
             >
+                <div
+                    role="separator"
+                    aria-label="Resize sidebar"
+                    aria-orientation="vertical"
+                    onPointerDown={onResizeDown}
+                    onPointerMove={onResizeMove}
+                    onPointerUp={onResizeUp}
+                    onDoubleClick={() => setSidebarWidth(SIDEBAR_DEFAULT_W)}
+                    title="Drag to resize · double-click to reset"
+                    className="absolute inset-y-0 left-0 z-40 hidden w-1.5 cursor-col-resize touch-none hover:bg-slate-600/40 md:block"
+                />
                 <div className="flex flex-col items-stretch gap-2">
                     <div className="group relative shrink-0 self-center">
                         <button
                             type="button"
                             onClick={() => portraitRef.current?.click()}
-                            className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 bg-slate-900 text-slate-500 hover:text-slate-200"
+                            className={clsx(
+                                'flex items-center justify-center overflow-hidden rounded-full border-2 bg-slate-900 text-slate-500 hover:text-slate-200',
+                                portraitClasses.avatar,
+                            )}
                             style={{ borderColor: theme }}
                             aria-label={sheet.portrait ? 'Change character portrait' : 'Add character portrait'}
                             title={sheet.portrait ? 'Change portrait' : 'Add a character portrait'}
@@ -190,7 +255,7 @@ export function HeaderToolbar({
                             {sheet.portrait ? (
                                 <img src={sheet.portrait} alt="Character portrait" className="h-full w-full object-cover" />
                             ) : (
-                                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" className={portraitClasses.icon} fill="currentColor" aria-hidden="true">
                                     <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
                                 </svg>
                             )}
@@ -224,21 +289,22 @@ export function HeaderToolbar({
                         title="Click to rename this character"
                         className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1 text-xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
                     />
-                    {inspirationField && (
-                        <button
-                            type="button"
-                            onClick={toggleInspiration}
-                            className={clsx(
-                                'rounded-md border px-2.5 py-1.5 text-sm font-medium',
-                                inspirationField.field.value === 'true'
-                                    ? 'border-amber-400 bg-amber-400/20 text-amber-200'
-                                    : 'border-slate-600 text-slate-400 hover:bg-slate-800',
-                            )}
-                            title="Toggle Inspiration"
-                        >
-                            ★ Insp.
-                        </button>
-                    )}
+                    <SidebarStats
+                        scope={scope}
+                        sheet={sheet}
+                        stats={sidebarStats}
+                        setStats={setSidebarStats}
+                        portraitSize={portraitSize}
+                        setPortraitSize={setPortraitSize}
+                        theme={theme}
+                        hasInspiration={!!inspirationField}
+                        inspirationOn={inspirationField?.field.value === 'true'}
+                        toggleInspiration={toggleInspiration}
+                        onDamage={onDamageHp}
+                        onHeal={onHealHp}
+                        onTempHp={onTempHp}
+                        onRollInitiative={onRollInitiative}
+                    />
                     <Menu label="Rest ▾" title="Take a short or long rest" align="right" className="w-full text-left">
                         {(close) => (
                             <>

@@ -74,10 +74,12 @@ src/
     useSelection.ts        # canvas multi-select + align / match-size / distribute over the selection
     usePresets.ts          # named canvas layout presets (save/apply a snapshot of every card's position)
     usePersistentState.ts  # useState mirrored to localStorage (persisted UI prefs: fit-width, density, grid cols, sidebar)
+    sidebarPrefs.ts        # per-user sidebar prefs: draggable width + portrait-size (S/M/L) + core-stat visibility codecs/consts + scope-value helpers (pickScope/fmtSigned)
     useCanvasGridLayout.ts # dashboard grid geometry + zoom + drop/reflow/auto-arrange handlers (extracted from App)
     useDrawerDrag.ts       # drawer + canvas card drag/tuck/restore state + handlers; exports inDrawer (extracted from App)
   components/
-    HeaderToolbar.tsx      # the right-hand side nav (rail): profile/portrait, character switcher, undo/redo, search, add + View/⋯ More menus, theme swatch, plus the narrow-width hamburger + overlay (extracted from App.tsx)
+    HeaderToolbar.tsx      # the right-hand side nav (rail): profile/portrait, the SidebarStats core-stats panel, character switcher, undo/redo, search, add + View/⋯ More menus, theme swatch, plus the drag-to-resize left edge (double-click resets) and the narrow-width hamburger + overlay (extracted from App.tsx)
+    SidebarStats.tsx       # D&D-Beyond-style core-stats panel in the rail: ability mods, interactive HP (damage/heal/temp), AC, Initiative (roll), Proficiency, Speed, Inspiration — read live from the resolved scope; a ⚙ Popover toggles which stats show + picks portrait size
     SectionCard.tsx        # section frame: header, ✎ edit button, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges
     SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened from the ✎ popover's "More settings…"
@@ -243,14 +245,40 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
 - **Portrait**: the sheet carries an optional `portrait` (an image data URL) set
   via `useSheet.setPortrait`. The side nav shows it as a circular avatar above
   the name (D&D-Beyond style); clicking it uploads/replaces an image (downscaled
-  to 256px JPEG by `App.readImageAsDataUrl`), and a hover ✕ removes it.
+  to 256px JPEG by `App.readImageAsDataUrl`), and a hover ✕ removes it. Its
+  rendered size is a per-user **S/M/L** preset (`character-sheet:portrait-size`,
+  default M) chosen in the SidebarStats ⚙ settings popover (`PORTRAIT_SIZE_CLASSES`
+  in `state/sidebarPrefs.ts`).
+- **Sidebar core stats**: `components/SidebarStats.tsx` renders a D&D-Beyond-style
+  "top bar" set of stats at the top of the rail (below the name): the six ability
+  **modifiers** (`str_mod`…`cha_mod`), an interactive **HP** control
+  (damage/heal/temp via `useSheet.damageHp`/`healHp`/`applyTempHp`), **AC**
+  (`ac`/`armor_class`), **Initiative** (a roll button → d20 + mod → roll log),
+  **Proficiency** (`proficiency`/`proficiency_bonus`/`prof`), **Speed**
+  (`speed`/`walking_speed`) and the **Inspiration** toggle (moved here from the
+  profile block). Values are read live from the resolved compute `scope` by
+  conventional slug (a badge is hidden if its slug is absent — hybrid auto-detect).
+  Which stats show is a per-user global pref (`character-sheet:sidebar-stats`, a
+  JSON `Record<StatKey,boolean>` in `state/sidebarPrefs.ts`, all on by default),
+  toggled — alongside the portrait size — in a ⚙ `Popover` on the panel. Because the
+  sidebar is the default home for the two **section-backed** stats, `App`'s
+  `hiddenByStat` filter removes the `hp` and `abilities` sections from the
+  canvas/stack/nav while those stats are enabled (toggling the stat off returns
+  the card); the field-backed badges (AC/init/prof/speed) are additive reads and
+  do **not** hide their source field's card.
 - **Side nav**: the app's persistent controls live in a **right-hand vertical
-  sidebar** (`<header>` styled as a rail; `md:sticky md:top-0 md:h-screen md:w-64`)
-  so the canvas reclaims the full top of the window (vertical space is the scarce
-  axis on landscape monitors). `App` renders it as the `order-2` flex child of a
+  sidebar** (`<header>` styled as a rail; `md:sticky md:top-0 md:h-screen`, width
+  `md:w-[var(--sidebar-w)]`) so the canvas reclaims the full top of the window
+  (vertical space is the scarce axis on landscape monitors). The rail width is
+  **drag-resizable** via a `col-resize` handle on its left edge (double-click
+  resets to the default), persisted per-user (`character-sheet:sidebar-width`,
+  clamped by `sidebarPrefs.ts`) and published as the `--sidebar-w` CSS var (set on
+  `document.documentElement` from `App`) so anything anchored beside the rail can
+  offset by the live width. `App` renders it as the `order-2` flex child of a
   `flex` `<main>`; the canvas/modals sit in an `order-1 flex-1` content column to
   its left. Top-to-bottom it mirrors the video's sidebar anatomy: **profile**
-  (portrait avatar, editable name, ★ Inspiration, **Rest ▾**, the ✓ Autosaved
+  (portrait avatar, editable name, the **SidebarStats** core-stats panel incl.
+  ★ Inspiration, **Rest ▾**, the ✓ Autosaved
   indicator + a ▴/▾ collapse toggle), then a **tools** group separated by thin
   horizontal rules — **Character** (switcher `<select>` + **Character ▾**),
   **history** (undo/redo), a **search** box with an inline magnifier icon (it
@@ -265,8 +293,8 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   profile; on narrow (`< md`) widths the rail is hidden and a fixed **≡ hamburger**
   opens it as a right-side overlay (with a backdrop, dismissed by a ✕/tap).
   Dropdown `Menu`s open `align="right"` and auto-nudge back on-screen. The
-  floating `RollLog` default anchor shifts left of the rail (`md:right-[17rem]`)
-  so they don't overlap. **View ▾** consolidates what used to be a row of
+  floating `RollLog` default anchor shifts left of the rail
+  (`md:right-[calc(var(--sidebar-w)_+_1rem)]`) so they don't overlap at any width. **View ▾** consolidates what used to be a row of
   standalone buttons: the Canvas/Stack view mode (with a ✓ on the active
   one), **Zoom** (Compact 80% / Normal 100% / Comfortable 120%, ✓-marked — a
   persisted whole-sheet CSS-`zoom` preset; disabled in canvas view while **Fit to

@@ -56,9 +56,16 @@ one hover away.
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
 - **Side-nav dashboard** — all persistent controls live in a collapsible
   right-hand sidebar so the canvas keeps the full height of the window; it folds
-  to a hamburger overlay on narrow screens.
+  to a hamburger overlay on narrow screens. Drag its left edge to resize it
+  (double-click to reset).
+- **Sidebar core stats** — a D&D-Beyond-style panel at the top of the rail shows
+  your ability modifiers, interactive HP (damage / heal / temp), AC, initiative
+  (with a roll button), proficiency, speed and inspiration — read live from your
+  sheet. A ⚙ popover chooses which stats appear; turning HP or Abilities on makes
+  the sidebar their home and tucks the matching canvas card away.
 - **Character portrait** — add a D&D-Beyond-style circular avatar in the side nav;
-  click to upload or replace an image (auto-downscaled), hover to remove it.
+  click to upload or replace an image (auto-downscaled), hover to remove it, and
+  size it S / M / L from the sidebar-stats ⚙ popover.
 - **Persistence & portability** — autosaves to a versioned `localStorage` schema
   (with migration) and keeps a **roster** of multiple characters; export/import
   the whole sheet as JSON, or share it via a link. Installable as an offline PWA.

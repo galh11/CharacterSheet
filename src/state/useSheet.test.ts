@@ -306,6 +306,17 @@ describe('useSheet', () => {
         expect(fieldVal(result.current, 'hp')).toBe('20')
     })
 
+    it('damageHp absorbs temp HP first, then reduces current HP, flooring at 0', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.replaceSheet(restSheet()))
+        act(() => result.current.damageHp(4))
+        expect(fieldVal(result.current, 'tmp')).toBe('1') // 5 temp absorbs 4
+        expect(fieldVal(result.current, 'hp')).toBe('3') // current untouched
+        act(() => result.current.damageHp(4))
+        expect(fieldVal(result.current, 'tmp')).toBe('0') // last 1 temp absorbed
+        expect(fieldVal(result.current, 'hp')).toBe('0') // remaining 3 floors at 0
+    })
+
     const recoverySheet = () => ({
         id: 's',
         name: 'T',

@@ -96,7 +96,7 @@ S('Combat', 'default', [
     F('Speed', 'number', 35, { description: 'Climb 35 ft (Athlete). +10 ft while in Large Form.' }),
     F('Passive Perception', 'computed', '10 + wis_mod'),
     F('Grapple / Shove DC', 'computed', '8 + str_mod + proficiency', { description: 'Targets make a STR or DEX save vs this DC. Inescapable (1 Moxie) imposes Disadvantage.' }),
-    F('Proficiency', 'number', 3, { description: 'Proficiency bonus (level 8). Used by attacks, saves and skills.' }),
+    F('Proficiency', 'computed', 'floor((level - 1) / 4) + 2', { description: 'Proficiency bonus, derived from your level. Used by attacks, saves and skills.' }),
 ], '#ef4444')
 
 // 3b. Movement & physique (all derived from Strength / Athlete / Powerful Build).
@@ -224,8 +224,8 @@ S('Bonus Actions', 'actions', [
         meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie' },
     }),
     F('Brace Up', 'text', '', {
-        description: 'Temp HP = fisticuffs die + level(8) + CON mod. Costs 1 Moxie.',
-        meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie', temp: '1d10 + {8 + con_mod}' },
+        description: 'Temp HP = fisticuffs die + level + CON mod. Costs 1 Moxie.',
+        meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie', temp: '1d10 + {level + con_mod}' },
     }),
     F('Large Form', 'text', '', {
         description: 'Become Large 10 min: advantage on STR checks, +10 ft Speed.',
@@ -241,7 +241,7 @@ S('Bonus Actions', 'actions', [
 S('Reactions', 'actions', [
     F('Bloodied But Unbowed', 'text', '', {
         description: 'When you take damage: regain all Moxie. If Bloodied, gain Temp HP = 4 × level. Once per Short/Long Rest.',
-        meta: { cost: '1', costField: 'bloodied_but_unbowed', costLabel: 'use', temp: '{4 * 8}' },
+        meta: { cost: '1', costField: 'bloodied_but_unbowed', costLabel: 'use', temp: '{4 * level}' },
     }),
     F('Meat Shield', 'text', '', {
         description: 'When a creature misses you, force it to reroll against a creature you are Grappling. Costs 1 Moxie.',
@@ -305,7 +305,7 @@ S('Buffs & States', 'conditions', [
 
 // 15. Conditions & states.
 S('Conditions', 'conditions', [
-    F('Bloodied', 'boolean', 'false', { description: 'At or below half HP (38). Auto-set by the HP tracker.' }),
+    F('Bloodied', 'boolean', 'false', { description: 'At or below half your Max HP. Auto-set by the HP tracker.' }),
     F('Prone', 'boolean', 'false'),
     F('Grappled', 'boolean', 'false'),
     F('Frightened', 'boolean', 'false'),

@@ -22,6 +22,7 @@ import { HitDiceModal, type HitDieEntry } from './components/HitDiceModal'
 import { AboutModal } from './components/AboutModal'
 import { UpdateToast } from './components/UpdateToast'
 import { RollLog } from './components/RollLog'
+import { EmptyCanvas } from './components/EmptyCanvas'
 import { Menu, MenuItem, MenuDivider, MenuLabel } from './components/Menu'
 import { APP_VERSION } from './version'
 import { useAppUpdate } from './state/useAppUpdate'
@@ -1250,7 +1251,9 @@ function App() {
                     </div>
                 )}
 
-                {stackView ? (
+                {sheet.sections.length === 0 ? (
+                    <EmptyCanvas onAddSection={addSection} onAddTemplate={addTemplateSection} />
+                ) : stackView ? (
                     <div ref={captureRef} className="columns-1 gap-4 md:columns-2 xl:columns-3" style={{ zoom: densityZoom }}>
                         {stackSections.map((section) => {
                             const isTarget = stackDragId != null && stackOverId === section.id && stackDragId !== section.id

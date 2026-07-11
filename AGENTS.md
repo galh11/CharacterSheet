@@ -86,6 +86,7 @@ src/
     AboutModal.tsx         # "What's new" panel: app version, build time, PR-linked changelog (opened from ⋯ More)
     Tooltip.tsx            # hover/focus description bubble (portaled to body, fixed-positioned so it's never clipped by a card's overflow)
     UpdateToast.tsx        # "new version available" reload prompt (fed by useAppUpdate)
+    EmptyCanvas.tsx        # app-level empty state (shown when the sheet has zero sections): + Section CTA + quick template picks
   test/
     setup.ts               # Vitest setup: jest-dom matchers + in-memory localStorage mock
   **/*.test.ts(x)          # unit/component tests colocated with source
@@ -226,6 +227,12 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   (`exportSheetToFile` / `importSheetFromFile`, both zod-validated) — surfaced as
   **Export JSON** / **Import JSON…** in the ⋯ More menu. There is no external
   (D&D Beyond) importer; import only accepts a sheet this app exported.
+- **Empty state**: when `sheet.sections.length === 0` (a brand-new or fully
+  cleared character) the canvas/stack slot renders `components/EmptyCanvas.tsx`
+  instead of a blank canvas — a centered card with a **+ Section** CTA (calls
+  `addSection`) plus a quick-pick button per `SECTION_TEMPLATES` entry (calls
+  `addTemplateSection`), mirroring the rail's add controls. Section-level empty
+  hints (e.g. "No items yet.") are separate and still render per-widget.
 - **Stack view reorder**: in the Stack (masonry) view each card exposes a ⠿ grip
   handle on hover; dragging it onto another card calls `useSheet.moveSection`
   (native HTML5 drag-and-drop), which reorders the underlying `sheet.sections`

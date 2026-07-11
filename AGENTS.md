@@ -324,6 +324,15 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   drag/Auto-arrange snaps them onto the grid.) Other `layout.ts` helpers handle
   alignment/distribution (`compactLayouts`/`tidyLayouts` are retained legacy
   packers, no longer surfaced in the UI).
+- **Multi-select bulk actions**: clicking canvas card handles builds the
+  `useSelection` hook's `selectedIds` set; while it's non-empty a **selection
+  bar** renders above the canvas. Beyond the layout-only align / match /
+  distribute controls (from `useSelection`), it offers whole-section bulk actions
+  on every selected card: **Duplicate** / **Tuck** (into the view's drawer) /
+  **Recolour** (a colour swatch sets `accent`) / **Delete** (confirms first).
+  Each — except Tuck, which loops `App.hideSection` — is a single undoable step
+  via `useSheet.duplicateSections`/`recolorSections`/`deleteSections` (batch
+  mutations that `commit` once), and confirms with a `useToast` toast.
 - **Canvas control**: drag the empty canvas **background** to pan (scroll) the
   viewport (a non-moving click clears the selection). **Fit to width** scales the
   whole canvas so its content fills the current window width edge-to-edge: it

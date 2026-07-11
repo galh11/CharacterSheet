@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.17.0',
+        date: '2026-07-11',
+        summary: 'The multi-select bar now does more than align cards: select sections on the canvas and Duplicate, Tuck into the drawer, Recolour, or Delete them all at once — each a single undo.',
+    },
+    {
         version: '1.16.0',
         date: '2026-07-11',
         summary: 'Added a ✐ quick-edit button on every section that opens a small non-blocking popover to rename it, recolour it (preset swatches or a custom colour) and switch its layout — without opening the full editor.',

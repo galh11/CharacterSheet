@@ -173,6 +173,56 @@ describe('useSheet', () => {
         expect(clone.layout.x).toBe(first.layout.x + 24)
     })
 
+    it('deletes several sections in one undoable step (bulk action)', () => {
+        const { result } = renderHook(() => useSheet())
+        const ids = result.current.sheet.sections.slice(0, 2).map((s) => s.id)
+        const before = result.current.sheet.sections.length
+        expect(ids.length).toBe(2)
+
+        act(() => result.current.deleteSections(ids))
+        expect(result.current.sheet.sections).toHaveLength(before - 2)
+        expect(result.current.sheet.sections.some((s) => ids.includes(s.id))).toBe(false)
+
+        // A single undo restores both sections.
+        act(() => result.current.undo())
+        expect(result.current.sheet.sections).toHaveLength(before)
+
+        // An empty id list is a no-op (no history entry).
+        act(() => result.current.deleteSections([]))
+        expect(result.current.sheet.sections).toHaveLength(before)
+    })
+
+    it('duplicates several sections in one undoable step (bulk action)', () => {
+        const { result } = renderHook(() => useSheet())
+        const originals = result.current.sheet.sections.slice(0, 2)
+        const ids = originals.map((s) => s.id)
+        const before = result.current.sheet.sections.length
+
+        act(() => result.current.duplicateSections(ids))
+        expect(result.current.sheet.sections).toHaveLength(before + 2)
+        // Each clone sits just after its original with a fresh id and copied name.
+        const after = result.current.sheet.sections
+        expect(after[1].title).toBe(`${originals[0].title} copy`)
+        expect(after[1].id).not.toBe(originals[0].id)
+
+        // A single undo removes both clones.
+        act(() => result.current.undo())
+        expect(result.current.sheet.sections).toHaveLength(before)
+    })
+
+    it('recolours several sections in one undoable step (bulk action)', () => {
+        const { result } = renderHook(() => useSheet())
+        const ids = result.current.sheet.sections.slice(0, 2).map((s) => s.id)
+
+        act(() => result.current.recolorSections(ids, '#123456'))
+        for (const id of ids) {
+            expect(result.current.sheet.sections.find((s) => s.id === id)?.accent).toBe('#123456')
+        }
+
+        act(() => result.current.undo())
+        expect(result.current.sheet.sections.find((s) => s.id === ids[0])?.accent).not.toBe('#123456')
+    })
+
     const restSheet = () => ({
         id: 's',
         name: 'T',

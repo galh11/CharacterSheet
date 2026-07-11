@@ -202,6 +202,55 @@ export const useSheet = () => {
         [commit],
     )
 
+    /** Delete several sections at once as a single undoable step (bulk action). */
+    const deleteSections = useCallback(
+        (ids: string[]) => {
+            if (ids.length === 0) return
+            const remove = new Set(ids)
+            commit((c) => ({ ...c, sections: c.sections.filter((s) => !remove.has(s.id)) }), 'Delete sections')
+        },
+        [commit],
+    )
+
+    /** Duplicate several sections at once, each clone inserted just after its
+     *  original with fresh ids, as a single undoable step (bulk action). */
+    const duplicateSections = useCallback(
+        (ids: string[]) => {
+            if (ids.length === 0) return
+            const dupe = new Set(ids)
+            commit((c) => {
+                const sections: CharacterSection[] = []
+                for (const s of c.sections) {
+                    sections.push(s)
+                    if (dupe.has(s.id)) {
+                        sections.push({
+                            ...s,
+                            id: crypto.randomUUID(),
+                            title: `${s.title} copy`,
+                            layout: { ...s.layout, x: s.layout.x + 24, y: s.layout.y + 24 },
+                            fields: s.fields.map((f) => ({ ...f, id: crypto.randomUUID() })),
+                        })
+                    }
+                }
+                return { ...c, sections }
+            }, 'Duplicate sections')
+        },
+        [commit],
+    )
+
+    /** Recolour several sections' accent at once as a single undoable step. */
+    const recolorSections = useCallback(
+        (ids: string[], accent: string) => {
+            if (ids.length === 0) return
+            const set = new Set(ids)
+            commit(
+                (c) => ({ ...c, sections: c.sections.map((s) => (set.has(s.id) ? { ...s, accent } : s)) }),
+                'Recolour sections',
+            )
+        },
+        [commit],
+    )
+
     /** Reorder sections by moving `sourceId` to just before `targetId` in the
      *  sections array (drag-to-reorder in the stack view). A null/omitted target
      *  moves the source to the end. No-op if the source is dropped on itself. */
@@ -492,6 +541,9 @@ export const useSheet = () => {
         addTemplateSection,
         deleteSection,
         duplicateSection,
+        deleteSections,
+        duplicateSections,
+        recolorSections,
         moveSection,
         rest,
         healHp,

@@ -99,7 +99,7 @@ S('Ability Scores', 'abilities', [
 
 // 2. Combat — AC, initiative, speed, passives, and spellcasting derived numbers.
 S('Combat', 'default', [
-    F('AC', 'computed', 'max(barkskin * 16, 12 + dex_mod)', { description: 'Studded Leather (base 12) + DEX mod; the Shield’s +2 comes from the Shield item’s effect, and Barkskin floors the armor AC to 16 while active.' }),
+    F('AC', 'computed', '12 + dex_mod', { description: 'Studded Leather (base 12) + DEX mod. The Shield’s +2 comes from the Shield item’s effect, and Barkskin grants a ≥16 floor (both are relational effects, not baked into this formula).' }),
     F('Initiative', 'computed', 'dex_mod'),
     F('Speed', 'number', 30),
     F('Passive Perception', 'computed', '10 + wis_mod + proficiency', { description: 'Proficient in Perception.' }),
@@ -274,7 +274,7 @@ S('Features & Traits', 'actions', [
 // 14. Resources (rest-aware pips).
 S('Resources', 'default', [
     F('Wild Shape', 'resource', 3, { max: 3, meta: { recharge: 'short' } }),
-    F('Moonlight Step', 'resource', 4, { max: 4, meta: { recharge: 'long' } }),
+    F('Moonlight Step', 'resource', 4, { maxFormula: 'wis_mod', meta: { recharge: 'long' } }),
     F('Shield (Magic Initiate)', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
 ], '#ec4899')
 
@@ -282,7 +282,10 @@ S('Resources', 'default', [
 S('Conditions', 'conditions', [
     F('Wild Shaped', 'boolean', 'false', { description: 'Currently in a Beast form.' }),
     F('Concentrating', 'boolean', 'false', { description: 'War Caster: Advantage on CON saves to keep Concentration.' }),
-    F('Barkskin', 'boolean', 'false', { description: 'AC floor 16 while active (the AC formula reads this).' }),
+    F('Barkskin', 'boolean', 'false', {
+        description: 'While active, your AC can’t be less than 16 (grants a ≥16 floor to AC).',
+        effects: [{ target: 'ac', op: 'min', value: '16' }],
+    }),
     F('Lantern Lit', 'boolean', 'false', {
         description: 'Whale-Oil Lantern lit: Advantage on sight Perception in snow/fog/freezing rain.',
         effects: [{ target: 'perception', op: 'advantage', value: 'lit lantern in snow/fog' }],

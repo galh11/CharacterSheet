@@ -275,7 +275,7 @@ S('Features & Traits', 'actions', [
 S('Resources', 'default', [
     F('Moxie Points', 'resource', 5, { max: 5, meta: { recharge: 'short' } }),
     F('Luck Points', 'resource', 3, { max: 3, meta: { recharge: 'long' } }),
-    F("Hill's Tumble", 'resource', 3, { max: 3, meta: { recharge: 'long' } }),
+    F("Hill's Tumble", 'resource', 3, { maxFormula: 'proficiency', meta: { recharge: 'long' } }),
     F('Large Form', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
     F('Dig Deep', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
     F('Bloodied But Unbowed', 'resource', 1, { max: 1, meta: { recharge: 'short' } }),

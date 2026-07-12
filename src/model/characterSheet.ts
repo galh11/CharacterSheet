@@ -384,64 +384,176 @@ export const createSection = (
     ...overrides,
 })
 
-export const createStarterSheet = (): CharacterSheet => ({
-    id: uid(),
-    name: 'New Character',
-    sections: [
-        createSection(0, {
-            title: 'Ability Scores',
-            description: 'Core ability scores. Modifiers below compute automatically.',
-            fields: [
-                createField({ label: 'STR', type: 'number', value: '10' }),
-                createField({ label: 'DEX', type: 'number', value: '14' }),
-                createField({ label: 'CON', type: 'number', value: '12' }),
-                createField({ label: 'INT', type: 'number', value: '10' }),
-                createField({ label: 'WIS', type: 'number', value: '13' }),
-                createField({ label: 'CHA', type: 'number', value: '8' }),
-            ],
-            layout: { x: 24, y: 24, w: 300, h: 340 },
-        }),
-        createSection(1, {
-            title: 'Modifiers',
-            description: 'Derived from ability scores: floor((score - 10) / 2).',
-            fields: [
-                createField({
-                    label: 'STR Mod',
-                    type: 'computed',
-                    value: 'floor((str - 10) / 2)',
-                    description: 'Strength modifier.',
-                }),
-                createField({
-                    label: 'DEX Mod',
-                    type: 'computed',
-                    value: 'floor((dex - 10) / 2)',
-                    description: 'Dexterity modifier.',
-                }),
-                createField({
-                    label: 'Proficiency',
-                    type: 'number',
-                    value: '2',
-                    description: 'Proficiency bonus scales with level.',
-                }),
-            ],
-            layout: { x: 336, y: 24, w: 300, h: 340 },
-        }),
-        createSection(2, {
-            title: 'Combat',
-            description: 'Quick reference for the heat of battle.',
-            fields: [
-                createField({ label: 'AC', type: 'number', value: '15' }),
-                createField({ label: 'Max HP', type: 'number', value: '24' }),
-                createField({ label: 'Current HP', type: 'number', value: '24' }),
-                createField({
-                    label: 'Initiative',
-                    type: 'computed',
-                    value: 'floor((dex - 10) / 2)',
-                    description: 'Initiative = DEX modifier.',
-                }),
-            ],
-            layout: { x: 648, y: 24, w: 300, h: 340 },
-        }),
-    ],
-})
+/** A blank, ready-to-play level 1 character. It mirrors the app's real section
+ *  kinds so the new-character experience shows off how the sheet actually works:
+ *  the Ability Scores (abilities) and Hit Points (hp) cards live in the sidebar
+ *  core-stats panel, while Combat, Saving Throws and Skills sit on the canvas.
+ *  Every derived value (ability modifiers, AC, initiative, proficiency, passive
+ *  perception, skill/save bonuses) is computed from the scores, so editing a
+ *  score immediately updates everything that depends on it. */
+export const createStarterSheet = (): CharacterSheet => {
+    const score = (label: string, value: number): CharacterField =>
+        createField({ label, type: 'number', value: String(value) })
+    const mod = (label: string, slug: string): CharacterField =>
+        createField({
+            label,
+            type: 'computed',
+            value: `floor((${slug} - 10) / 2)`,
+            description: `${label.split(' ')[0]} modifier: floor((score − 10) / 2).`,
+        })
+    const skill = (
+        label: string,
+        ability: string,
+        prof: 'none' | 'proficient' | 'expertise' = 'none',
+    ): CharacterField =>
+        createField({ label, type: 'number', value: '', meta: { ability, prof, auto: 'true' } })
+
+    return {
+        id: uid(),
+        name: 'New Character',
+        sections: [
+            // Identity — fill in as you build the character.
+            createSection(0, {
+                title: 'Character',
+                accent: '#8b5cf6',
+                description: 'Who your character is. Fill these in as you build them.',
+                fields: [
+                    createField({ label: 'Class', type: 'text', value: '' }),
+                    createField({
+                        label: 'Level',
+                        type: 'number',
+                        value: '1',
+                        description: 'Character level. Proficiency and other values scale from this.',
+                    }),
+                    createField({ label: 'Race', type: 'text', value: '' }),
+                    createField({ label: 'Background', type: 'text', value: '' }),
+                    createField({ label: 'Alignment', type: 'text', value: '' }),
+                    createField({
+                        label: 'Inspiration',
+                        type: 'boolean',
+                        value: 'false',
+                        description: 'Spend to reroll a d20. Toggle it from the star in the sidebar.',
+                    }),
+                ],
+                layout: { x: 24, y: 24, w: 300, h: 230 },
+            }),
+            // Ability scores (shown as tiles in the sidebar). Each score has a
+            // computed modifier that the rest of the sheet references.
+            createSection(1, {
+                title: 'Ability Scores',
+                kind: 'abilities',
+                accent: '#f59e0b',
+                description: 'Your six core scores. Modifiers compute automatically.',
+                fields: [
+                    score('STR', 15),
+                    score('DEX', 14),
+                    score('CON', 13),
+                    score('INT', 12),
+                    score('WIS', 10),
+                    score('CHA', 8),
+                    mod('STR Mod', 'str'),
+                    mod('DEX Mod', 'dex'),
+                    mod('CON Mod', 'con'),
+                    mod('INT Mod', 'int'),
+                    mod('WIS Mod', 'wis'),
+                    mod('CHA Mod', 'cha'),
+                ],
+                layout: { x: 344, y: 294, w: 300, h: 250 },
+            }),
+            // Hit points (shown as the HP card in the sidebar).
+            createSection(2, {
+                title: 'Hit Points',
+                kind: 'hp',
+                accent: '#10b981',
+                description: 'Track current, max and temporary hit points.',
+                fields: [
+                    createField({ label: 'Current HP', type: 'number', value: '10' }),
+                    createField({ label: 'Max HP', type: 'number', value: '10' }),
+                    createField({ label: 'Temp HP', type: 'number', value: '0' }),
+                ],
+                layout: { x: 664, y: 314, w: 300, h: 240 },
+            }),
+            // Combat quick-reference. AC, initiative, proficiency and passive
+            // perception all derive from the ability scores above.
+            createSection(3, {
+                title: 'Combat',
+                accent: '#ef4444',
+                description: 'Key numbers for the heat of battle.',
+                fields: [
+                    createField({
+                        label: 'AC',
+                        type: 'computed',
+                        value: '10 + dex_mod',
+                        description: 'Unarmored Armor Class = 10 + DEX modifier. Adjust for armor.',
+                    }),
+                    createField({
+                        label: 'Initiative',
+                        type: 'computed',
+                        value: 'dex_mod',
+                        description: 'Initiative bonus = DEX modifier.',
+                    }),
+                    createField({
+                        label: 'Proficiency',
+                        type: 'computed',
+                        value: 'floor((level - 1) / 4) + 2',
+                        description: 'Proficiency bonus, derived from your level.',
+                    }),
+                    createField({ label: 'Speed', type: 'number', value: '30', description: 'Walking speed in feet.' }),
+                    createField({
+                        label: 'Passive Perception',
+                        type: 'computed',
+                        value: '10 + wis_mod',
+                        description: 'Passive Perception = 10 + WIS modifier (+ proficiency if trained).',
+                    }),
+                ],
+                layout: { x: 344, y: 24, w: 300, h: 250 },
+            }),
+            // Saving throws (auto: ability modifier + proficiency when proficient).
+            // Mark a save proficient by setting its dot in the section editor.
+            createSection(4, {
+                title: 'Saving Throws',
+                kind: 'skills',
+                accent: '#06b6d4',
+                description: 'Roll a save by clicking it. Set proficiency in the editor.',
+                fields: [
+                    skill('Strength', 'STR'),
+                    skill('Dexterity', 'DEX'),
+                    skill('Constitution', 'CON'),
+                    skill('Intelligence', 'INT'),
+                    skill('Wisdom', 'WIS'),
+                    skill('Charisma', 'CHA'),
+                ],
+                layout: { x: 664, y: 24, w: 300, h: 270 },
+            }),
+            // The eighteen skills (auto). Click any to roll a d20 + its modifier.
+            createSection(5, {
+                title: 'Skills',
+                kind: 'skills',
+                accent: '#06b6d4',
+                description: 'Click a skill to roll it. Set proficiency/expertise in the editor.',
+                fields: [
+                    skill('Acrobatics', 'DEX'),
+                    skill('Animal Handling', 'WIS'),
+                    skill('Arcana', 'INT'),
+                    skill('Athletics', 'STR'),
+                    skill('Deception', 'CHA'),
+                    skill('History', 'INT'),
+                    skill('Insight', 'WIS'),
+                    skill('Intimidation', 'CHA'),
+                    skill('Investigation', 'INT'),
+                    skill('Medicine', 'WIS'),
+                    skill('Nature', 'INT'),
+                    skill('Perception', 'WIS'),
+                    skill('Performance', 'CHA'),
+                    skill('Persuasion', 'CHA'),
+                    skill('Religion', 'INT'),
+                    skill('Sleight of Hand', 'DEX'),
+                    skill('Stealth', 'DEX'),
+                    skill('Survival', 'WIS'),
+                ],
+                layout: { x: 24, y: 274, w: 300, h: 620 },
+            }),
+        ],
+    }
+}
 

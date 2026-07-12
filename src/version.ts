@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.28.0',
+        date: '2026-07-12',
+        summary: 'Rebuilt the new-character starter sheet so it makes sense out of the box: a proper level 1 character with an Ability Scores tile panel and full HP card in the sidebar, plus Combat, all six saving throws and the eighteen skills on the canvas. AC, initiative, proficiency, passive perception and every skill/save bonus now compute automatically from the scores (the old broken half-filled “Modifiers” card is gone).',
+    },
+    {
         version: '1.27.0',
         date: '2026-07-11',
         summary: 'Sidebar upgrades: the rail now has Stats / Tools tabs (no more collapse arrow + scrolling), ability tiles show your score and roll a check when clicked, the sidebar HP is the full card again (direct-edit current/temp HP, death saves at 0 HP), and the roll log can dock at the bottom of the rail — pop it back out to a floating panel from the ⚙ settings.',

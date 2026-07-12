@@ -384,13 +384,15 @@ export const createSection = (
     ...overrides,
 })
 
-/** A blank, ready-to-play level 1 character. It mirrors the app's real section
- *  kinds so the new-character experience shows off how the sheet actually works:
- *  the Ability Scores (abilities) and Hit Points (hp) cards live in the sidebar
- *  core-stats panel, while Combat, Saving Throws and Skills sit on the canvas.
- *  Every derived value (ability modifiers, AC, initiative, proficiency, passive
- *  perception, skill/save bonuses) is computed from the scores, so editing a
- *  score immediately updates everything that depends on it. */
+/** A fully fleshed-out sample character to greet new players: a **level 1 human
+ *  paladin** (Acolyte of Torm). It shows every section a player expects — an
+ *  ability-score tile panel and HP card in the sidebar, plus Combat, Saving
+ *  Throws, Skills, Attacks, class Features & Resources, Proficiencies &
+ *  Languages, roleplay Personality traits, and an Equipment/coin section on the
+ *  canvas. Every derived value (ability modifiers, AC bonuses, initiative,
+ *  proficiency, passive perception, attacks, skill/save bonuses, the Lay on
+ *  Hands and Divine Sense pools) computes from the ability scores and level, so
+ *  editing a score or level immediately cascades through the whole sheet. */
 export const createStarterSheet = (): CharacterSheet => {
     const score = (label: string, value: number): CharacterField =>
         createField({ label, type: 'number', value: String(value) })
@@ -407,153 +409,313 @@ export const createStarterSheet = (): CharacterSheet => {
         prof: 'none' | 'proficient' | 'expertise' = 'none',
     ): CharacterField =>
         createField({ label, type: 'number', value: '', meta: { ability, prof, auto: 'true' } })
+    const attack = (
+        label: string,
+        damage: string,
+        type: string,
+        range: string,
+        description = '',
+    ): CharacterField =>
+        createField({
+            label,
+            type: 'text',
+            value: '',
+            description,
+            meta: { hit: '+{str_mod + proficiency}', damage, type, range },
+        })
+    const item = (label: string, value: string, description = ''): CharacterField =>
+        createField({ label, type: 'text', value, description })
+
+    // Column-pack the cards into a tidy three-column grid (packing the two
+    // sidebar-hosted cards last so the canvas has no gaps). Three columns keep
+    // every card clear of the right-hand sidebar rail.
+    const COLS = 3
+    const COL_W = 300
+    const GAP = 20
+    const X0 = 24
+    const Y0 = 24
+    const bottoms = Array(COLS).fill(Y0)
+    const place = (h: number): SectionLayout => {
+        let c = 0
+        for (let i = 1; i < COLS; i++) if (bottoms[i] < bottoms[c]) c = i
+        const layout = { x: X0 + c * (COL_W + GAP), y: bottoms[c], w: COL_W, h }
+        bottoms[c] = layout.y + h + GAP
+        return layout
+    }
+
+    interface Spec {
+        title: string
+        kind?: CharacterSection['kind']
+        accent: string
+        description: string
+        fields: CharacterField[]
+        meta?: Record<string, string>
+        h: number
+        hidden?: boolean
+    }
+
+    const specs: Spec[] = [
+        // Identity + roleplay basics.
+        {
+            title: 'Character',
+            accent: '#8b5cf6',
+            description: 'Who you are. Class, level and background drive the rest of the sheet.',
+            h: 300,
+            fields: [
+                item('Class', 'Paladin'),
+                createField({
+                    label: 'Level',
+                    type: 'number',
+                    value: '1',
+                    description: 'Character level. Proficiency, Lay on Hands and other values scale from this.',
+                }),
+                item('Race', 'Human'),
+                item('Background', 'Acolyte', 'Grants Insight & Religion proficiency and two languages.'),
+                item('Alignment', 'Lawful Good'),
+                item('Faith', 'Torm, the True', 'The god of courage and self-sacrifice.'),
+                createField({ label: 'Experience', type: 'number', value: '0', description: 'XP toward your next level.' }),
+                createField({
+                    label: 'Inspiration',
+                    type: 'boolean',
+                    value: 'false',
+                    description: 'Spend to reroll a d20. Toggle it from the star in the sidebar.',
+                }),
+            ],
+        },
+        // Ability scores — shown as tiles in the sidebar (hidden from canvas).
+        {
+            title: 'Ability Scores',
+            kind: 'abilities',
+            accent: '#f59e0b',
+            description: 'Your six core scores. Modifiers compute automatically.',
+            h: 250,
+            hidden: true,
+            fields: [
+                score('STR', 16),
+                score('DEX', 10),
+                score('CON', 14),
+                score('INT', 8),
+                score('WIS', 12),
+                score('CHA', 15),
+                mod('STR Mod', 'str'),
+                mod('DEX Mod', 'dex'),
+                mod('CON Mod', 'con'),
+                mod('INT Mod', 'int'),
+                mod('WIS Mod', 'wis'),
+                mod('CHA Mod', 'cha'),
+            ],
+        },
+        // Hit points — the full HP card in the sidebar (hidden from canvas).
+        {
+            title: 'Hit Points',
+            kind: 'hp',
+            accent: '#10b981',
+            description: 'Track current, max and temporary hit points.',
+            h: 240,
+            hidden: true,
+            fields: [
+                createField({ label: 'Current HP', type: 'number', value: '12', description: 'Level 1 paladin: d10 (10) + CON modifier.' }),
+                createField({ label: 'Max HP', type: 'number', value: '12' }),
+                createField({ label: 'Temp HP', type: 'number', value: '0' }),
+                createField({ label: 'Hit Dice (d10)', type: 'resource', value: '1', max: 1, meta: { die: 'd10', recharge: 'long' } }),
+            ],
+        },
+        // Combat quick-reference.
+        {
+            title: 'Combat',
+            accent: '#ef4444',
+            description: 'Key numbers for the heat of battle.',
+            h: 250,
+            fields: [
+                createField({
+                    label: 'AC',
+                    type: 'number',
+                    value: '18',
+                    description: 'Chain mail (16) + shield (2). Chain mail sets AC to 16 regardless of DEX.',
+                }),
+                createField({ label: 'Initiative', type: 'computed', value: 'dex_mod', description: 'Initiative bonus = DEX modifier.' }),
+                createField({
+                    label: 'Proficiency',
+                    type: 'computed',
+                    value: 'floor((level - 1) / 4) + 2',
+                    description: 'Proficiency bonus, derived from your level.',
+                }),
+                createField({ label: 'Speed', type: 'number', value: '30', description: 'Walking speed in feet.' }),
+                createField({
+                    label: 'Passive Perception',
+                    type: 'computed',
+                    value: '10 + wis_mod',
+                    description: 'Passive Perception = 10 + WIS modifier (+ proficiency if trained).',
+                }),
+            ],
+        },
+        // Attacks — to-hit and damage derive from STR mod + proficiency.
+        {
+            title: 'Attacks',
+            kind: 'actions',
+            accent: '#f59e0b',
+            description: 'Click 🎲 to roll to-hit or damage. Bonuses derive from your scores.',
+            h: 220,
+            fields: [
+                attack('Longsword', '1d8+{str_mod}', 'slashing', '5 ft', 'Versatile — deal 1d10 when wielded in two hands.'),
+                attack('Javelin', '1d6+{str_mod}', 'piercing', '30/120', 'Thrown weapon.'),
+            ],
+        },
+        // Saving throws — paladins are proficient in Wisdom and Charisma.
+        {
+            title: 'Saving Throws',
+            kind: 'skills',
+            accent: '#06b6d4',
+            description: 'Click a save to roll it. Paladins are proficient in WIS and CHA.',
+            h: 270,
+            fields: [
+                skill('Strength', 'STR'),
+                skill('Dexterity', 'DEX'),
+                skill('Constitution', 'CON'),
+                skill('Intelligence', 'INT'),
+                skill('Wisdom', 'WIS', 'proficient'),
+                skill('Charisma', 'CHA', 'proficient'),
+            ],
+        },
+        // Skills — Athletics & Intimidation (paladin) + Insight & Religion (Acolyte).
+        {
+            title: 'Skills',
+            kind: 'skills',
+            accent: '#06b6d4',
+            description: 'Click a skill to roll it. Set proficiency/expertise in the editor.',
+            h: 620,
+            fields: [
+                skill('Acrobatics', 'DEX'),
+                skill('Animal Handling', 'WIS'),
+                skill('Arcana', 'INT'),
+                skill('Athletics', 'STR', 'proficient'),
+                skill('Deception', 'CHA'),
+                skill('History', 'INT'),
+                skill('Insight', 'WIS', 'proficient'),
+                skill('Intimidation', 'CHA', 'proficient'),
+                skill('Investigation', 'INT'),
+                skill('Medicine', 'WIS'),
+                skill('Nature', 'INT'),
+                skill('Perception', 'WIS'),
+                skill('Performance', 'CHA'),
+                skill('Persuasion', 'CHA'),
+                skill('Religion', 'INT', 'proficient'),
+                skill('Sleight of Hand', 'DEX'),
+                skill('Stealth', 'DEX'),
+                skill('Survival', 'WIS'),
+            ],
+        },
+        // Class features & racial traits.
+        {
+            title: 'Features & Traits',
+            accent: '#8b5cf6',
+            description: 'What your class, race and background let you do.',
+            h: 300,
+            fields: [
+                item('Divine Sense', '1 + CHA mod / long rest', 'As an action, know the location of celestials, fiends and undead within 60 ft until the end of your next turn.'),
+                item('Lay on Hands', '5 HP pool', 'A pool of healing equal to 5 × your paladin level. Restore HP, or spend 5 to end one disease or neutralize one poison.'),
+                item('Divine Smite (level 2)', 'not yet', 'Paladins gain spellcasting and Divine Smite at level 2.'),
+                item('Human — Versatile', '+1 to all scores', 'Humans get a small bonus to every ability score (already included).'),
+                item('Shelter of the Faithful', 'Acolyte', 'You and your companions receive free healing and care at temples of your faith.'),
+            ],
+        },
+        // Rest-aware class resource pools (auto-scaling caps).
+        {
+            title: 'Class Resources',
+            accent: '#ec4899',
+            description: 'Spend the pips; a long rest refills them.',
+            h: 170,
+            fields: [
+                createField({
+                    label: 'Lay on Hands',
+                    type: 'resource',
+                    value: '5',
+                    max: 5,
+                    maxFormula: '5 * level',
+                    meta: { recharge: 'long' },
+                    description: 'Healing pool = 5 × paladin level.',
+                }),
+                createField({
+                    label: 'Divine Sense',
+                    type: 'resource',
+                    value: '3',
+                    max: 3,
+                    maxFormula: '1 + cha_mod',
+                    meta: { recharge: 'long' },
+                    description: 'Uses per long rest = 1 + CHA modifier.',
+                }),
+            ],
+        },
+        // Proficiencies & languages.
+        {
+            title: 'Proficiencies & Languages',
+            accent: '#22d3ee',
+            description: 'What you are trained to use and the tongues you speak.',
+            h: 220,
+            fields: [
+                item('Armor', 'All armor, shields'),
+                item('Weapons', 'Simple, Martial'),
+                item('Tools', 'None'),
+                item('Languages', 'Common, Celestial'),
+            ],
+        },
+        // Background roleplay hooks.
+        {
+            title: 'Personality',
+            accent: '#a78bfa',
+            description: 'Roleplay anchors from your Acolyte background — make them yours.',
+            h: 300,
+            fields: [
+                item('Trait', 'I idolize a hero of my faith and constantly refer to their deeds.'),
+                item('Ideal', 'Charity. I always try to help those in need, no matter the personal cost.'),
+                item('Bond', 'I would die to recover an ancient relic of my faith that was lost long ago.'),
+                item('Flaw', 'I put too much trust in those who wield power within my temple hierarchy.'),
+            ],
+        },
+        // Equipment — coin purse on top, then gear (D&D-Beyond-style single card).
+        {
+            title: 'Equipment',
+            kind: 'inventory',
+            accent: '#a3a3a3',
+            description: 'Your coin purse and everything you carry.',
+            h: 460,
+            fields: [
+                createField({ label: 'GP', type: 'number', value: '15', meta: { coin: 'gp' } }),
+                createField({ label: 'SP', type: 'number', value: '0', meta: { coin: 'sp' } }),
+                createField({ label: 'CP', type: 'number', value: '0', meta: { coin: 'cp' } }),
+                item('Chain Mail', 'worn', 'Heavy armor, AC 16 (no DEX). Disadvantage on Stealth; STR 13 required.'),
+                item('Shield', 'worn', '+2 AC.'),
+                item('Longsword', 'equipped', 'Versatile martial weapon (1d8 / 1d10).'),
+                item('Javelins', '×5', 'Thrown simple weapons (1d6 piercing, range 30/120).'),
+                item('Holy Symbol', 'amulet', 'A symbol of Torm; your spellcasting focus once you gain spells.'),
+                item('Priest’s Pack', 'carried', 'Backpack, blanket, tinderbox, alms box, 2 blocks of incense, censer, vestments, 2 days of rations, waterskin.'),
+                item('Holy Water', '×1 flask', 'Throw to deal 2d6 radiant to a fiend or undead.'),
+                item('Prayer Book', 'carried', 'A book of common prayers and rites.'),
+                item('Common Clothes', 'worn'),
+            ],
+        },
+    ]
+
+    // Assign layouts: pack the canvas-visible cards first, then the two hidden
+    // (sidebar-hosted) cards, so the canvas grid has no holes.
+    const layouts = new Map<Spec, SectionLayout>()
+    for (const spec of specs.filter((s) => !s.hidden)) layouts.set(spec, place(spec.h))
+    for (const spec of specs.filter((s) => s.hidden)) layouts.set(spec, place(spec.h))
 
     return {
         id: uid(),
         name: 'New Character',
-        sections: [
-            // Identity — fill in as you build the character.
-            createSection(0, {
-                title: 'Character',
-                accent: '#8b5cf6',
-                description: 'Who your character is. Fill these in as you build them.',
-                fields: [
-                    createField({ label: 'Class', type: 'text', value: '' }),
-                    createField({
-                        label: 'Level',
-                        type: 'number',
-                        value: '1',
-                        description: 'Character level. Proficiency and other values scale from this.',
-                    }),
-                    createField({ label: 'Race', type: 'text', value: '' }),
-                    createField({ label: 'Background', type: 'text', value: '' }),
-                    createField({ label: 'Alignment', type: 'text', value: '' }),
-                    createField({
-                        label: 'Inspiration',
-                        type: 'boolean',
-                        value: 'false',
-                        description: 'Spend to reroll a d20. Toggle it from the star in the sidebar.',
-                    }),
-                ],
-                layout: { x: 24, y: 24, w: 300, h: 230 },
+        sections: specs.map((spec, index) =>
+            createSection(index, {
+                title: spec.title,
+                kind: spec.kind ?? 'default',
+                accent: spec.accent,
+                description: spec.description,
+                ...(spec.meta ? { meta: spec.meta } : {}),
+                fields: spec.fields,
+                layout: layouts.get(spec)!,
             }),
-            // Ability scores (shown as tiles in the sidebar). Each score has a
-            // computed modifier that the rest of the sheet references.
-            createSection(1, {
-                title: 'Ability Scores',
-                kind: 'abilities',
-                accent: '#f59e0b',
-                description: 'Your six core scores. Modifiers compute automatically.',
-                fields: [
-                    score('STR', 15),
-                    score('DEX', 14),
-                    score('CON', 13),
-                    score('INT', 12),
-                    score('WIS', 10),
-                    score('CHA', 8),
-                    mod('STR Mod', 'str'),
-                    mod('DEX Mod', 'dex'),
-                    mod('CON Mod', 'con'),
-                    mod('INT Mod', 'int'),
-                    mod('WIS Mod', 'wis'),
-                    mod('CHA Mod', 'cha'),
-                ],
-                layout: { x: 344, y: 294, w: 300, h: 250 },
-            }),
-            // Hit points (shown as the HP card in the sidebar).
-            createSection(2, {
-                title: 'Hit Points',
-                kind: 'hp',
-                accent: '#10b981',
-                description: 'Track current, max and temporary hit points.',
-                fields: [
-                    createField({ label: 'Current HP', type: 'number', value: '10' }),
-                    createField({ label: 'Max HP', type: 'number', value: '10' }),
-                    createField({ label: 'Temp HP', type: 'number', value: '0' }),
-                ],
-                layout: { x: 664, y: 314, w: 300, h: 240 },
-            }),
-            // Combat quick-reference. AC, initiative, proficiency and passive
-            // perception all derive from the ability scores above.
-            createSection(3, {
-                title: 'Combat',
-                accent: '#ef4444',
-                description: 'Key numbers for the heat of battle.',
-                fields: [
-                    createField({
-                        label: 'AC',
-                        type: 'computed',
-                        value: '10 + dex_mod',
-                        description: 'Unarmored Armor Class = 10 + DEX modifier. Adjust for armor.',
-                    }),
-                    createField({
-                        label: 'Initiative',
-                        type: 'computed',
-                        value: 'dex_mod',
-                        description: 'Initiative bonus = DEX modifier.',
-                    }),
-                    createField({
-                        label: 'Proficiency',
-                        type: 'computed',
-                        value: 'floor((level - 1) / 4) + 2',
-                        description: 'Proficiency bonus, derived from your level.',
-                    }),
-                    createField({ label: 'Speed', type: 'number', value: '30', description: 'Walking speed in feet.' }),
-                    createField({
-                        label: 'Passive Perception',
-                        type: 'computed',
-                        value: '10 + wis_mod',
-                        description: 'Passive Perception = 10 + WIS modifier (+ proficiency if trained).',
-                    }),
-                ],
-                layout: { x: 344, y: 24, w: 300, h: 250 },
-            }),
-            // Saving throws (auto: ability modifier + proficiency when proficient).
-            // Mark a save proficient by setting its dot in the section editor.
-            createSection(4, {
-                title: 'Saving Throws',
-                kind: 'skills',
-                accent: '#06b6d4',
-                description: 'Roll a save by clicking it. Set proficiency in the editor.',
-                fields: [
-                    skill('Strength', 'STR'),
-                    skill('Dexterity', 'DEX'),
-                    skill('Constitution', 'CON'),
-                    skill('Intelligence', 'INT'),
-                    skill('Wisdom', 'WIS'),
-                    skill('Charisma', 'CHA'),
-                ],
-                layout: { x: 664, y: 24, w: 300, h: 270 },
-            }),
-            // The eighteen skills (auto). Click any to roll a d20 + its modifier.
-            createSection(5, {
-                title: 'Skills',
-                kind: 'skills',
-                accent: '#06b6d4',
-                description: 'Click a skill to roll it. Set proficiency/expertise in the editor.',
-                fields: [
-                    skill('Acrobatics', 'DEX'),
-                    skill('Animal Handling', 'WIS'),
-                    skill('Arcana', 'INT'),
-                    skill('Athletics', 'STR'),
-                    skill('Deception', 'CHA'),
-                    skill('History', 'INT'),
-                    skill('Insight', 'WIS'),
-                    skill('Intimidation', 'CHA'),
-                    skill('Investigation', 'INT'),
-                    skill('Medicine', 'WIS'),
-                    skill('Nature', 'INT'),
-                    skill('Perception', 'WIS'),
-                    skill('Performance', 'CHA'),
-                    skill('Persuasion', 'CHA'),
-                    skill('Religion', 'INT'),
-                    skill('Sleight of Hand', 'DEX'),
-                    skill('Stealth', 'DEX'),
-                    skill('Survival', 'WIS'),
-                ],
-                layout: { x: 24, y: 274, w: 300, h: 620 },
-            }),
-        ],
+        ),
     }
 }
 

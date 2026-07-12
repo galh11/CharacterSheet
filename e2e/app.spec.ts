@@ -24,12 +24,12 @@ test('drag handles and the section editor are available without an edit mode', a
 })
 
 test('adding a section increases the section count', async ({ page }) => {
-    // The starter has four canvas cards (Ability Scores + Hit Points render in
+    // The starter has ten canvas cards (Ability Scores + Hit Points render in
     // the sidebar, not on the canvas).
-    await expect(page.locator('article')).toHaveCount(4)
+    await expect(page.locator('article')).toHaveCount(10)
     await page.getByRole('tab', { name: '⚙ Options' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
-    await expect(page.locator('article')).toHaveCount(5)
+    await expect(page.locator('article')).toHaveCount(11)
 })
 
 test('dragging a section moves it on the canvas', async ({ page }) => {
@@ -56,12 +56,12 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {
     await page.getByRole('tab', { name: '⚙ Options' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
-    await expect(page.locator('article')).toHaveCount(5)
+    await expect(page.locator('article')).toHaveCount(11)
 
     await page.reload()
 
     // The sheet is autosaved to localStorage, so the count persists.
-    await expect(page.locator('article')).toHaveCount(5)
+    await expect(page.locator('article')).toHaveCount(11)
 })
 
 test('tucking a section into the drawer and restoring it', async ({ page }) => {

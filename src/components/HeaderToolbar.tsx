@@ -244,88 +244,94 @@ export function HeaderToolbar({
                     title="Drag to resize · double-click to reset"
                     className="absolute inset-y-0 left-0 z-40 hidden w-1.5 cursor-col-resize touch-none hover:bg-slate-600/40 md:block"
                 />
-                <div className="flex shrink-0 flex-col items-stretch gap-2">
-                    <div className="group relative shrink-0 self-center">
-                        <button
-                            type="button"
-                            onClick={() => portraitRef.current?.click()}
-                            className={clsx(
-                                'flex items-center justify-center overflow-hidden rounded-full border-2 bg-slate-900 text-slate-500 hover:text-slate-200',
-                                portraitClasses.avatar,
-                            )}
-                            style={{ borderColor: theme }}
-                            aria-label={sheet.portrait ? 'Change character portrait' : 'Add character portrait'}
-                            title={sheet.portrait ? 'Change portrait' : 'Add a character portrait'}
-                        >
-                            {sheet.portrait ? (
-                                <img src={sheet.portrait} alt="Character portrait" className="h-full w-full object-cover" />
-                            ) : (
-                                <svg viewBox="0 0 24 24" className={portraitClasses.icon} fill="currentColor" aria-hidden="true">
-                                    <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
-                                </svg>
-                            )}
-                        </button>
-                        {sheet.portrait && (
-                            <button
-                                type="button"
-                                onClick={() => setPortrait(undefined)}
-                                className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xs leading-none text-slate-300 hover:bg-slate-700 hover:text-white group-hover:flex"
-                                aria-label="Remove character portrait"
-                                title="Remove portrait"
-                            >
-                                ×
-                            </button>
-                        )}
-                    </div>
-                    <input
-                        ref={portraitRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(event) => {
-                            void handlePortrait(event.target.files?.[0])
-                            event.target.value = ''
-                        }}
-                    />
-                    <input
-                        value={sheet.name}
-                        onChange={(event) => renameSheet(event.target.value)}
-                        aria-label="Character name"
-                        title="Click to rename this character"
-                        className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1 text-xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
-                    />
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                    <div role="tablist" aria-label="Sidebar panels" className="flex flex-1 overflow-hidden rounded-md border border-slate-700">
+                {/* Flat underline tabs, raised to the very top of the rail: the
+                    primary Character view and a secondary ⚙ Options panel. The
+                    portrait + name live inside the Character tab, so the Options
+                    tab's tools start right at the top with no wasted space. */}
+                <div className="flex shrink-0 items-center gap-2">
+                    <div role="tablist" aria-label="Sidebar panels" className="flex flex-1 items-stretch gap-4 border-b border-slate-800">
                         <button
                             type="button"
                             role="tab"
                             aria-selected={sidebarTab === 'stats'}
                             onClick={() => setSidebarTab('stats')}
-                            className={clsx('flex-1 px-2 py-1.5 text-sm font-medium', sidebarTab === 'stats' ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-800')}
+                            className={clsx('-mb-px border-b-2 px-1 py-1.5 text-sm font-semibold transition-colors', sidebarTab === 'stats' ? 'border-violet-500 text-white' : 'border-transparent text-slate-400 hover:text-slate-200')}
                         >
-                            Stats
+                            Character
                         </button>
                         <button
                             type="button"
                             role="tab"
                             aria-selected={sidebarTab === 'tools'}
                             onClick={() => setSidebarTab('tools')}
-                            className={clsx('flex-1 px-2 py-1.5 text-sm font-medium', sidebarTab === 'tools' ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-800')}
+                            className={clsx('-mb-px border-b-2 px-1 py-1.5 text-sm font-medium transition-colors', sidebarTab === 'tools' ? 'border-violet-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300')}
                         >
-                            Tools
+                            ⚙ Options
                         </button>
                     </div>
                     <button
                         type="button"
                         onClick={() => setMobileNavOpen(false)}
-                        className="shrink-0 rounded-md border border-slate-600 px-2 py-1.5 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:hidden"
+                        className="shrink-0 rounded-md border border-slate-600 px-2 py-1 leading-none text-slate-200 hover:bg-slate-800 hover:text-white md:hidden"
                         aria-label="Close menu"
                         title="Close menu"
                     >
                         ✕
                     </button>
                 </div>
+                {sidebarTab === 'stats' && (
+                    <div className="flex shrink-0 flex-col items-stretch gap-2">
+                        <div className="group relative shrink-0 self-center">
+                            <button
+                                type="button"
+                                onClick={() => portraitRef.current?.click()}
+                                className={clsx(
+                                    'flex items-center justify-center overflow-hidden rounded-full border-2 bg-slate-900 text-slate-500 hover:text-slate-200',
+                                    portraitClasses.avatar,
+                                )}
+                                style={{ borderColor: theme }}
+                                aria-label={sheet.portrait ? 'Change character portrait' : 'Add character portrait'}
+                                title={sheet.portrait ? 'Change portrait' : 'Add a character portrait'}
+                            >
+                                {sheet.portrait ? (
+                                    <img src={sheet.portrait} alt="Character portrait" className="h-full w-full object-cover" />
+                                ) : (
+                                    <svg viewBox="0 0 24 24" className={portraitClasses.icon} fill="currentColor" aria-hidden="true">
+                                        <path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
+                                    </svg>
+                                )}
+                            </button>
+                            {sheet.portrait && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPortrait(undefined)}
+                                    className="absolute -right-1 -top-1 hidden h-5 w-5 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-xs leading-none text-slate-300 hover:bg-slate-700 hover:text-white group-hover:flex"
+                                    aria-label="Remove character portrait"
+                                    title="Remove portrait"
+                                >
+                                    ×
+                                </button>
+                            )}
+                        </div>
+                        <input
+                            ref={portraitRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(event) => {
+                                void handlePortrait(event.target.files?.[0])
+                                event.target.value = ''
+                            }}
+                        />
+                        <input
+                            value={sheet.name}
+                            onChange={(event) => renameSheet(event.target.value)}
+                            aria-label="Character name"
+                            title="Click to rename this character"
+                            className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1 text-center text-xl font-semibold text-slate-100 hover:border-slate-700 focus:border-slate-600 focus:bg-slate-900 focus:outline-none"
+                        />
+                    </div>
+                )}
                 <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
                 {sidebarTab === 'stats' ? (
                     <div className="flex flex-col items-stretch gap-2">
@@ -637,13 +643,14 @@ export function HeaderToolbar({
                                 event.target.value = ''
                             }}
                         />
-                        <label className="flex w-full items-center justify-center rounded-md border border-slate-600 px-2 py-1" title="Character colour theme">
+                        <label className="flex w-full items-center justify-between rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300" title="Accent colour used for this character across the sheet">
+                            <span>Accent colour</span>
                             <input
                                 type="color"
                                 value={theme}
                                 onChange={(e) => setTheme(e.target.value)}
                                 aria-label="Theme colour"
-                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                                className="h-6 w-8 cursor-pointer rounded border-0 bg-transparent p-0"
                             />
                         </label>
                     </div>

@@ -74,11 +74,11 @@ src/
     useSelection.ts        # canvas multi-select + align / match-size / distribute over the selection
     usePresets.ts          # named canvas layout presets (save/apply a snapshot of every card's position)
     usePersistentState.ts  # useState mirrored to localStorage (persisted UI prefs: fit-width, density, grid cols, sidebar)
-    sidebarPrefs.ts        # per-user sidebar prefs: draggable width + portrait-size (S/M/L) + Stats/Tools tab + core-stat visibility codecs/consts + scope-value helpers (pickScope/fmtSigned)
+    sidebarPrefs.ts        # per-user sidebar prefs: draggable width + portrait-size (S/M/L) + Character/Options tab + core-stat visibility codecs/consts + scope-value helpers (pickScope/fmtSigned)
     useCanvasGridLayout.ts # dashboard grid geometry + zoom + drop/reflow/auto-arrange handlers (extracted from App)
     useDrawerDrag.ts       # drawer + canvas card drag/tuck/restore state + handlers; exports inDrawer (extracted from App)
   components/
-    HeaderToolbar.tsx      # the right-hand side nav (rail): pinned profile/portrait + Stats/Tools tabs (Stats hosts the SidebarStats panel + Rest; Tools hosts character switcher, undo/redo, search, add + View/⋯ More menus, theme swatch) + an optional docked RollLog at the bottom, the drag-to-resize left edge (double-click resets) and the narrow-width hamburger + overlay (extracted from App.tsx)
+    HeaderToolbar.tsx      # the right-hand side nav (rail): flat Character/⚙ Options underline tabs raised to the very top; the Character tab hosts the pinned profile/portrait + SidebarStats panel + Rest, the Options tab hosts the character switcher, undo/redo, search, add + View/⋯ More menus and a labelled accent-colour swatch + an optional docked RollLog at the bottom, the drag-to-resize left edge (double-click resets) and the narrow-width hamburger + overlay (extracted from App.tsx)
     SidebarStats.tsx       # D&D-Beyond-style core-stats panel in the rail: clickable ability tiles (score + mod → roll a check), the full interactive HP card (via the exported HpWidget node), AC, Initiative (roll), Proficiency, Speed, Inspiration — read live from the resolved scope; a ⚙ Popover toggles which stats show, picks portrait size + docks/pops-out the roll log
     SectionCard.tsx        # section frame: header, ✎ edit button, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges; exports HpWidget (reused in the sidebar core-stats panel)
@@ -287,12 +287,14 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   `document.documentElement` from `App`) so anything anchored beside the rail can
   offset by the live width. `App` renders it as the `order-2` flex child of a
   `flex` `<main>`; the canvas/modals sit in an `order-1 flex-1` content column to
-  its left. Top-to-bottom the rail is: a **pinned profile** (portrait avatar +
-  editable name), a **Stats / Tools tab bar** (persisted as
-  `character-sheet:sidebar-tab`), the active tab's scrollable content, and — when
-  docked — the **RollLog** pinned at the bottom. The **Stats** tab hosts the
-  **SidebarStats** core-stats panel (incl. ★ Inspiration), **Rest ▾** and the
-  ✓ Autosaved indicator; the **Tools** tab hosts a **tools** group separated by
+  its left. Top-to-bottom the rail is: a flat **Character / ⚙ Options tab bar**
+  raised flush to the very top (persisted as `character-sheet:sidebar-tab`), the
+  active tab's scrollable content, and — when docked — the **RollLog** pinned at
+  the bottom. The **Character** tab (the primary view) hosts the **pinned
+  profile** (portrait avatar + editable name), the **SidebarStats** core-stats
+  panel (incl. ★ Inspiration), **Rest ▾** and the
+  ✓ Autosaved indicator; the secondary **⚙ Options** tab hosts a **tools** group
+  separated by
   thin horizontal rules — **Character** (switcher `<select>` + **Character ▾**),
   **history** (undo/redo), a **search** box with an inline magnifier icon (it
   filters the visible cards + fields *and* the drawer list, shows a live match
@@ -301,11 +303,15 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   scroll it into view + select it, with the active card highlighted and, while
   searching, matched titles highlighted / non-matches dimmed), **add**
   (the violet **+ Section** button + a **+ Template ▾** menu), a single **View ▾**
-  menu, then **⋯ More** and the theme-colour swatch. The tabs replaced the old
+  menu, then **⋯ More** and a labelled **Accent colour** swatch row. The tabs
+  replaced the old
   ▴/▾ collapse arrow (so tools are one click away, not hidden behind a scroll);
   on narrow (`< md`) widths the rail is hidden and a fixed **≡ hamburger**
   opens it as a right-side overlay (with a backdrop, dismissed by a ✕/tap).
-  Dropdown `Menu`s open `align="right"` and auto-nudge back on-screen. The
+  Dropdown `Menu`s open `align="right"`, auto-nudge back on-screen horizontally,
+  and **flip upward** (`bottom-full`) when they'd otherwise open below the
+  viewport — so a bottom-of-rail menu (Rest, + Template, View, ⋯ More) lands
+  on-screen instead of below the fold. The
   **RollLog** can either **dock** at the bottom of the rail (default, persisted as
   `character-sheet:rolllog-docked`; rendered inline, no drag/resize, starts
   collapsed so it doesn't crowd the stats) or **float** as a movable panel whose

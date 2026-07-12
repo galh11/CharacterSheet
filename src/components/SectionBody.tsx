@@ -595,7 +595,7 @@ export function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHe
                     )}
                 </div>
             )}
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
                 <input
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}

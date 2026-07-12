@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.29.0',
+        date: '2026-07-12',
+        summary: 'Sidebar polish: the Character / ⚙ Options tabs now sit flush at the very top (flat underline tabs), the portrait + name live only on the Character tab, and every dropdown (Rest, + Template, View, ⋯ More…) flips upward when it would open below the screen instead of forcing you to scroll. The roll log’s disadvantage button and the HP damage/heal/temp controls now wrap to fit any rail width, and the accent-colour swatch is a clearly labelled row.',
+    },
+    {
         version: '1.28.0',
         date: '2026-07-12',
         summary: 'Rebuilt the new-character starter sheet so it makes sense out of the box: a proper level 1 character with an Ability Scores tile panel and full HP card in the sidebar, plus Combat, all six saving throws and the eighteen skills on the canvas. AC, initiative, proficiency, passive perception and every skill/save bonus now compute automatically from the scores (the old broken half-filled “Modifiers” card is gone).',

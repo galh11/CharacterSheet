@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.31.0',
+        date: '2026-07-12',
+        summary: 'The starter paladin now casts (2024 rules): added a Spellcasting card (save DC + spell attack), Spell Slots (two 1st-level slots that the spell cards spend), and prepared Spells — Bless, Cure Wounds and the always-prepared Divine Smite. Also removed the redundant Combat card: AC, initiative, proficiency and speed already show in the sidebar core-stats panel, so those fields moved there and the canvas gains a small Senses card (passive Perception/Insight) instead.',
+    },
+    {
         version: '1.30.0',
         date: '2026-07-12',
         summary: 'The new-character starter is now a fully worked example: a level 1 human paladin (Acolyte of Torm) with everything a player expects — ability tiles and HP in the sidebar, plus Combat, Attacks (longsword & javelin), Saving Throws, Skills, Features & Traits, auto-scaling Class Resources (Lay on Hands, Divine Sense), Proficiencies & Languages, roleplay Personality traits, and an Equipment/coin section. Attacks, saves, skills and pools all compute from the scores and level.',

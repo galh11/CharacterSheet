@@ -385,14 +385,17 @@ export const createSection = (
 })
 
 /** A fully fleshed-out sample character to greet new players: a **level 1 human
- *  paladin** (Acolyte of Torm). It shows every section a player expects — an
- *  ability-score tile panel and HP card in the sidebar, plus Combat, Saving
- *  Throws, Skills, Attacks, class Features & Resources, Proficiencies &
- *  Languages, roleplay Personality traits, and an Equipment/coin section on the
- *  canvas. Every derived value (ability modifiers, AC bonuses, initiative,
- *  proficiency, passive perception, attacks, skill/save bonuses, the Lay on
- *  Hands and Divine Sense pools) computes from the ability scores and level, so
- *  editing a score or level immediately cascades through the whole sheet. */
+ *  paladin** (Acolyte of Torm), built to the 2024 rules (so it already has
+ *  spellcasting). The sidebar hosts the ability-score tiles, the HP card and the
+ *  core combat badges (AC, initiative, proficiency, speed), so the canvas isn't
+ *  cluttered with a card that just repeats them. The canvas shows every section a
+ *  player expects — Senses, Attacks, Spellcasting, Spell Slots, Spells, Saving
+ *  Throws, Skills, class Features & Resources, Proficiencies & Languages, roleplay
+ *  Personality traits, and an Equipment/coin section. Every derived value (ability
+ *  modifiers, initiative, proficiency, passive scores, attacks, skill/save
+ *  bonuses, the spell save DC/attack, and the Lay on Hands and Divine Sense
+ *  pools) computes from the ability scores and level, so editing a score or level
+ *  immediately cascades through the whole sheet. */
 export const createStarterSheet = (): CharacterSheet => {
     const score = (label: string, value: number): CharacterField =>
         createField({ label, type: 'number', value: String(value) })
@@ -425,6 +428,8 @@ export const createStarterSheet = (): CharacterSheet => {
         })
     const item = (label: string, value: string, description = ''): CharacterField =>
         createField({ label, type: 'text', value, description })
+    const spell = (label: string, meta: Record<string, string>, description = ''): CharacterField =>
+        createField({ label, type: 'text', value: '', description, meta })
 
     // Column-pack the cards into a tidy three-column grid (packing the two
     // sidebar-hosted cards last so the canvas has no gaps). Three columns keep
@@ -505,7 +510,10 @@ export const createStarterSheet = (): CharacterSheet => {
                 mod('CHA Mod', 'cha'),
             ],
         },
-        // Hit points — the full HP card in the sidebar (hidden from canvas).
+        // Hit points — the full HP card in the sidebar (hidden from canvas). It
+        // also carries the core combat numbers (AC, initiative, proficiency,
+        // speed): the sidebar reads them as read-only badges, so keeping the
+        // fields here feeds those badges without a redundant on-canvas card.
         {
             title: 'Hit Points',
             kind: 'hp',
@@ -518,15 +526,9 @@ export const createStarterSheet = (): CharacterSheet => {
                 createField({ label: 'Max HP', type: 'number', value: '12' }),
                 createField({ label: 'Temp HP', type: 'number', value: '0' }),
                 createField({ label: 'Hit Dice (d10)', type: 'resource', value: '1', max: 1, meta: { die: 'd10', recharge: 'long' } }),
-            ],
-        },
-        // Combat quick-reference.
-        {
-            title: 'Combat',
-            accent: '#ef4444',
-            description: 'Key numbers for the heat of battle.',
-            h: 250,
-            fields: [
+                // Core combat stats — surfaced by the sidebar badges (AC / Init /
+                // Prof / Speed); the HP widget ignores these labels so they don't
+                // render here. Edit them from this section's field editor.
                 createField({
                     label: 'AC',
                     type: 'number',
@@ -541,11 +543,26 @@ export const createStarterSheet = (): CharacterSheet => {
                     description: 'Proficiency bonus, derived from your level.',
                 }),
                 createField({ label: 'Speed', type: 'number', value: '30', description: 'Walking speed in feet.' }),
+            ],
+        },
+        // Senses — the passive scores the sidebar doesn't show.
+        {
+            title: 'Senses',
+            accent: '#ef4444',
+            description: 'Your passive scores (used when you aren’t actively rolling).',
+            h: 170,
+            fields: [
                 createField({
                     label: 'Passive Perception',
                     type: 'computed',
                     value: '10 + wis_mod',
-                    description: 'Passive Perception = 10 + WIS modifier (+ proficiency if trained).',
+                    description: 'Passive Perception = 10 + WIS modifier (Perception isn’t trained).',
+                }),
+                createField({
+                    label: 'Passive Insight',
+                    type: 'computed',
+                    value: '10 + wis_mod + proficiency',
+                    description: 'Passive Insight = 10 + WIS modifier + proficiency (Insight is trained via Acolyte).',
                 }),
             ],
         },
@@ -559,6 +576,64 @@ export const createStarterSheet = (): CharacterSheet => {
             fields: [
                 attack('Longsword', '1d8+{str_mod}', 'slashing', '5 ft', 'Versatile — deal 1d10 when wielded in two hands.'),
                 attack('Javelin', '1d6+{str_mod}', 'piercing', '30/120', 'Thrown weapon.'),
+            ],
+        },
+        // Spellcasting summary — save DC and attack derive from CHA + proficiency.
+        {
+            title: 'Spellcasting',
+            accent: '#8b5cf6',
+            description: 'Paladins cast with Charisma. These update as you level.',
+            h: 190,
+            fields: [
+                item('Spellcasting Ability', 'Charisma'),
+                createField({
+                    label: 'Spell Save DC',
+                    type: 'computed',
+                    value: '8 + proficiency + cha_mod',
+                    description: 'DC an enemy must beat to resist your spells.',
+                }),
+                createField({
+                    label: 'Spell Attack',
+                    type: 'computed',
+                    value: 'proficiency + cha_mod',
+                    description: 'Bonus to hit with spell attacks.',
+                }),
+            ],
+        },
+        // Spell slots — spent by the spell cards' Cast buttons; refill on a rest.
+        {
+            title: 'Spell Slots',
+            kind: 'spellslots',
+            accent: '#a855f7',
+            description: 'Click a pip to spend a slot. A long rest refills them.',
+            h: 130,
+            fields: [
+                createField({ label: 'Level 1', type: 'resource', value: '2', max: 2, meta: { recharge: 'long' } }),
+            ],
+        },
+        // Prepared spells — Cast spends a slot; Divine Smite is always prepared.
+        {
+            title: 'Spells',
+            kind: 'spellcards',
+            accent: '#a855f7',
+            description: 'Cast to spend a slot and log it; roll healing/damage where shown.',
+            h: 320,
+            fields: [
+                spell(
+                    'Bless',
+                    { level: '1', school: 'Enchantment', range: '30 ft', slot: 'level_1', slotLabel: 'L1', cost: '1' },
+                    'Up to three creatures add 1d4 to their attack rolls and saving throws (Concentration, up to 1 minute).',
+                ),
+                spell(
+                    'Cure Wounds',
+                    { level: '1', school: 'Abjuration', range: 'Touch', damage: '1d8+{cha_mod}', type: 'healing', slot: 'level_1', slotLabel: 'L1', cost: '1' },
+                    'Touch a creature to restore hit points equal to 1d8 + your Charisma modifier.',
+                ),
+                spell(
+                    'Divine Smite',
+                    { level: '1', school: 'Evocation', range: 'Self', damage: '2d8', type: 'radiant', slot: 'level_1', slotLabel: 'L1', cost: '1' },
+                    'When you hit with a melee weapon, expend a spell slot to deal +2d8 radiant (+1d8 per slot level above 1st, and +1d8 vs. undead or fiends). Always prepared.',
+                ),
             ],
         },
         // Saving throws — paladins are proficient in Wisdom and Charisma.
@@ -612,9 +687,10 @@ export const createStarterSheet = (): CharacterSheet => {
             description: 'What your class, race and background let you do.',
             h: 300,
             fields: [
+                item('Spellcasting', '2 slots · 2 prepared', 'You can cast prepared paladin spells using Charisma (see the Spellcasting, Spell Slots and Spells cards).'),
+                item('Divine Smite', 'always prepared', 'Expend a spell slot when you hit with a melee weapon to deal extra radiant damage.'),
                 item('Divine Sense', '1 + CHA mod / long rest', 'As an action, know the location of celestials, fiends and undead within 60 ft until the end of your next turn.'),
                 item('Lay on Hands', '5 HP pool', 'A pool of healing equal to 5 × your paladin level. Restore HP, or spend 5 to end one disease or neutralize one poison.'),
-                item('Divine Smite (level 2)', 'not yet', 'Paladins gain spellcasting and Divine Smite at level 2.'),
                 item('Human — Versatile', '+1 to all scores', 'Humans get a small bonus to every ability score (already included).'),
                 item('Shelter of the Faithful', 'Acolyte', 'You and your companions receive free healing and care at temples of your faith.'),
             ],
@@ -687,7 +763,7 @@ export const createStarterSheet = (): CharacterSheet => {
                 item('Shield', 'worn', '+2 AC.'),
                 item('Longsword', 'equipped', 'Versatile martial weapon (1d8 / 1d10).'),
                 item('Javelins', '×5', 'Thrown simple weapons (1d6 piercing, range 30/120).'),
-                item('Holy Symbol', 'amulet', 'A symbol of Torm; your spellcasting focus once you gain spells.'),
+                item('Holy Symbol', 'amulet', 'A symbol of Torm; your spellcasting focus.'),
                 item('Priest’s Pack', 'carried', 'Backpack, blanket, tinderbox, alms box, 2 blocks of incense, censer, vestments, 2 days of rations, waterskin.'),
                 item('Holy Water', '×1 flask', 'Throw to deal 2d6 radiant to a fiend or undead.'),
                 item('Prayer Book', 'carried', 'A book of common prayers and rites.'),

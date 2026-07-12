@@ -8,8 +8,8 @@ test.beforeEach(async ({ page }) => {
 
 test('loads the starter sheet', async ({ page }) => {
     await expect(page.getByLabel('Character name')).toHaveValue('New Character')
-    // The abilities/HP cards live in the sidebar; Combat sits on the canvas.
-    await expect(page.getByRole('heading', { name: 'Combat' })).toBeVisible()
+    // The abilities/HP + core combat stats live in the sidebar; Skills is on the canvas.
+    await expect(page.getByRole('heading', { name: 'Skills' })).toBeVisible()
 })
 
 test('drag handles and the section editor are available without an edit mode', async ({ page }) => {
@@ -24,12 +24,12 @@ test('drag handles and the section editor are available without an edit mode', a
 })
 
 test('adding a section increases the section count', async ({ page }) => {
-    // The starter has ten canvas cards (Ability Scores + Hit Points render in
-    // the sidebar, not on the canvas).
-    await expect(page.locator('article')).toHaveCount(10)
+    // The starter has thirteen canvas cards (Ability Scores + Hit Points render
+    // in the sidebar, not on the canvas).
+    await expect(page.locator('article')).toHaveCount(13)
     await page.getByRole('tab', { name: '⚙ Options' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
-    await expect(page.locator('article')).toHaveCount(11)
+    await expect(page.locator('article')).toHaveCount(14)
 })
 
 test('dragging a section moves it on the canvas', async ({ page }) => {
@@ -56,12 +56,12 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {
     await page.getByRole('tab', { name: '⚙ Options' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
-    await expect(page.locator('article')).toHaveCount(11)
+    await expect(page.locator('article')).toHaveCount(14)
 
     await page.reload()
 
     // The sheet is autosaved to localStorage, so the count persists.
-    await expect(page.locator('article')).toHaveCount(11)
+    await expect(page.locator('article')).toHaveCount(14)
 })
 
 test('tucking a section into the drawer and restoring it', async ({ page }) => {

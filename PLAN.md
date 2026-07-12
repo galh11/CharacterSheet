@@ -248,9 +248,10 @@ D&D extras
       and the floating RollLog offset).
 
 ### Phase S — Sidebar tabs, roll log & core-stat depth  [x]
-- [x] **Stats / Tools tabs** replace the ▴/▾ collapse arrow: a tab bar under the
-      pinned profile swaps the panel (`character-sheet:sidebar-tab`) so tools are
-      one click away instead of hidden behind a scroll.
+- [x] **Character / ⚙ Options tabs** replace the ▴/▾ collapse arrow: a flat
+      underline tab bar at the very top of the rail swaps the panel
+      (`character-sheet:sidebar-tab`) so tools are one click away instead of
+      hidden behind a scroll (the portrait + name live on the Character tab).
 - [x] **Clickable ability tiles**: each shows the score prominently with its
       modifier below and rolls a d20 + mod ability check when clicked.
 - [x] **Full HP in the rail**: the sidebar renders the exported `SectionBody`

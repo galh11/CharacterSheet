@@ -27,7 +27,7 @@ test('adding a section increases the section count', async ({ page }) => {
     // The starter has four canvas cards (Ability Scores + Hit Points render in
     // the sidebar, not on the canvas).
     await expect(page.locator('article')).toHaveCount(4)
-    await page.getByRole('tab', { name: 'Tools' }).click()
+    await page.getByRole('tab', { name: '⚙ Options' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
     await expect(page.locator('article')).toHaveCount(5)
 })
@@ -54,7 +54,7 @@ test('dragging a section moves it on the canvas', async ({ page }) => {
 })
 
 test('a newly added section survives a page reload (persistence)', async ({ page }) => {
-    await page.getByRole('tab', { name: 'Tools' }).click()
+    await page.getByRole('tab', { name: '⚙ Options' }).click()
     await page.getByRole('button', { name: '+ Section' }).click()
     await expect(page.locator('article')).toHaveCount(5)
 

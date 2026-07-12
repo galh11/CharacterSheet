@@ -55,11 +55,12 @@ one hover away.
   inventory whose coin purse and items share one card…).
 - **On-hover descriptions** — give any field a tooltip for quick rules recall.
 - **Side-nav dashboard** — all persistent controls live in a
-  right-hand sidebar so the canvas keeps the full height of the window; **Stats /
-  Tools tabs** swap the panel (no collapse-and-scroll), it folds to a hamburger
+  right-hand sidebar so the canvas keeps the full height of the window; flat
+  **Character / ⚙ Options tabs** at the very top swap the panel (no
+  collapse-and-scroll), it folds to a hamburger
   overlay on narrow screens, and you can drag its left edge to resize it
   (double-click to reset).
-- **Sidebar core stats** — a D&D-Beyond-style panel in the Stats tab shows
+- **Sidebar core stats** — a D&D-Beyond-style panel in the Character tab shows
   clickable ability tiles (score + modifier, click to roll a check), the full
   interactive HP card (direct-edit current/temp HP, death saves at 0 HP), AC,
   initiative (roll), proficiency, speed and inspiration — read live from your

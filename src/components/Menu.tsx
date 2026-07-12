@@ -1,5 +1,5 @@
 import { clsx } from 'clsx'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 
 interface MenuProps {
     label: ReactNode
@@ -14,6 +14,7 @@ interface MenuProps {
 export function Menu({ label, title, align = 'left', className, children }: MenuProps) {
     const [open, setOpen] = useState(false)
     const [shift, setShift] = useState(0)
+    const [placement, setPlacement] = useState<{ up: boolean; maxH: number }>({ up: false, maxH: 0 })
     const ref = useRef<HTMLDivElement>(null)
     const menuRef = useRef<HTMLDivElement>(null)
 
@@ -34,18 +35,28 @@ export function Menu({ label, title, align = 'left', className, children }: Menu
     }, [open])
 
     // Nudge the panel back on-screen if it would spill past either edge (the
-    // toolbar wraps, so a button can end up anywhere across the width). The
-    // panel only renders while open, so we (re)measure and set the shift on
-    // open and leave the stale value untouched while closed.
-    useEffect(() => {
+    // toolbar wraps, so a button can end up anywhere across the width) and flip
+    // it above the trigger when it would spill below the viewport. The panel only
+    // renders while open, so we (re)measure on open and leave the stale value
+    // untouched while closed. useLayoutEffect places it before paint (no flicker).
+    useLayoutEffect(() => {
         if (!open) return
         const el = menuRef.current
-        if (!el) return
+        const wrap = ref.current
+        if (!el || !wrap) return
         const rect = el.getBoundingClientRect()
+        const trigger = wrap.getBoundingClientRect()
         const margin = 8
         if (rect.right > window.innerWidth - margin) setShift(window.innerWidth - margin - rect.right)
         else if (rect.left < margin) setShift(margin - rect.left)
         else setShift(0)
+        // Open upward when the panel is taller than the room below the trigger
+        // and there's more room above (so a bottom-of-rail menu lands on-screen
+        // instead of below the fold). Cap the height to the space it opens into.
+        const spaceBelow = window.innerHeight - trigger.bottom - margin
+        const spaceAbove = trigger.top - margin
+        const up = rect.height > spaceBelow && spaceAbove > spaceBelow
+        setPlacement({ up, maxH: Math.max(120, Math.floor(up ? spaceAbove : spaceBelow)) })
     }, [open])
 
     return (
@@ -67,9 +78,13 @@ export function Menu({ label, title, align = 'left', className, children }: Menu
                 <div
                     ref={menuRef}
                     role="menu"
-                    style={shift ? { transform: `translateX(${shift}px)` } : undefined}
+                    style={{
+                        maxHeight: placement.maxH || undefined,
+                        ...(shift ? { transform: `translateX(${shift}px)` } : {}),
+                    }}
                     className={clsx(
-                        'absolute z-30 mt-1 max-h-[70vh] min-w-[11rem] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-lg border border-slate-700 bg-slate-900/95 p-1 shadow-2xl ring-1 ring-black/20 backdrop-blur',
+                        'absolute z-30 min-w-[11rem] max-w-[calc(100vw-1rem)] overflow-y-auto overscroll-contain rounded-lg border border-slate-700 bg-slate-900/95 p-1 shadow-2xl ring-1 ring-black/20 backdrop-blur',
+                        placement.up ? 'bottom-full mb-1' : 'top-full mt-1',
                         align === 'right' ? 'right-0' : 'left-0',
                     )}
                 >

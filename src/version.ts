@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.30.0',
+        date: '2026-07-12',
+        summary: 'The new-character starter is now a fully worked example: a level 1 human paladin (Acolyte of Torm) with everything a player expects — ability tiles and HP in the sidebar, plus Combat, Attacks (longsword & javelin), Saving Throws, Skills, Features & Traits, auto-scaling Class Resources (Lay on Hands, Divine Sense), Proficiencies & Languages, roleplay Personality traits, and an Equipment/coin section. Attacks, saves, skills and pools all compute from the scores and level.',
+    },
+    {
         version: '1.29.0',
         date: '2026-07-12',
         summary: 'Sidebar polish: the Character / ⚙ Options tabs now sit flush at the very top (flat underline tabs), the portrait + name live only on the Character tab, and every dropdown (Rest, + Template, View, ⋯ More…) flips upward when it would open below the screen instead of forcing you to scroll. The roll log’s disadvantage button and the HP damage/heal/temp controls now wrap to fit any rail width, and the accent-colour swatch is a clearly labelled row.',

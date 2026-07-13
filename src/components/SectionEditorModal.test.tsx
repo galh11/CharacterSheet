@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { SectionEditorModal } from './SectionEditorModal'
 import type { CharacterField, CharacterSection } from '../model/characterSheet'
+import type { FieldReference } from '../model/compute'
 
 const field: CharacterField = {
     id: 'f1',
@@ -43,6 +44,34 @@ function renderModal(onUpdateField = vi.fn()) {
     )
     return onUpdateField
 }
+
+describe('SectionEditorModal effect target hints', () => {
+    it('disambiguates target options by section so the DEX save is findable', () => {
+        const references: FieldReference[] = [
+            { slug: 'dex', label: 'DEX', value: 14, section: 'Ability Scores', kind: 'number' },
+            { slug: 'dexterity', label: 'Dexterity', value: 0, section: 'Saving Throws', kind: 'number' },
+        ]
+        render(
+            <SectionEditorModal
+                section={section}
+                results={new Map()}
+                references={references}
+                onClose={noop}
+                onUpdateSection={noop}
+                onDeleteSection={noop}
+                onDuplicateSection={noop}
+                onAddField={noop}
+                onUpdateField={vi.fn()}
+                onDeleteField={noop}
+                onMoveField={noop}
+            />,
+        )
+        // The saving-throw row is now labelled with its section, so it's no
+        // longer confused with the DEX ability score in the target picker.
+        expect(screen.getByText('Dexterity · Saving Throws')).toBeInTheDocument()
+        expect(screen.getByText('DEX · Ability Scores')).toBeInTheDocument()
+    })
+})
 
 describe('SectionEditorModal field description', () => {
     it('shows each field description in an editable box', () => {

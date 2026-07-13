@@ -98,7 +98,7 @@ function EffectsEditor({
             <datalist id={`slugs-${field.id}`}>
                 {references.map((r) => (
                     <option key={r.slug} value={r.slug}>
-                        {r.label}
+                        {r.section ? `${r.label} · ${r.section}` : r.label}
                     </option>
                 ))}
             </datalist>

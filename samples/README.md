@@ -5,6 +5,10 @@ sample sheets. These files are not part of the application bundle.
 
 - `yad-armhand-ddb.json` / `amarthon-ddb.json` — source D&D Beyond character JSON
   exports, kept as the reference data the sample-sheet generators are built from.
+- `yad-armhand-source.json` / `amarthon-source.json` — fresh D&D Beyond
+  character-service exports (character ids 164963661 / 166905628), plus
+  `yad-armhand-digest.md` / `amarthon-digest.md`, the compact digests distilled
+  from them and used to rebuild the sheets below.
 - `yad-armhand-sheet.json` / `amarthon-sheet.json` — the app-native sheets built
   from those characters (loadable via **Import JSON…**). Regenerate them with the
   generators in `scripts/` (`node scripts/gen-yad.mjs`,

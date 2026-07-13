@@ -1,5 +1,5 @@
 // One-off generator: builds Amarthon's sheet in this app's native format from
-// samples/amarthon-ddb.json (a D&D Beyond character export). Every derivable
+// samples/amarthon-source.json (a D&D Beyond character export). Every derivable
 // value is a computed field or a {formula} placeholder so nothing that depends
 // on ability mods / proficiency is hand-typed.
 // Run: `node scripts/gen-amarthon.mjs` -> samples/amarthon-sheet.json
@@ -7,7 +7,7 @@
 // Character: Amarthon — Variant Human Druid 8 (Circle of the Moon), Sage.
 // Verified from the DDB JSON:
 //   Abilities STR 8 / DEX 14 / CON 17 / INT 10 / WIS 19 / CHA 10 (base + Variant
-//   Human +1 WIS/+1 CON + Sage ASI +2 CON/+1 WIS + two Druid ASIs +1 WIS each).
+//   Human +1 WIS/+1 CON + Sage ASI +2 CON/+1 WIS + War Caster +1 WIS + Fey Touched +1 WIS).
 //   HP = baseHitPoints 43 + con_mod(3) * level(8) = 67. Speed 30. Proficiency +3.
 //   AC = Studded Leather 12 + DEX mod + Shield 2 = 16. Spell save DC 15, atk +7.
 import { writeFileSync } from 'node:fs'
@@ -258,29 +258,33 @@ S('Features & Traits', 'actions', [
             { target: 'nature', op: 'add', value: 'wis_mod' },
         ],
     }),
-    F('Wild Shape (3/rest)', 'text', '', { description: 'Bonus Action: transform into a known Beast form (max CR 1, no Fly Speed until — from level 8 you may take a form with a Fly Speed). Lasts hours = half your level. 3 uses at level 8; regain one on a Short Rest, all on a Long Rest.' }),
+    F('Wild Shape (3/rest)', 'text', '', { description: 'Bonus Action: transform into a known Beast form (from level 8, max CR 1 and you may take a form with a Fly Speed). Lasts hours = half your level. 3 uses at level 8; regain one on a Short Rest, all on a Long Rest. Assuming a form grants Temp HP = your Druid level.' }),
     F('Wild Companion', 'text', '', { description: 'Magic action: expend a spell slot or a Wild Shape use to cast Find Familiar without Materials; the familiar is Fey and lasts until your next Long Rest.' }),
-    F('Circle Forms', 'text', '', { description: 'Circle of the Moon: while in Wild Shape you can use a Magic action to expend a spell slot and regain 1d8 HP per slot level; your beast forms may have higher CR. (See the subclass table for the CR cap.)' }),
-    F('Wild Resurgence', 'text', '', { description: 'Once per turn, if you have no Wild Shape uses left, expend a spell slot to regain one (no action). Also, once per Long Rest, expend a Wild Shape use to gain a level 1 spell slot.' }),
-    F('Improved Circle Forms', 'text', '', { description: 'While in Wild Shape you can use your WIS mod in place of Con for concentration and add your WIS mod to the beast form’s attack damage; you also gain the ability to spend a slot to heal in beast form.' }),
-    F('Elemental Fury — Primal Strike', 'text', '', { description: 'Once on each of your turns when you hit with an attack roll (including in Wild Shape), deal an extra 1d8 damage of the attack’s type.' }),
-    F('Moonlight Step (4/Long)', 'text', '', { description: 'Circle of the Moon: Bonus Action to teleport up to 30 ft to a space you can see; you have Advantage on your next attack this turn. WIS-mod uses per Long Rest; regain uses by expending a level 2+ slot.' }),
+    F('Circle Forms (Circle of the Moon)', 'text', '', { description: 'While in Wild Shape your AC becomes 13 + WIS mod (17) if higher than the beast’s, and you gain Temp HP = 3 × your Druid level (24) in place of the normal Wild Shape Temp HP.' }),
+    F('Wild Resurgence', 'text', '', { description: 'Once per turn, if you have no Wild Shape uses left, expend a spell slot to regain one (no action). Also, once per Long Rest, expend a Wild Shape use to regain a level 1 spell slot.' }),
+    F('Improved Circle Forms (L6)', 'text', '', { description: 'While in Wild Shape: your attacks can deal Radiant instead of their normal type (Lunar Radiance), and you add your WIS mod to your Constitution saving throws — toggle the “Wild Shaped” state to fold the CON-save bonus in.' }),
+    F('Elemental Fury — Primal Strike', 'text', '', { description: 'Once on each of your turns when you hit with an attack roll (including in Wild Shape), deal an extra 1d8 of Cold, Fire, Lightning, or Thunder (choose on hit). Add it via the Primal Strike toggle on the Quarterstaff.' }),
     F('Spellcasting', 'text', '', { description: 'Wisdom-based druid casting. Prepare spells from the whole Druid list; swap after a Long Rest. Save DC 15, spell attack +7.' }),
     F('War Caster (feat)', 'text', '', { description: 'Advantage on CON saves to maintain Concentration; cast somatic spells with hands full; cast a spell (1 action, single target) as an opportunity attack.' }),
     F('Magic Initiate — Wizard (feat)', 'text', '', { description: 'Two wizard cantrips (Minor Illusion, Booming Blade) and a level 1 wizard spell (Shield) you can cast free 1/Long Rest or with slots.' }),
-    F('Homebrew feats', 'text', '', { description: 'Campaign feats: Dark Bargain, Runestones, Character Threads — grant Silvery Barbs and Misty Step among other benefits.' }),
+    F('Fey Touched (feat)', 'text', '', { description: '+1 WIS; you always have Misty Step and Silvery Barbs prepared and can cast each once per Long Rest without a slot (WIS-based).' }),
 ])
 
 // 14. Resources (rest-aware pips).
 S('Resources', 'default', [
-    F('Wild Shape', 'resource', 3, { max: 3, meta: { recharge: 'short' } }),
-    F('Moonlight Step', 'resource', 4, { maxFormula: 'wis_mod', meta: { recharge: 'long' } }),
-    F('Shield (Magic Initiate)', 'resource', 1, { max: 1, meta: { recharge: 'long' } }),
+    F('Wild Shape', 'resource', 3, { max: 3, meta: { recharge: 'short' }, description: 'Regain one on a Short Rest, all on a Long Rest.' }),
+    F('Wild Resurgence (slot)', 'resource', 1, { max: 1, meta: { recharge: 'long' }, description: 'Once per Long Rest, expend a Wild Shape use to regain a level 1 spell slot.' }),
+    F('Shield (Magic Initiate)', 'resource', 1, { max: 1, meta: { recharge: 'long' }, description: 'Cast Shield free once per Long Rest (or with a slot).' }),
+    F('Misty Step (Fey Touched)', 'resource', 1, { max: 1, meta: { recharge: 'long' }, description: 'Cast Misty Step free once per Long Rest (or with a slot).' }),
+    F('Silvery Barbs (Fey Touched)', 'resource', 1, { max: 1, meta: { recharge: 'long' }, description: 'Cast Silvery Barbs free once per Long Rest (or with a slot).' }),
 ], '#ec4899')
 
 // 15. Conditions & states.
 S('Conditions', 'conditions', [
-    F('Wild Shaped', 'boolean', 'false', { description: 'Currently in a Beast form.' }),
+    F('Wild Shaped', 'boolean', 'false', {
+        description: 'Currently in a Beast form. Improved Circle Forms: while active, add your WIS mod to your Constitution saving throws.',
+        effects: [{ target: 'constitution', op: 'add', value: 'wis_mod' }],
+    }),
     F('Concentrating', 'boolean', 'false', { description: 'War Caster: Advantage on CON saves to keep Concentration.' }),
     F('Barkskin', 'boolean', 'false', {
         description: 'While active, your AC can’t be less than 16 (grants a ≥16 floor to AC).',

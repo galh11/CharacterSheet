@@ -97,6 +97,29 @@ describe('useSheet', () => {
         expect(labels).toEqual(['Second', 'First'])
     })
 
+    it('moves a field to another section with moveFieldToSection', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.addSection())
+        act(() => result.current.addSection())
+        const fromId = result.current.sheet.sections.at(-2)!.id
+        const toId = result.current.sheet.sections.at(-1)!.id
+
+        act(() => result.current.addField(fromId, { label: 'Wanderer' }))
+        const field = result.current.sheet.sections.find((s) => s.id === fromId)!.fields.at(-1)!
+
+        act(() => result.current.moveFieldToSection(fromId, field.id, toId))
+
+        const from = result.current.sheet.sections.find((s) => s.id === fromId)!
+        const to = result.current.sheet.sections.find((s) => s.id === toId)!
+        expect(from.fields.some((f) => f.id === field.id)).toBe(false)
+        expect(to.fields.at(-1)!.id).toBe(field.id)
+        expect(to.fields.at(-1)!.label).toBe('Wanderer')
+
+        // Undoable in one step.
+        act(() => result.current.undo())
+        expect(result.current.sheet.sections.find((s) => s.id === fromId)!.fields.some((f) => f.id === field.id)).toBe(true)
+    })
+
     it('autosaves changes to localStorage', () => {
         const { result } = renderHook(() => useSheet())
         act(() => result.current.renameSheet('Saved Hero'))

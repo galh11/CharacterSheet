@@ -581,6 +581,29 @@ export const useSheet = () => {
         [mapSections],
     )
 
+    /** Move a field out of one section and append it to another (undoable). */
+    const moveFieldToSection = useCallback(
+        (fromSectionId: string, fieldId: string, toSectionId: string) => {
+            if (fromSectionId === toSectionId) return
+            commit((c) => {
+                const from = c.sections.find((s) => s.id === fromSectionId)
+                const field = from?.fields.find((f) => f.id === fieldId)
+                if (!field) return c
+                return {
+                    ...c,
+                    sections: c.sections.map((section) => {
+                        if (section.id === fromSectionId)
+                            return { ...section, fields: section.fields.filter((f) => f.id !== fieldId) }
+                        if (section.id === toSectionId)
+                            return { ...section, fields: [...section.fields, field] }
+                        return section
+                    }),
+                }
+            }, 'Move field to section')
+        },
+        [commit],
+    )
+
     return {
         sheet,
         characters,
@@ -622,6 +645,7 @@ export const useSheet = () => {
         updateField,
         deleteField,
         moveField,
+        moveFieldToSection,
     }
 }
 

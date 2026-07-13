@@ -33,6 +33,9 @@ interface SectionEditorModalProps {
     onUpdateField: (fieldId: string, patch: Partial<CharacterField>) => void
     onDeleteField: (fieldId: string) => void
     onMoveField: (fieldId: string, direction: -1 | 1) => void
+    /** All sections (id + title), for the per-field "move to another section" control. */
+    sections?: { id: string; title: string }[]
+    onMoveFieldToSection?: (fieldId: string, toSectionId: string) => void
 }
 
 const FIELD_TYPES: FieldType[] = ['text', 'number', 'boolean', 'computed', 'counter', 'resource']
@@ -432,6 +435,8 @@ export function SectionEditorModal({
     onUpdateField,
     onDeleteField,
     onMoveField,
+    sections = [],
+    onMoveFieldToSection,
 }: SectionEditorModalProps) {
     // Booleans (conditions) are technically 0/1 but rarely belong in a formula,
     // so keep them out of the autocomplete noise; users can still type a slug.
@@ -672,6 +677,29 @@ export function SectionEditorModal({
                                         className="mt-2 w-full resize-y rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300 placeholder:text-slate-600"
                                         aria-label="Field description"
                                     />
+
+                                    {onMoveFieldToSection && sections.some((s) => s.id !== section.id) && (
+                                        <label className="mt-2 flex items-center gap-2 text-[11px] text-slate-400">
+                                            Move to
+                                            <select
+                                                value=""
+                                                onChange={(event) => {
+                                                    if (event.target.value) onMoveFieldToSection(field.id, event.target.value)
+                                                }}
+                                                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
+                                                aria-label="Move field to section"
+                                            >
+                                                <option value="">another section…</option>
+                                                {sections
+                                                    .filter((s) => s.id !== section.id)
+                                                    .map((s) => (
+                                                        <option key={s.id} value={s.id}>
+                                                            {s.title || 'Untitled section'}
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </label>
+                                    )}
 
                                     {(field.type === 'counter' || field.type === 'resource') && (
                                         <input

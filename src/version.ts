@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.33.0',
+        date: '2026-07-13',
+        summary: 'Move a field to another section without deleting and re-typing it: each field in the section editor now has a “Move to another section…” picker that relocates it (keeping its value, formula, description and effects) to any other section in one undoable step.',
+    },
+    {
         version: '1.32.0',
         date: '2026-07-13',
         summary: 'You can now write and edit every field’s description yourself. The section editor gained a Description box under each field, so the on-hover rules reminders (and the text shown on action cards) are yours to author from scratch instead of only arriving pre-filled from an import — no more descriptions locked away in the underlying data.',

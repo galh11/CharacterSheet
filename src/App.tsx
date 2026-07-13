@@ -196,6 +196,7 @@ function App() {
         updateField,
         deleteField,
         moveField,
+        moveFieldToSection,
     } = useSheet()
 
     const { rollLog, setRollLog, pushRoll } = useRollLog(activeId)
@@ -1196,6 +1197,10 @@ function App() {
                     onUpdateField={(fieldId, patch) => updateField(editingSection.id, fieldId, patch)}
                     onDeleteField={(fieldId) => deleteField(editingSection.id, fieldId)}
                     onMoveField={(fieldId, direction) => moveField(editingSection.id, fieldId, direction)}
+                    sections={sheet.sections.map((s) => ({ id: s.id, title: s.title }))}
+                    onMoveFieldToSection={(fieldId, toSectionId) =>
+                        moveFieldToSection(editingSection.id, fieldId, toSectionId)
+                    }
                 />
             )}
 

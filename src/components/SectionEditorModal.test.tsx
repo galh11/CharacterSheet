@@ -59,3 +59,56 @@ describe('SectionEditorModal field description', () => {
         expect(onUpdateField).toHaveBeenCalledWith('f1', { description: 'My own attack notes.' })
     })
 })
+
+describe('SectionEditorModal move field to section', () => {
+    it('offers other sections and moves the field on select', () => {
+        const onMoveFieldToSection = vi.fn()
+        render(
+            <SectionEditorModal
+                section={section}
+                results={new Map()}
+                references={[]}
+                onClose={noop}
+                onUpdateSection={noop}
+                onDeleteSection={noop}
+                onDuplicateSection={noop}
+                onAddField={noop}
+                onUpdateField={vi.fn()}
+                onDeleteField={noop}
+                onMoveField={noop}
+                sections={[
+                    { id: 's1', title: 'Attacks' },
+                    { id: 's2', title: 'Free Actions' },
+                ]}
+                onMoveFieldToSection={onMoveFieldToSection}
+            />,
+        )
+        const select = screen.getByLabelText('Move field to section') as HTMLSelectElement
+        // The field's own section is excluded from the options.
+        expect(screen.getByRole('option', { name: 'Free Actions' })).toBeInTheDocument()
+        expect(screen.queryByRole('option', { name: 'Attacks' })).toBeNull()
+        fireEvent.change(select, { target: { value: 's2' } })
+        expect(onMoveFieldToSection).toHaveBeenCalledWith('f1', 's2')
+    })
+
+    it('hides the control when there is nowhere else to move', () => {
+        render(
+            <SectionEditorModal
+                section={section}
+                results={new Map()}
+                references={[]}
+                onClose={noop}
+                onUpdateSection={noop}
+                onDeleteSection={noop}
+                onDuplicateSection={noop}
+                onAddField={noop}
+                onUpdateField={vi.fn()}
+                onDeleteField={noop}
+                onMoveField={noop}
+                sections={[{ id: 's1', title: 'Attacks' }]}
+                onMoveFieldToSection={vi.fn()}
+            />,
+        )
+        expect(screen.queryByLabelText('Move field to section')).toBeNull()
+    })
+})

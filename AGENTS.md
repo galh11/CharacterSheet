@@ -82,7 +82,7 @@ src/
     SidebarStats.tsx       # D&D-Beyond-style core-stats panel in the rail: clickable ability tiles (score + mod → roll a check), the full interactive HP card (via the exported HpWidget node), AC, Initiative (roll), Proficiency, Speed, Inspiration — read live from the resolved scope; a ⚙ Popover toggles which stats show, picks portrait size + docks/pops-out the roll log
     SectionCard.tsx        # section frame: header, ✎ edit button, collapse/pin; hosts SectionBody
     SectionBody.tsx        # renders each section kind's widget (abilities/hp/skills/actions/…) + effect badges; exports HpWidget (reused in the sidebar core-stats panel)
-    SectionEditorModal.tsx # per-section editor (fields, formulas, kind, colour, effects, action toggles) — opened from the ✎ popover's "More settings…"
+    SectionEditorModal.tsx # per-section editor (fields, per-field descriptions, formulas, kind, colour, effects, action toggles) — opened from the ✎ popover's "More settings…"
     SectionQuickEdit.tsx   # the ✎ edit button: a non-blocking Popover for fast rename / accent colour / layout kind (+ "More settings…" opens the full editor)
     SectionNav.tsx         # sidebar "Sections" navigator: collapsible list of the current view's cards; click a row to scroll it into view + select it; highlights the active (selected) card
     Popover.tsx            # lightweight, non-blocking floating panel anchored to a trigger (no backdrop/focus-trap); closes on outside click / Escape; used by SectionQuickEdit

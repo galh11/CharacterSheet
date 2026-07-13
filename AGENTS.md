@@ -201,7 +201,14 @@ playwright.config.ts       # Playwright config (auto-starts the dev server)
   still renders older sheets.) The **HP**
   widget also hosts **death saves** — they appear inside it (successes/failures
   pips, auto-roll, stable/dead) only while Current HP is 0, and clear on any
-  healing or long rest. The HP widget also **consumes relational-effect tags** an
+  healing or long rest. It also carries a D&D-Beyond-style **max-HP modifier**
+  (`section.meta.maxHpMod`, a signed integer) for combat effects that temporarily
+  raise or lower max HP: the `Max HP` field stays the character's *true* max
+  (always editable, rendered struck-through while a modifier is active), the
+  **effective** cap (`max(0, trueMax + maxHpMod)`) shows next to it in
+  green/red, and it's what the HP bar percentage and the Heal cap use (so healing
+  tops out at the reduced max, not the true one). A `+`/`−` stepper and a typed
+  field edit the modifier (Reset clears it). The HP widget also **consumes relational-effect tags** an
   item/feature grants to HP-relevant slugs (`damage_reduction`, `defenses`, `hp`,
   `hit_points`): `note` effects (e.g. an armor's flat physical-damage reminder)
   render as source-attributed badges via `EffectTargetBadges`, and

@@ -440,7 +440,14 @@ export function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHe
     const maxN = max ? toNum(max.value) : 0
     const tempN = temp ? toNum(temp.value) : 0
     const reduceN = reduction ? toNum(reduction.value) : 0
-    const pct = maxN > 0 ? Math.max(0, Math.min(100, (curN / maxN) * 100)) : 0
+    // A temporary max-HP modifier (combat effects, a wraith's drain, etc.). The
+    // `max` field stays the character's *true* max; this shifts the *effective*
+    // cap current HP is measured against, and can be negative.
+    const maxMod = Number(section.meta?.maxHpMod) || 0
+    const effMaxN = max ? Math.max(0, maxN + maxMod) : 0
+    const setMaxMod = (v: number) =>
+        onUpdateSection?.({ meta: { ...section.meta, maxHpMod: v === 0 ? '' : String(v) } })
+    const pct = effMaxN > 0 ? Math.max(0, Math.min(100, (curN / effMaxN) * 100)) : 0
 
     // Death saves live in the HP section's meta and only surface once Current HP
     // hits 0 — there is no separate death-saves section.
@@ -498,7 +505,7 @@ export function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHe
             if (curN <= 0 && taken > 0 && failN < 3) setDeaths(succN, Math.min(3, failN + 1))
             if (conc && conc.value === 'true' && taken > 0) setConcSave(Math.max(10, Math.floor(taken / 2)))
         } else {
-            const next = maxN > 0 ? Math.min(maxN, curN + amt) : curN + amt
+            const next = effMaxN > 0 ? Math.min(effMaxN, curN + amt) : curN + amt
             onUpdateField(cur.id, { value: String(next) })
             // Healing above 0 stabilises the character and clears death saves.
             if (next > 0 && (succN || failN)) setDeaths(0, 0)
@@ -526,8 +533,23 @@ export function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHe
                             onChange={(e) => onUpdateField(max.id, { value: e.target.value.replace(/[^0-9]/g, '') })}
                             inputMode="numeric"
                             aria-label="Max HP"
-                            className="w-12 rounded bg-slate-900/30 pb-1 text-center font-mono text-lg text-slate-400 outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500"
+                            title={maxMod !== 0 ? `True max HP (${maxN}); effective cap is ${effMaxN}` : 'Max HP'}
+                            className={clsx(
+                                'w-12 rounded bg-slate-900/30 pb-1 text-center font-mono text-lg outline-none focus:bg-slate-800 focus:ring-1 focus:ring-slate-500',
+                                maxMod !== 0 ? 'text-slate-500 line-through decoration-slate-600' : 'text-slate-400',
+                            )}
                         />
+                    )}
+                    {max && maxMod !== 0 && (
+                        <span
+                            className={clsx(
+                                'pb-1 font-mono text-lg font-bold',
+                                maxMod < 0 ? 'text-rose-300' : 'text-emerald-300',
+                            )}
+                            title={`Effective max HP: true ${maxN} ${maxMod < 0 ? '−' : '+'} ${Math.abs(maxMod)}`}
+                        >
+                            {effMaxN}
+                        </span>
                     )}
                 </div>
                 {temp && (
@@ -539,6 +561,46 @@ export function HpWidget({ section, onUpdateField, onUpdateSection, onRoll, onHe
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div className={clsx('h-full rounded-full transition-all', pct > 50 ? 'bg-emerald-500' : pct > 25 ? 'bg-amber-500' : 'bg-rose-500')} style={{ width: `${pct}%` }} />
             </div>
+            {max && (
+                <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-slate-400">Max HP mod</span>
+                    <button
+                        type="button"
+                        onClick={() => setMaxMod(maxMod - 1)}
+                        aria-label="Decrease max HP modifier"
+                        className="flex h-5 w-5 items-center justify-center rounded bg-slate-700 text-slate-200 hover:bg-slate-600"
+                    >
+                        −
+                    </button>
+                    <input
+                        value={section.meta?.maxHpMod ?? ''}
+                        onChange={(e) => onUpdateSection?.({ meta: { ...section.meta, maxHpMod: e.target.value.replace(/[^0-9-]/g, '') } })}
+                        inputMode="numeric"
+                        placeholder="0"
+                        aria-label="Max HP modifier"
+                        title="Temporary change to max HP (e.g. −10 from a combat effect). Your true max stays intact."
+                        className="w-12 rounded border border-slate-600 bg-slate-900 px-1 py-0.5 text-center font-mono text-slate-100 outline-none focus:ring-1 focus:ring-slate-500"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setMaxMod(maxMod + 1)}
+                        aria-label="Increase max HP modifier"
+                        className="flex h-5 w-5 items-center justify-center rounded bg-slate-700 text-slate-200 hover:bg-slate-600"
+                    >
+                        +
+                    </button>
+                    {maxMod !== 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setMaxMod(0)}
+                            className="ml-auto rounded border border-slate-600 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800"
+                            title="Clear max HP modifier"
+                        >
+                            Reset
+                        </button>
+                    )}
+                </div>
+            )}
             {dying && (
                 <div className="flex flex-col gap-2 rounded-md border border-rose-500/40 bg-rose-950/30 p-2">
                     <div className="flex items-center gap-2">

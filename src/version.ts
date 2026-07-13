@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.37.0',
+        date: '2026-07-13',
+        summary: 'The HP card gains a D&D-Beyond-style Max HP modifier — a quick +/− control (and typed field) for combat effects that raise or lower your max HP. Your true max stays visible and editable (shown struck-through when reduced), the effective cap shows next to it in green/red, and healing tops out at the effective max instead of the true one.',
+    },
+    {
         version: '1.36.0',
         date: '2026-07-13',
         summary: 'An action that spends a resource can now also switch on a linked buff in one click. Set “Activate on spend” on the action to a boolean field (e.g. large_form), and pressing its −1 use button both spends the use and turns that buff on — so the Large Form bonus action activates the Large Form state (and its +10 Speed) for you. Wired into the Yad sample.',

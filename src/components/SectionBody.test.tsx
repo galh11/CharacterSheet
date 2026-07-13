@@ -295,6 +295,59 @@ describe('SpellCards', () => {
     })
 })
 
+describe('HpWidget max HP modifier', () => {
+    const hpSection = (meta?: Record<string, string>): CharacterSection => ({
+        id: 'hp',
+        title: 'Hit Points',
+        description: '',
+        accent: '#000',
+        kind: 'hp',
+        scale: 1,
+        meta,
+        fields: [
+            field({ id: 'cur', label: 'Current HP', type: 'number', value: '76' }),
+            field({ id: 'max', label: 'Max HP', type: 'number', value: '76' }),
+        ],
+        layout: { x: 0, y: 0, w: 1, h: 1 },
+    })
+
+    it('keeps the true max editable and shows the effective max alongside it', () => {
+        render(<SectionBody section={hpSection({ maxHpMod: '-10' })} results={new Map()} onUpdateField={() => { }} />)
+        // The true max (76) is still shown in its input.
+        expect(screen.getByLabelText('Max HP')).toHaveValue('76')
+        // The reduced effective cap (66) is shown too.
+        expect(screen.getByText('66')).toBeInTheDocument()
+    })
+
+    it('writes the max HP modifier into the section meta', () => {
+        const onUpdateSection = vi.fn()
+        render(<SectionBody section={hpSection()} results={new Map()} onUpdateField={() => { }} onUpdateSection={onUpdateSection} />)
+        fireEvent.click(screen.getByLabelText('Decrease max HP modifier'))
+        expect(onUpdateSection).toHaveBeenCalledWith({ meta: { maxHpMod: '-1' } })
+    })
+
+    it('caps healing at the effective max, not the true max', () => {
+        const onUpdateField = vi.fn()
+        render(
+            <SectionBody
+                section={{
+                    ...hpSection({ maxHpMod: '-10' }),
+                    fields: [
+                        field({ id: 'cur', label: 'Current HP', type: 'number', value: '60' }),
+                        field({ id: 'max', label: 'Max HP', type: 'number', value: '76' }),
+                    ],
+                }}
+                results={new Map()}
+                onUpdateField={onUpdateField}
+            />,
+        )
+        fireEvent.change(screen.getByLabelText('HP amount'), { target: { value: '20' } })
+        fireEvent.click(screen.getByRole('button', { name: 'Heal' }))
+        // 60 + 20 = 80, but the effective cap is 76 - 10 = 66.
+        expect(onUpdateField).toHaveBeenCalledWith('cur', { value: '66' })
+    })
+})
+
 describe('HpWidget death saves', () => {
     const hpSection = (current: string, meta?: Record<string, string>): CharacterSection => ({
         id: 'hp',

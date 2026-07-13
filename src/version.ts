@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.32.0',
+        date: '2026-07-13',
+        summary: 'You can now write and edit every field’s description yourself. The section editor gained a Description box under each field, so the on-hover rules reminders (and the text shown on action cards) are yours to author from scratch instead of only arriving pre-filled from an import — no more descriptions locked away in the underlying data.',
+    },
+    {
         version: '1.31.0',
         date: '2026-07-12',
         summary: 'The starter paladin now casts (2024 rules): added a Spellcasting card (save DC + spell attack), Spell Slots (two 1st-level slots that the spell cards spend), and prepared Spells — Bless, Cure Wounds and the always-prepared Divine Smite. Also removed the redundant Combat card: AC, initiative, proficiency and speed already show in the sidebar core-stats panel, so those fields moved there and the canvas gains a small Senses card (passive Perception/Insight) instead.',

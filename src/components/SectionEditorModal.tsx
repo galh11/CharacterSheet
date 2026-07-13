@@ -660,6 +660,19 @@ export function SectionEditorModal({
                                         </button>
                                     </div>
 
+                                    <textarea
+                                        value={field.description}
+                                        onChange={(event) => onUpdateField(field.id, { description: event.target.value })}
+                                        rows={2}
+                                        placeholder={
+                                            section.kind === 'actions'
+                                                ? 'Description — shown as the card text and on hover (write your own).'
+                                                : 'Description — shown on hover as a rules reminder (optional).'
+                                        }
+                                        className="mt-2 w-full resize-y rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300 placeholder:text-slate-600"
+                                        aria-label="Field description"
+                                    />
+
                                     {(field.type === 'counter' || field.type === 'resource') && (
                                         <input
                                             type="number"

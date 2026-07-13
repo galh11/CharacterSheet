@@ -189,7 +189,7 @@ function App() {
         healHp,
         spendResource,
         toggleField,
-        restoreResource,
+        setFlag,        restoreResource,
         applyTempHp,
         setFieldValueSilent,
         addField,
@@ -728,6 +728,7 @@ function App() {
             onSpend={spendResource}
             onRestore={restoreResource}
             onToggleFlag={toggleField}
+            onSetFlag={setFlag}
             onTempHp={applyTempHp}
             onEdit={collapsible ? () => setEditingSectionId(section.id) : undefined}
             onHide={collapsible ? () => hideSection(section.id) : undefined}

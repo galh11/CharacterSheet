@@ -181,7 +181,7 @@ function EffectsEditor({
  *  cost…), so the editor shows friendly names instead of cryptic slugs. The
  *  `resource` flag marks inputs that point at a resource slug (not a formula), so
  *  they autocomplete spendable resources instead of formula fields. */
-const ACTION_META_FIELDS: { key: string; label: string; placeholder: string; resource?: boolean }[] = [
+const ACTION_META_FIELDS: { key: string; label: string; placeholder: string; resource?: boolean; boolean?: boolean }[] = [
     { key: 'hit', label: 'To-hit', placeholder: '+{str_mod + proficiency}' },
     { key: 'damage', label: 'Damage dice', placeholder: '1d8+{str_mod}' },
     { key: 'type', label: 'Damage type', placeholder: 'slashing' },
@@ -190,6 +190,7 @@ const ACTION_META_FIELDS: { key: string; label: string; placeholder: string; res
     { key: 'cost', label: 'Resource cost (amount)', placeholder: '1' },
     { key: 'costField', label: 'Resource to spend (slug)', placeholder: 'moxie_points', resource: true },
     { key: 'costLabel', label: 'Resource label', placeholder: 'Moxie' },
+    { key: 'activates', label: 'Activate on spend (boolean)', placeholder: 'large_form', boolean: true },
     { key: 'refill', label: 'Refill resource (slug)', placeholder: 'ki_points', resource: true },
     { key: 'refillCost', label: 'Refill cost resource (slug)', placeholder: '', resource: true },
 ]
@@ -817,13 +818,13 @@ export function SectionEditorModal({
 
                                     {section.kind === 'actions' && (
                                         <div className="mt-2 grid grid-cols-2 gap-1.5">
-                                            {ACTION_META_FIELDS.map(({ key, label, placeholder, resource }) => (
+                                            {ACTION_META_FIELDS.map(({ key, label, placeholder, resource, boolean }) => (
                                                 <label key={key} className="flex flex-col gap-0.5 text-[10px] text-slate-500">
                                                     {label}
                                                     <FormulaInput
                                                         value={field.meta?.[key] ?? ''}
                                                         onChange={(next) => setMeta(field, key, next)}
-                                                        references={resource ? resourceReferences : formulaReferences}
+                                                        references={boolean ? booleanReferences : resource ? resourceReferences : formulaReferences}
                                                         placeholder={placeholder}
                                                         className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-300"
                                                         aria-label={`Action ${label}`}

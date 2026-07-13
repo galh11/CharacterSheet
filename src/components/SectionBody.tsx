@@ -39,6 +39,8 @@ interface SectionBodyProps {
     onRestore?: (refillSlug: string, costSlug?: string) => void
     /** Toggle a boolean activation flag anywhere on the sheet, by slug. */
     onToggleFlag?: (slug: string) => void
+    /** Set a boolean activation flag to a specific value, by slug. */
+    onSetFlag?: (slug: string, value: boolean) => void
     /** Apply temporary HP (kept if higher). */
     onTempHp?: (amount: number) => void
     /** Add a field to this section with the given overrides. */
@@ -737,7 +739,7 @@ function SkillRows({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, 
     )
 }
 
-function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onToggleFlag, onTempHp, contributions, effectTags, critMode }: SectionBodyProps) {
+function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll, onSpend, onRestore, onUpdateField, onToggleFlag, onSetFlag, onTempHp, contributions, effectTags, critMode }: SectionBodyProps) {
     /** Resolve `{...}` formula placeholders in a meta value against the scope. */
     const val = (raw?: string) => interpolate(raw ?? '', scope ?? {})
     /** A toggle is on either from its own `active` flag or, when it's bound to a
@@ -823,6 +825,9 @@ function ActionCards({ section, scope, rollMode, bonus, bonusDie, repeat, onRoll
         const m = field.meta ?? {}
         const amount = Number(m.cost) || 1
         onSpend?.(m.costField!, amount)
+        // Optionally switch on a linked buff/state boolean (e.g. spending a Large
+        // Form use also activates the Large Form buff).
+        if (m.activates) onSetFlag?.(m.activates, true)
         onRoll?.({ title: field.label, detail: `Spent ${amount} ${m.costLabel || m.costField}`, total: amount, kind: 'raw' })
     }
     const rollTemp = (field: CharacterField) => {

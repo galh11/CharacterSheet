@@ -62,6 +62,28 @@ describe('ActionCards', () => {
         expect(onSpend).toHaveBeenCalledWith('moxie_points', 1)
     })
 
+    it('activates a linked boolean when a spend also carries meta.activates', () => {
+        const onSpend = vi.fn()
+        const onSetFlag = vi.fn()
+        const section = actionsSection([
+            field({ id: 'lf', label: 'Large Form', meta: { cost: '1', costField: 'large_form', costLabel: 'use', activates: 'large_form' } }),
+        ])
+        render(
+            <SectionBody
+                section={section}
+                results={new Map()}
+                onUpdateField={() => { }}
+                scope={{ large_form: 1 }}
+                onRoll={() => { }}
+                onSpend={onSpend}
+                onSetFlag={onSetFlag}
+            />,
+        )
+        fireEvent.click(screen.getByRole('button', { name: /use/ }))
+        expect(onSpend).toHaveBeenCalledWith('large_form', 1)
+        expect(onSetFlag).toHaveBeenCalledWith('large_form', true)
+    })
+
     it('applies an active toggle that replaces the base damage and to-hit', () => {
         const section = actionsSection([
             field({

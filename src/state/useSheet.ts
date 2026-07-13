@@ -458,6 +458,30 @@ export const useSheet = () => {
         [commit],
     )
 
+    /** Set the first boolean field with this slug to a specific value (used to
+     *  activate a linked buff when an action's cost is spent). */
+    const setFlag = useCallback(
+        (slug: string, value: boolean) => {
+            const next = value ? 'true' : 'false'
+            commit((c) => {
+                let done = false
+                return {
+                    ...c,
+                    sections: c.sections.map((section) => ({
+                        ...section,
+                        fields: section.fields.map((field) => {
+                            if (done || field.type !== 'boolean' || slugify(field.label) !== slug || field.value === next)
+                                return field
+                            done = true
+                            return { ...field, value: next }
+                        }),
+                    })),
+                }
+            }, value ? 'Activate' : 'Deactivate')
+        },
+        [commit],
+    )
+
     /** Refill a resource to its max and, optionally, pay a cost by adding 1 to a counter
      *  (e.g. Dig Deep: restore the feature in exchange for a level of exhaustion). */
     const restoreResource = useCallback(
@@ -638,6 +662,7 @@ export const useSheet = () => {
         damageHp,
         spendResource,
         toggleField,
+        setFlag,
         restoreResource,
         applyTempHp,
         setFieldValueSilent,

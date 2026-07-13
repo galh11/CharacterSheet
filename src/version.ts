@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.34.0',
+        date: '2026-07-13',
+        summary: 'Relational effects (like Large Form’s +10 to Speed) now show up everywhere consistently. Previously a buffed number would update in computed fields but the plain field and the sidebar core-stats still showed the raw base — so Speed read 45 in one place and 35 in another. Now the field itself shows the folded value (35 → 45) with a “+10 · Large Form” badge, and the sidebar reads the same buffed number.',
+    },
+    {
         version: '1.33.0',
         date: '2026-07-13',
         summary: 'Move a field to another section without deleting and re-typing it: each field in the section editor now has a “Move to another section…” picker that relocates it (keeping its value, formula, description and effects) to any other section in one undoable step.',

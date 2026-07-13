@@ -82,6 +82,22 @@ const displayValue = (field: CharacterField, results: Map<string, FormulaResult>
     return field.value || '—'
 }
 
+/** Display value that reflects relational effects: a plain number field that is
+ *  the target of add/sub/set/min/max effects shows its folded scope value (e.g.
+ *  Speed 35 → 45 while Large Form is on) rather than its raw base. */
+const effectiveDisplay = (
+    field: CharacterField,
+    results: Map<string, FormulaResult>,
+    scope?: Record<string, number>,
+    contributions?: Map<string, Contribution[]>,
+): string => {
+    if (field.type === 'number' && scope) {
+        const slug = slugify(field.label)
+        if ((contributions?.get(slug)?.length ?? 0) > 0 && slug in scope) return String(scope[slug])
+    }
+    return displayValue(field, results)
+}
+
 /** Colour accents for damage-type pills. */
 const DAMAGE_COLORS: Record<string, string> = {
     fire: 'bg-orange-500/20 text-orange-300 ring-orange-500/40',
@@ -350,7 +366,7 @@ function DefaultList({ section, results, scope, onUpdateField, contributions, ef
                                 <EffectTargetBadges slug={slugify(field.label)} contributions={contributions} tags={effectTags} />
                             </span>
                             <span className={clsx('font-mono', field.type === 'computed' ? (results.get(field.id)?.ok ? 'text-emerald-300' : 'text-rose-300') : 'text-slate-100')}>
-                                {displayValue(field, results)}
+                                {effectiveDisplay(field, results, scope, contributions)}
                             </span>
                         </div>
                     )}

@@ -22,6 +22,7 @@ interface SectionCardProps {
     onSpend?: (slug: string, amount: number) => void
     onRestore?: (refillSlug: string, costSlug?: string) => void
     onToggleFlag?: (slug: string) => void
+    onSetFlag?: (slug: string, value: boolean) => void
     onTempHp?: (amount: number) => void
     collapsed?: boolean
     onToggleCollapse?: () => void
@@ -54,7 +55,7 @@ export function SectionCard({
     onSpend,
     onRestore,
     onToggleFlag,
-    onTempHp,
+    onSetFlag,    onTempHp,
     collapsed,
     onToggleCollapse,
     pinned,
@@ -137,6 +138,7 @@ export function SectionCard({
                         onSpend={onSpend}
                         onRestore={onRestore}
                         onToggleFlag={onToggleFlag}
+                        onSetFlag={onSetFlag}
                         onTempHp={onTempHp}
                         onAddField={onAddField}
                     />

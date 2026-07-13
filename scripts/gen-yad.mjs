@@ -228,8 +228,8 @@ S('Bonus Actions', 'actions', [
         meta: { cost: '1', costField: 'moxie_points', costLabel: 'Moxie', temp: '1d10 + {level + con_mod}' },
     }),
     F('Large Form', 'text', '', {
-        description: 'Become Large 10 min: advantage on STR checks, +10 ft Speed.',
-        meta: { cost: '1', costField: 'large_form', costLabel: 'use' },
+        description: 'Become Large 10 min: advantage on STR checks, +10 ft Speed. Spending a use also switches on the Large Form buff in Buffs & States.',
+        meta: { cost: '1', costField: 'large_form', costLabel: 'use', activates: 'large_form' },
     }),
     F('Dig Deep', 'text', '', {
         description: '10 min: resistance to Bludgeoning/Piercing/Slashing; ignore exhaustion < 6. Restore by gaining 1 exhaustion.',

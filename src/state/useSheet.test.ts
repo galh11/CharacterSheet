@@ -120,6 +120,23 @@ describe('useSheet', () => {
         expect(result.current.sheet.sections.find((s) => s.id === fromId)!.fields.some((f) => f.id === field.id)).toBe(true)
     })
 
+    it('sets a boolean flag to a specific value with setFlag', () => {
+        const { result } = renderHook(() => useSheet())
+        act(() => result.current.addSection())
+        const sectionId = result.current.sheet.sections.at(-1)!.id
+        act(() => result.current.addField(sectionId, { label: 'Large Form', type: 'boolean', value: 'false' }))
+        const boolId = result.current.sheet.sections.find((s) => s.id === sectionId)!.fields.at(-1)!.id
+        const val = () => result.current.sheet.sections.find((s) => s.id === sectionId)!.fields.find((f) => f.id === boolId)!.value
+
+        act(() => result.current.setFlag('large_form', true))
+        expect(val()).toBe('true')
+        // Idempotent — activating an already-active flag stays active.
+        act(() => result.current.setFlag('large_form', true))
+        expect(val()).toBe('true')
+        act(() => result.current.setFlag('large_form', false))
+        expect(val()).toBe('false')
+    })
+
     it('autosaves changes to localStorage', () => {
         const { result } = renderHook(() => useSheet())
         act(() => result.current.renameSheet('Saved Hero'))

@@ -61,7 +61,7 @@ src/
     dice.ts                # d20 (advantage/disadvantage), damage, crit flags, roll formatting
     layout.ts              # canvas geometry: dashboard grid (gridMetrics/toCell/snapToGrid/compactGrid), snap/align/distribute, skyline pack
   state/
-    useSheet.ts            # central sheet state + immutable mutation ops (incl. moveSection reorder) + undo/redo
+    useSheet.ts            # central sheet state + immutable mutation ops (incl. moveSection reorder, moveFieldToSection, setFlag activate-a-boolean) + undo/redo
     persistence.ts         # versioned localStorage load/save/clear (+ migration)
     transfer.ts            # whole-sheet JSON export / import
     roster.ts              # multiple characters (character-sheet:char:{id}, character-sheet:roster:v1)

@@ -27,6 +27,11 @@ export const prUrl = (pr: number): string => `${REPO_URL}/pull/${pr}`
  *  `APP_VERSION`. Keep summaries short — one line each. */
 export const CHANGELOG: ChangelogEntry[] = [
     {
+        version: '1.36.0',
+        date: '2026-07-13',
+        summary: 'An action that spends a resource can now also switch on a linked buff in one click. Set “Activate on spend” on the action to a boolean field (e.g. large_form), and pressing its −1 use button both spends the use and turns that buff on — so the Large Form bonus action activates the Large Form state (and its +10 Speed) for you. Wired into the Yad sample.',
+    },
+    {
         version: '1.35.0',
         date: '2026-07-13',
         summary: 'When picking what a relational effect targets, each suggestion now shows its section — so a saving throw reads “Dexterity · Saving Throws” instead of a bare “Dexterity” that was indistinguishable from the DEX ability score. Makes targets like the DEX save easy to find.',

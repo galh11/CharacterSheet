@@ -211,6 +211,11 @@ function App() {
     const resourceReferences = useMemo(() => listResourceReferences(sheet), [sheet])
     const scope = useMemo(() => {
         const s = Object.fromEntries(references.map((r) => [r.slug, r.value]))
+        // Overlay the fully-resolved scope so relational effects (e.g. Large
+        // Form's +10 to speed) are reflected everywhere — the sidebar core-stats,
+        // number-field displays and formulas all read the same buffed value, not
+        // the raw base.
+        Object.assign(s, resolved.scope)
         // Overlay resource/counter counts (e.g. moxie_points, luck_points) so
         // action costs and the Luck button can read live remaining values.
         for (const section of sheet.sections) {
@@ -222,7 +227,7 @@ function App() {
             }
         }
         return s
-    }, [references, sheet])
+    }, [references, resolved, sheet])
 
     // The drawer is per-view: tucking a card in the canvas doesn't hide it in the
     // stack, and vice-versa. `view` picks which view's drawer we're acting on.

@@ -533,3 +533,42 @@ describe('relational effect badges', () => {
         expect(screen.getByText('+5')).toBeInTheDocument()
     })
 })
+
+describe('number field with relational effects', () => {
+    const defaultSection = (fields: CharacterField[]): CharacterSection => ({
+        id: 'd',
+        title: 'Combat',
+        description: '',
+        accent: '#000',
+        kind: 'default',
+        scale: 1,
+        fields,
+        layout: { x: 0, y: 0, w: 1, h: 1 },
+    })
+
+    it('shows the folded (buffed) value plus the +N source badge, not the raw base', () => {
+        const section = defaultSection([field({ id: 'sp', label: 'Speed', type: 'number', value: '35' })])
+        render(
+            <SectionBody
+                section={section}
+                results={new Map()}
+                onUpdateField={() => { }}
+                scope={{ speed: 45 }}
+                contributions={new Map([
+                    ['speed', [{ sourceId: 'lf', sourceLabel: 'Large Form', op: 'add', amount: 10, value: '10' }]],
+                ])}
+            />,
+        )
+        // Buffed speed (35 + 10) is shown, and the +10 badge attributes it.
+        expect(screen.getByText('45')).toBeInTheDocument()
+        expect(screen.queryByText('35')).toBeNull()
+        expect(screen.getByText('+10')).toBeInTheDocument()
+    })
+
+    it('shows the raw value when there is no active effect', () => {
+        const section = defaultSection([field({ id: 'sp', label: 'Speed', type: 'number', value: '35' })])
+        render(<SectionBody section={section} results={new Map()} onUpdateField={() => { }} scope={{ speed: 35 }} />)
+        expect(screen.getByText('35')).toBeInTheDocument()
+    })
+})
+
